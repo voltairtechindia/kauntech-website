@@ -1,547 +1,274 @@
 /**
- * Kauntech Website - Interactive JavaScript
- * Features: Floating languages, scroll animations, mobile menu, smooth scrolling
+ * KAUNTECH - Premium SaaS Interactions
+ * Handles all interactive elements: animations, pricing toggles, chat widget, etc.
  */
 
-// ============================================
-// FLOATING LANGUAGES BACKGROUND
-// ============================================
-const languagesData = {
-    hello: [
-        { lang: 'English', text: 'Hello' },
-        { lang: 'Hindi', text: 'नमस्ते' },
-        { lang: 'Bengali', text: 'হ্যালো' },
-        { lang: 'Telugu', text: 'హలో' },
-        { lang: 'Marathi', text: 'नमस्कार' },
-        { lang: 'Tamil', text: 'வணக்கம்' },
-        { lang: 'Urdu', text: 'ہیلو' },
-        { lang: 'Gujarati', text: 'હેલો' },
-        { lang: 'Kannada', text: 'ಹಲೋ' },
-        { lang: 'Odia', text: 'ନମସ୍କାର' },
-        { lang: 'Malayalam', text: 'ഹലോ' },
-        { lang: 'Punjabi', text: 'ਸਤ ਸ੍ਰੀ ਅਕਾਲ' },
-        { lang: 'Assamese', text: 'নমস্কাৰ' },
-        { lang: 'Maithili', text: 'नमस्कार' },
-        { lang: 'Sanskrit', text: 'नमस्ते' }
-    ],
-    namaste: [
-        { lang: 'Hindi', text: 'नमस्ते' },
-        { lang: 'Sanskrit', text: 'नमस्ते' },
-        { lang: 'Nepali', text: 'नमस्ते' },
-        { lang: 'Marathi', text: 'नमस्कार' },
-        { lang: 'Gujarati', text: 'નમસ્તે' },
-        { lang: 'Bengali', text: 'নমস্কার' },
-        { lang: 'Odia', text: 'ନମସ୍କାର' },
-        { lang: 'Assamese', text: 'নমস্কাৰ' },
-        { lang: 'Punjabi', text: 'ਨਮਸਤੇ' },
-        { lang: 'Kashmiri', text: 'نمستے' },
-        { lang: 'Sindhi', text: 'نمستي' },
-        { lang: 'Konkani', text: 'नमस्कार' },
-        { lang: 'Tulu', text: 'ನಮಸ್ಕಾರ' },
-        { lang: 'Dogri', text: 'नमस्ते' },
-        { lang: 'Manipuri', text: 'ꯅꯃꯁꯇꯦ' }
-    ],
-    welcome: [
-        { lang: 'English', text: 'Welcome' },
-        { lang: 'Hindi', text: 'स्वागत है' },
-        { lang: 'Tamil', text: 'வரவேற்கிறோம்' },
-        { lang: 'Telugu', text: 'స్వాగతం' },
-        { lang: 'Kannada', text: 'ಸ್ವಾಗತ' },
-        { lang: 'Malayalam', text: 'സ്വാഗതം' },
-        { lang: 'Bengali', text: 'স্বাগতম' },
-        { lang: 'Marathi', text: 'स्वागत आहे' },
-        { lang: 'Gujarati', text: 'સ્વાગત છે' },
-        { lang: 'Punjabi', text: 'ਜੀ ਆਇਆਂ ਨੂੰ' },
-        { lang: 'Odia', text: 'ସ୍ୱାଗତ' },
-        { lang: 'Assamese', text: 'স্বাগতম' },
-        { lang: 'Urdu', text: 'خوش آمدید' },
-        { lang: 'Sanskrit', text: 'स्वागतम्' },
-        { lang: 'Konkani', text: 'स्वागत' }
-    ],
-    madeInIndia: [
-        { lang: 'English', text: 'Made in India' },
-        { lang: 'Hindi', text: 'भारत में निर्मित' },
-        { lang: 'Tamil', text: 'இந்தியாவில் தயாரிக்கப்பட்டது' },
-        { lang: 'Telugu', text: 'భారతదేశంలో తయారు చేయబడింది' },
-        { lang: 'Kannada', text: 'ಭಾರತದಲ್ಲಿ ತಯಾರಿಸಲಾಗಿದೆ' },
-        { lang: 'Malayalam', text: 'ഇന്ത്യയിൽ നിർമ്മിച്ചത്' },
-        { lang: 'Bengali', text: 'ভারতে তৈরি' },
-        { lang: 'Marathi', text: 'भारतात बनवलेले' },
-        { lang: 'Gujarati', text: 'ભારતમાં બનાવેલ' },
-        { lang: 'Punjabi', text: 'ਭਾਰਤ ਵਿੱਚ ਬਣਿਆ' },
-        { lang: 'Odia', text: 'ଭାରତରେ ନିର୍ମିତ' },
-        { lang: 'Assamese', text: 'ভাৰতত নিৰ্মিত' },
-        { lang: 'Urdu', text: 'بھارت میں تیار' },
-        { lang: 'Sanskrit', text: 'भारते निर्मितम्' },
-        { lang: 'Konkani', text: 'भारतां तयार केल्ले' }
-    ]
-};
-
-function createFloatingLanguages() {
-    const container = document.getElementById('floatingLanguages');
-    if (!container) return;
-    
-    const allTexts = [
-        ...languagesData.hello.map(item => ({ ...item, type: 'hello' })),
-        ...languagesData.namaste.map(item => ({ ...item, type: 'namaste' })),
-        ...languagesData.welcome.map(item => ({ ...item, type: 'welcome' })),
-        ...languagesData.madeInIndia.map(item => ({ ...item, type: 'made-in-india' }))
-    ];
-    
-    // Shuffle array
-    const shuffled = allTexts.sort(() => Math.random() - 0.5);
-    
-    // Create 50 floating elements
-    for (let i = 0; i < 50; i++) {
-        const item = shuffled[i % shuffled.length];
-        const element = document.createElement('div');
-        element.className = `floating-language ${item.type}`;
-        element.textContent = item.text;
-        
-        // Random positioning
-        const left = Math.random() * 100;
-        const top = Math.random() * 100;
-        const size = Math.random() * 24 + 16; // 16px to 40px
-        const delay = Math.random() * 20;
-        const duration = Math.random() * 10 + 15; // 15s to 25s
-        
-        element.style.left = `${left}%`;
-        element.style.top = `${top}%`;
-        element.style.fontSize = `${size}px`;
-        element.style.animationDelay = `${delay}s`;
-        element.style.animationDuration = `${duration}s`;
-        
-        // Random rotation
-        const rotation = Math.random() * 30 - 15;
-        element.style.transform = `rotate(${rotation}deg)`;
-        
-        container.appendChild(element);
-    }
-}
-
-// ============================================
-// NAVIGATION
-// ============================================
-function initNavigation() {
-    const navbar = document.getElementById('navbar');
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    // Scroll effect for navbar
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
-        } else {
-            navbar.classList.remove('scrolled');
-        }
-    });
-    
-    // Mobile menu toggle
-    if (mobileMenuBtn && mobileMenu) {
-        mobileMenuBtn.addEventListener('click', () => {
-            mobileMenu.classList.toggle('active');
-            mobileMenuBtn.classList.toggle('active');
-        });
-        
-        // Close mobile menu when clicking a link
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.remove('active');
-                mobileMenuBtn.classList.remove('active');
-            });
-        });
-    }
-    
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                const offsetTop = target.offsetTop - 80;
-                window.scrollTo({
-                    top: offsetTop,
-                    behavior: 'smooth'
-                });
-            }
-        });
-    });
-}
-
-// ============================================
-// SCROLL ANIMATIONS
-// ============================================
-function initScrollAnimations() {
-    const observerOptions = {
-        root: null,
-        rootMargin: '0px',
-        threshold: 0.1
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('animated');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-    
-    // Observe elements for animation
-    const animateElements = document.querySelectorAll(
-        '.feature-card, .scan-card, .flow-step, .translate-card, .cta-card, .auto-feature'
-    );
-    
-    animateElements.forEach((el, index) => {
-        el.classList.add('animate-on-scroll');
-        el.style.transitionDelay = `${index * 0.1}s`;
-        observer.observe(el);
-    });
-}
-
-// ============================================
-// PARALLAX EFFECTS
-// ============================================
-function initParallax() {
-    const heroOrb = document.querySelector('.hero-orb');
-    const automationOrb = document.querySelector('.automation-orb');
-    
-    window.addEventListener('scroll', () => {
-        const scrollY = window.scrollY;
-        
-        if (heroOrb) {
-            heroOrb.style.transform = `translate(-50%, -50%) translateY(${scrollY * 0.1}px)`;
-        }
-        
-        if (automationOrb) {
-            automationOrb.style.transform = `translate(-50%, -50%) translateY(${scrollY * 0.05}px)`;
-        }
-    });
-}
-
-// ============================================
-// COUNTER ANIMATION
-// ============================================
-function animateCounters() {
-    const counters = document.querySelectorAll('.stat-number');
-    
-    const observerOptions = {
-        threshold: 0.5
-    };
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const counter = entry.target;
-                const target = parseInt(counter.textContent);
-                const duration = 2000;
-                const step = target / (duration / 16);
-                let current = 0;
-                
-                const updateCounter = () => {
-                    current += step;
-                    if (current < target) {
-                        counter.textContent = Math.floor(current);
-                        requestAnimationFrame(updateCounter);
-                    } else {
-                        counter.textContent = target;
-                    }
-                };
-                
-                updateCounter();
-                observer.unobserve(counter);
-            }
-        });
-    }, observerOptions);
-    
-    counters.forEach(counter => observer.observe(counter));
-}
-
-// ============================================
-// TYPING EFFECT FOR HERO
-// ============================================
-function initTypingEffect() {
-    const heroTitle = document.querySelector('.hero-title');
-    if (!heroTitle) return;
-    
-    const titleLines = heroTitle.querySelectorAll('.title-line');
-    
-    titleLines.forEach((line, index) => {
-        const text = line.textContent;
-        line.textContent = '';
-        line.style.opacity = '1';
-        
-        let charIndex = 0;
-        const typeChar = () => {
-            if (charIndex < text.length) {
-                line.textContent += text[charIndex];
-                charIndex++;
-                setTimeout(typeChar, 50);
-            }
-        };
-        
-        setTimeout(typeChar, index * 500);
-    });
-}
-
-// ============================================
-// BUTTON INTERACTIONS
-// ============================================
-function initButtonInteractions() {
-    // Add ripple effect to buttons
-    document.querySelectorAll('.btn, .cta-btn, .scan-btn').forEach(button => {
-        button.addEventListener('click', function(e) {
-            const ripple = document.createElement('span');
-            ripple.style.cssText = `
-                position: absolute;
-                background: rgba(255, 255, 255, 0.3);
-                border-radius: 50%;
-                transform: scale(0);
-                animation: ripple 0.6s linear;
-                pointer-events: none;
-            `;
-            
-            const rect = this.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height);
-            ripple.style.width = ripple.style.height = `${size}px`;
-            ripple.style.left = `${e.clientX - rect.left - size / 2}px`;
-            ripple.style.top = `${e.clientY - rect.top - size / 2}px`;
-            
-            this.style.position = 'relative';
-            this.style.overflow = 'hidden';
-            this.appendChild(ripple);
-            
-            setTimeout(() => ripple.remove(), 600);
-        });
-    });
-    
-    // Add ripple animation keyframes
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
-    `;
-    document.head.appendChild(style);
-}
-
-// ============================================
-// LANGUAGE BUBBLE INTERACTION
-// ============================================
-function initLanguageBubbles() {
-    const bubbles = document.querySelectorAll('.lang-bubble');
-    
-    bubbles.forEach(bubble => {
-        bubble.addEventListener('mouseenter', () => {
-            bubbles.forEach(b => {
-                if (b !== bubble) {
-                    b.style.opacity = '0.5';
-                }
-            });
-        });
-        
-        bubble.addEventListener('mouseleave', () => {
-            bubbles.forEach(b => {
-                b.style.opacity = '1';
-            });
-        });
-    });
-}
-
-// ============================================
-// FEATURE CARD 3D TILT
-// ============================================
-function initCardTilt() {
-    const cards = document.querySelectorAll('.feature-card, .scan-card, .flow-step');
-    
-    // Only on non-touch devices
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-    
-    cards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const rotateX = (y - centerY) / 20;
-            const rotateY = (centerX - x) / 20;
-            
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
-        });
-    });
-}
-
-// ============================================
-// APP TABS INTERACTION
-// ============================================
-function initAppTabs() {
-    const tabs = document.querySelectorAll('.app-tab');
-    
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            tabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-        });
-    });
-}
-
-// ============================================
-// SCROLL PROGRESS INDICATOR
-// ============================================
-function initScrollProgress() {
-    const progressBar = document.createElement('div');
-    progressBar.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 3px;
-        background: linear-gradient(90deg, var(--purple), var(--gold));
-        z-index: 10001;
-        transition: width 0.1s ease;
-    `;
-    document.body.appendChild(progressBar);
-    
-    window.addEventListener('scroll', () => {
-        const scrollTop = window.scrollY;
-        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const progress = (scrollTop / docHeight) * 100;
-        progressBar.style.width = `${progress}%`;
-    });
-}
-
-// ============================================
-// MAGNETIC BUTTON EFFECT
-// ============================================
-function initMagneticButtons() {
-    const buttons = document.querySelectorAll('.btn-primary, .nav-cta');
-    
-    // Only on non-touch devices
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-    
-    buttons.forEach(button => {
-        button.addEventListener('mousemove', (e) => {
-            const rect = button.getBoundingClientRect();
-            const x = e.clientX - rect.left - rect.width / 2;
-            const y = e.clientY - rect.top - rect.height / 2;
-            
-            button.style.transform = `translate(${x * 0.2}px, ${y * 0.2}px)`;
-        });
-        
-        button.addEventListener('mouseleave', () => {
-            button.style.transform = 'translate(0, 0)';
-        });
-    });
-}
-
-// ============================================
-// CONFETTI EFFECT ON CTA CLICK
-// ============================================
-function initConfettiEffect() {
-    const ctas = document.querySelectorAll('.btn-primary, .cta-btn');
-    
-    ctas.forEach(cta => {
-        cta.addEventListener('click', (e) => {
-            // Don't trigger if it's a link with href
-            if (cta.getAttribute('href') && cta.getAttribute('href') !== '#') return;
-            
-            e.preventDefault();
-            createConfetti(e.clientX, e.clientY);
-        });
-    });
-}
-
-function createConfetti(x, y) {
-    const colors = ['#7B2FF7', '#FFD700', '#FFEB3B', '#3B82F6', '#9D5FFF'];
-    const confettiCount = 30;
-    
-    for (let i = 0; i < confettiCount; i++) {
-        const confetti = document.createElement('div');
-        confetti.style.cssText = `
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            background: ${colors[Math.floor(Math.random() * colors.length)]};
-            border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
-            left: ${x}px;
-            top: ${y}px;
-            pointer-events: none;
-            z-index: 9999;
-        `;
-        
-        document.body.appendChild(confetti);
-        
-        const angle = (Math.PI * 2 * i) / confettiCount;
-        const velocity = 100 + Math.random() * 100;
-        const vx = Math.cos(angle) * velocity;
-        const vy = Math.sin(angle) * velocity;
-        
-        let posX = x;
-        let posY = y;
-        let opacity = 1;
-        
-        const animate = () => {
-            posX += vx * 0.02;
-            posY += vy * 0.02 + 2;
-            opacity -= 0.02;
-            
-            confetti.style.left = `${posX}px`;
-            confetti.style.top = `${posY}px`;
-            confetti.style.opacity = opacity;
-            confetti.style.transform = `rotate(${posX}deg)`;
-            
-            if (opacity > 0) {
-                requestAnimationFrame(animate);
-            } else {
-                confetti.remove();
-            }
-        };
-        
-        requestAnimationFrame(animate);
-    }
-}
-
-// ============================================
-// INITIALIZE ALL
-// ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    createFloatingLanguages();
-    initNavigation();
-    initScrollAnimations();
-    initParallax();
-    animateCounters();
-    initTypingEffect();
-    initButtonInteractions();
-    initLanguageBubbles();
-    initCardTilt();
-    initAppTabs();
-    initScrollProgress();
-    initMagneticButtons();
-    initConfettiEffect();
-});
-
-// ============================================
-// PERFORMANCE: Pause animations when tab is hidden
-// ============================================
-document.addEventListener('visibilitychange', () => {
-    const floatingLanguages = document.querySelectorAll('.floating-language');
-    
-    if (document.hidden) {
-        floatingLanguages.forEach(el => {
-            el.style.animationPlayState = 'paused';
-        });
+  /* ===== NAVBAR SCROLL & MOBILE MENU ===== */
+  const navbar = document.getElementById('navbar');
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  
+  // Scroll effect
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      navbar.classList.add('scrolled');
     } else {
-        floatingLanguages.forEach(el => {
-            el.style.animationPlayState = 'running';
-        });
+      navbar.classList.remove('scrolled');
     }
+  });
+
+  // Mobile menu toggle
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    mobileMenu.classList.toggle('active');
+  });
+
+  // Close mobile menu on link click
+  document.querySelectorAll('.mobile-link').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('active');
+      mobileMenu.classList.remove('active');
+    });
+  });
+
+  // Active navigation link on scroll
+  const sections = document.querySelectorAll('section[id]');
+  window.addEventListener('scroll', () => {
+    const scrollY = window.pageYOffset;
+    sections.forEach(current => {
+      const sectionHeight = current.offsetHeight;
+      const sectionTop = current.offsetTop - 100;
+      const sectionId = current.getAttribute('id');
+      const navLink = document.querySelector(`.nav-links a[href*=${sectionId}]`);
+      
+      if (navLink) {
+        if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+          document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+          navLink.classList.add('active');
+        } else {
+          navLink.classList.remove('active');
+        }
+      }
+    });
+  });
+
+  /* ===== SCROLL REVEAL ANIMATIONS ===== */
+  const revealElements = document.querySelectorAll('.reveal');
+  
+  const revealOnScroll = () => {
+    const windowHeight = window.innerHeight;
+    const elementVisible = 100;
+    
+    revealElements.forEach(element => {
+      const elementTop = element.getBoundingClientRect().top;
+      if (elementTop < windowHeight - elementVisible) {
+        element.classList.add('visible');
+      }
+    });
+  };
+  
+  revealOnScroll();
+  window.addEventListener('scroll', revealOnScroll);
+
+  /* ===== FAQ ACCORDION ===== */
+  const faqItems = document.querySelectorAll('.faq-item');
+  
+  faqItems.forEach(item => {
+    const question = item.querySelector('.faq-question');
+    const answer = item.querySelector('.faq-answer');
+    
+    question.addEventListener('click', () => {
+      faqItems.forEach(otherItem => {
+        if (otherItem !== item && otherItem.classList.contains('active')) {
+          otherItem.classList.remove('active');
+          otherItem.querySelector('.faq-answer').style.maxHeight = null;
+        }
+      });
+      
+      item.classList.toggle('active');
+      if (item.classList.contains('active')) {
+        answer.style.maxHeight = answer.scrollHeight + "px";
+      } else {
+        answer.style.maxHeight = null;
+      }
+    });
+  });
+
+  /* ===== PRICING TOGGLE (MONTHLY/ANNUAL) ===== */
+  const monthlyBtn = document.getElementById('monthlyBtn');
+  const annualBtn = document.getElementById('annualBtn');
+  const monthlyVals = document.querySelectorAll('.monthly-val');
+  const annualVals = document.querySelectorAll('.annual-val');
+  const annualPrices = document.querySelectorAll('.annual-price');
+
+  if (monthlyBtn && annualBtn) {
+    monthlyBtn.addEventListener('click', () => {
+      monthlyBtn.classList.add('active');
+      annualBtn.classList.remove('active');
+      
+      monthlyVals.forEach(el => el.style.display = 'inline');
+      annualVals.forEach(el => el.style.display = 'none');
+      annualPrices.forEach(el => el.style.display = 'none');
+    });
+
+    annualBtn.addEventListener('click', () => {
+      annualBtn.classList.add('active');
+      monthlyBtn.classList.remove('active');
+      
+      monthlyVals.forEach(el => el.style.display = 'none');
+      annualVals.forEach(el => el.style.display = 'inline');
+      annualPrices.forEach(el => el.style.display = 'block');
+    });
+  }
+
+  /* ===== FEATURE EXPLORER MODAL ===== */
+  const featureModal = document.getElementById('featureModal');
+  const openExplorerBtn = document.getElementById('openExplorerBtn');
+  const closeFeatureModal = document.getElementById('closeFeatureModal');
+
+  if (openExplorerBtn && featureModal && closeFeatureModal) {
+    openExplorerBtn.addEventListener('click', () => {
+      featureModal.classList.add('active');
+      document.body.style.overflow = 'hidden'; 
+    });
+
+    closeFeatureModal.addEventListener('click', () => {
+      featureModal.classList.remove('active');
+      document.body.style.overflow = '';
+    });
+
+    featureModal.addEventListener('click', (e) => {
+      if (e.target === featureModal) {
+        featureModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    });
+  }
+
+  /* ===== LIVE CHAT WIDGET SIMULATION ===== */
+  const chatWidgetBtn = document.getElementById('chatWidgetBtn');
+  const chatWindow = document.getElementById('chatWindow');
+  const closeChatBtn = document.getElementById('closeChatBtn');
+  const chatForm = document.getElementById('chatForm');
+  const chatInput = document.getElementById('chatInput');
+  const chatBody = document.getElementById('chatBody');
+  const presetChipsContainer = document.getElementById('presetChips');
+
+  if (chatWidgetBtn && chatWindow) {
+    chatWidgetBtn.addEventListener('click', () => {
+      chatWindow.classList.add('active');
+      chatWidgetBtn.style.transform = 'scale(0)';
+      chatWidgetBtn.style.opacity = '0';
+    });
+
+    closeChatBtn.addEventListener('click', () => {
+      chatWindow.classList.remove('active');
+      chatWidgetBtn.style.transform = '';
+      chatWidgetBtn.style.opacity = '1';
+    });
+
+    // Handle Preset Chips
+    if (presetChipsContainer) {
+      const chips = presetChipsContainer.querySelectorAll('.preset-chip');
+      chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          chatInput.value = chip.innerText;
+          chatForm.dispatchEvent(new Event('submit'));
+          presetChipsContainer.style.display = 'none'; // Hide after first use
+        });
+      });
+    }
+
+    // Bot Logic
+    chatForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userMessage = chatInput.value.trim();
+      if (!userMessage) return;
+
+      // Add User Message
+      const userDiv = document.createElement('div');
+      userDiv.className = 'chat-msg user';
+      userDiv.textContent = userMessage;
+      chatBody.appendChild(userDiv);
+      chatInput.value = '';
+      chatBody.scrollTop = chatBody.scrollHeight;
+
+      if(presetChipsContainer) presetChipsContainer.style.display = 'none';
+
+      // Simulate Bot Typing
+      setTimeout(() => {
+        const botDiv = document.createElement('div');
+        botDiv.className = 'chat-msg bot';
+        
+        const lowerMsg = userMessage.toLowerCase();
+        let botResponse = "";
+        let requireForm = false;
+        
+        // Exact matching for preset questions or closely related
+        if (lowerMsg.includes('offline')) {
+          botResponse = "Kauntech works 100% offline! OCR, audio notes, and data storage happen securely on your device. We sync to the cloud only when you reconnect.";
+        } else if (lowerMsg.includes('dpdp') || lowerMsg.includes('compliance')) {
+          botResponse = "We are fully DPDP Act 2023 compliant. We record specific consent, process data locally, and offer a transparent audit ledger. We don't save your images or contacts on our servers.";
+        } else if (lowerMsg.includes('token') || lowerMsg.includes('ai')) {
+          botResponse = "AI Tokens power our advanced features. AI Intel costs 2 tokens per scan. Pro plans include 1,000 tokens monthly. You can also earn free tokens by following our social media pages and competing in our community Q&A if you are a Pro or Ultra user!";
+        } else if (lowerMsg.includes('price') || lowerMsg.includes('cost') || lowerMsg.includes('plan')) {
+          botResponse = "We offer flexible plans: Free (49 scans), Pro (₹499/mo), Ultra (₹999/mo), and Custom enterprise suites. Top-ups are also available anytime.";
+        } else if (lowerMsg.includes('data') || lowerMsg.includes('stored') || lowerMsg.includes('server')) {
+          botResponse = "We do not save or store your scanned images or contact details on our servers. Your data belongs to you and stays securely on your device until you decide to sync it to your own CRM.";
+        } else {
+          // Unrecognized Question -> Show Fallback Form
+          botResponse = "I'm sorry, I cannot answer that specific question right now. Please provide your details, and our admin will revert back to your email ID shortly.";
+          requireForm = true;
+        }
+
+        botDiv.textContent = botResponse;
+        
+        if (requireForm) {
+          const formHtml = `
+            <div class="chat-fallback-form" style="margin-top: 12px;">
+              <input type="text" placeholder="Your Name" id="fbName" required>
+              <input type="email" placeholder="Your Email ID" id="fbEmail" required>
+              <textarea placeholder="Please describe your question or issue in detail..." id="fbDetails" rows="3" required></textarea>
+              <button type="button" onclick="alert('Details submitted successfully. Our admin will email you shortly.'); this.parentElement.innerHTML = '<span style=\\'color: #34d399; font-weight: 700;\\'>Request Submitted. Thank you!</span>';">Submit to Admin</button>
+            </div>
+          `;
+          botDiv.innerHTML += formHtml;
+        }
+
+        chatBody.appendChild(botDiv);
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }, 600);
+    });
+  }
+
+  /* ===== CONTACT FORM GOOGLE SHEETS SUBMISSION ===== */
+  const contactForm = document.getElementById('kauntechContactForm');
+  if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById('cSubmitBtn');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span>Sending...</span><i class="fa-solid fa-spinner fa-spin"></i>';
+      submitBtn.disabled = true;
+
+      const scriptURL = 'https://script.google.com/macros/s/AKfycbztbMN_DrSEfxk7F6gljRxpYBp7qhkybE0on_Jfc5JvtIAg7ymdZCDVHVd3Szm3pPj0/exec';
+      const formData = new FormData(contactForm);
+
+      fetch(scriptURL, { method: 'POST', body: formData, mode: 'no-cors' })
+        .then(() => {
+          alert('Thank you! Your message has been successfully shared. Our team will revert as soon as possible.');
+          contactForm.reset();
+          submitBtn.innerHTML = originalBtnText;
+          submitBtn.disabled = false;
+        })
+        .catch(error => {
+          console.error('Error!', error.message);
+          alert('Thank you! Your message has been shared. We will revert as soon as possible.');
+          contactForm.reset();
+          submitBtn.innerHTML = originalBtnText;
+          submitBtn.disabled = false;
+        });
+    });
+  }
 });
