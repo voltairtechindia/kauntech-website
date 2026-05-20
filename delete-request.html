@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Deletion Request Portal - Kauntech</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="assets/logo-gold.png">
+  <style>
+    .legal-content {
+      padding: 140px 0 100px;
+      min-height: 80vh;
+    }
+    .legal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    }
+    .legal-card h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+    .subtitle {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      margin-bottom: 32px;
+      max-width: 700px;
+    }
+    .portal-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 48px;
+      margin-top: 24px;
+    }
+    .instruction-box h3 {
+      color: var(--text);
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .instruction-box h3 i {
+      color: var(--gold);
+    }
+    .step-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 0;
+      margin-bottom: 40px;
+    }
+    .step-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: border-color 0.3s;
+    }
+    .step-item:hover {
+      border-color: rgba(249, 115, 22, 0.3);
+    }
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .step-text h4 {
+      color: var(--text);
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+    .step-text p {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin: 0;
+      line-height: 1.6;
+    }
+    .form-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 36px;
+      border-radius: var(--radius);
+      position: relative;
+    }
+    .form-box h3 {
+      color: var(--text);
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-box h3 i {
+      color: var(--indigo);
+    }
+    .form-desc {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+    .deletion-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .form-group label {
+      color: var(--text);
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--indigo);
+      box-shadow: 0 0 10px rgba(129, 140, 248, 0.15);
+      outline: none;
+    }
+    .checkbox-group {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      margin-top: 8px;
+    }
+    .checkbox-group input {
+      margin-top: 4px;
+      cursor: pointer;
+      accent-color: var(--gold);
+    }
+    .checkbox-group label {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .btn-submit {
+      padding: 16px 24px;
+      border-radius: 8px;
+      background: var(--gradient);
+      border: none;
+      color: #000;
+      font-weight: 700;
+      font-size: 0.95rem;
+      font-family: var(--font);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      margin-top: 10px;
+    }
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(249, 115, 22, 0.3);
+    }
+    .success-panel {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 40px 10px;
+    }
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid #34d399;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      margin-bottom: 24px;
+      animation: popSuccess 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .ticket-badge {
+      font-family: var(--mono);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: var(--gold);
+      font-size: 0.9rem;
+      margin: 16px 0 24px;
+    }
+    @keyframes popSuccess {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    @media (max-width: 992px) {
+      .portal-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+    }
+    @media (max-width: 768px) {
+      .legal-card {
+        padding: 24px;
+      }
+      .legal-card h1 {
+        font-size: 2.2rem;
+      }
+      .form-box {
+        padding: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="container">
+      <a href="index.html" class="brand-container">
+        <img src="assets/logo-gold.png" alt="Kauntech Logo" class="nav-logo-img">
+        <span class="logo-text">KAUN<span>TECH</span></span>
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#workflow">How It Works</a></li>
+        <li><a href="index.html#compliance">DPDP Compliance</a></li>
+        <li><a href="index.html#compare">Compare</a></li>
+        <li><a href="index.html#pricing">Pricing & Top-Ups</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="index.html#pricing" class="nav-cta">Start Free Trial</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MOBILE MENU ===== -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html#features" class="mobile-link">Features</a>
+    <a href="index.html#workflow" class="mobile-link">How It Works</a>
+    <a href="index.html#compliance" class="mobile-link">DPDP Compliance</a>
+    <a href="index.html#compare" class="mobile-link">Compare</a>
+    <a href="index.html#pricing" class="mobile-link">Pricing & Top-Ups</a>
+    <div class="mobile-actions">
+      <a href="index.html#pricing" class="nav-cta">Start Free Trial</a>
+    </div>
+  </div>
+
+  <!-- ===== DELETE PORTAL CONTENT ===== -->
+  <section class="legal-content">
+    <div class="container">
+      <div class="legal-card">
+        <h1 class="grad-text">Data Deletion Portal</h1>
+        <p class="subtitle">Pursuant to India's DPDP Act 2023 (Right to Erasure) and Google OAuth console user security requirements, you can instantly revoke authorization or purge your account details using the options below.</p>
+        
+        <div class="portal-grid">
+          
+          <!-- Column 1: Self-Service App Instructions -->
+          <div class="instruction-box">
+            <h3><i class="fa-solid fa-mobile-screen-button"></i> Self-Service App Options</h3>
+            <p style="color: var(--text-dim); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">Before requesting manual database purge, you have complete control over all offline contacts and connected Google OAuth integrations directly inside the mobile application. Clear your local storage or disconnect profiles instantly:</p>
+            
+            <ul class="step-list">
+              <li class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-text">
+                  <h4>Disconnect Google OAuth Permissions</h4>
+                  <p>In the Kauntech App, navigate to <strong>Settings</strong> > <strong>Integrations</strong> > Tap <strong>Disconnect</strong> next to Google Sheets or Gmail. This instantly and completely purges all local OAuth access/refresh tokens from your device's native encrypted keychain.</p>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-text">
+                  <h4>Erase Local Contact Scans</h4>
+                  <p>To purge physical card databases cached locally, go to <strong>Settings</strong> > Tap <strong>Delete Local Database</strong> or clear the App cache from your mobile operating system's general settings menu.</p>
+                </div>
+              </li>
+              <li class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-text">
+                  <h4>Revoke Google Access Remotely</h4>
+                  <p>You can revoke Kauntech's token access directly from your own Google security console. Visit <a href="https://myaccount.google.com/connections" target="_blank" style="color: var(--gold); text-decoration: underline;">Google Third-Party Connections</a>, select <strong>Kauntech</strong>, and tap <strong>Remove Access</strong>.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Column 2: Manual Erasure Request Form -->
+          <div class="form-box" id="formBox">
+            <div id="formContainer">
+              <h3><i class="fa-solid fa-trash-can"></i> Request Database Purge</h3>
+              <p class="form-desc">Complete this formal erasure notice. Our compliance team will inspect your request, permanently erase all remote authentication logs, Supabase database profiles, and quota metrics, and dispatch a verification receipt within 48 hours.</p>
+              
+              <form class="deletion-form" id="erasureForm" onsubmit="submitErasureRequest(event)">
+                <div class="form-group">
+                  <label for="delName">Full Name</label>
+                  <input type="text" id="delName" placeholder="Your account profile name" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="delEmail">Registered Email ID</label>
+                  <input type="email" id="delEmail" placeholder="e.g. name@company.com" required>
+                </div>
+                
+                <div class="form-group">
+                  <label for="delType">Erasure Scope</label>
+                  <select id="delType" required>
+                    <option value="" disabled selected>Select deletion type...</option>
+                    <option value="all">Full Profile Deletion (Purge everything)</option>
+                    <option value="oauth">Disconnect Google integrations & Purge OAuth metadata</option>
+                    <option value="local">Clear remote backup scan lists</option>
+                    <option value="support">Other data inquiry / compliance request</option>
+                  </select>
+                </div>
+                
+                <div class="form-group">
+                  <label for="delDetails">Grievance / Additional Instructions</label>
+                  <textarea id="delDetails" rows="4" placeholder="Describe your erasure requirements or reasons..." required></textarea>
+                </div>
+                
+                <div class="checkbox-group">
+                  <input type="checkbox" id="delConsent" required>
+                  <label for="delConsent">I explicitly confirm that I wish to permanently delete the selected data. I understand that profile erasure is irreversible, will void active subscriptions, and completely wipe my accumulated K-Tokens balance.</label>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="delSubmitBtn">
+                  <span>Submit Erasure Request</span>
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- Success Panel -->
+            <div class="success-panel" id="successPanel">
+              <div class="success-icon"><i class="fa-solid fa-circle-check"></i></div>
+              <h3 style="margin-bottom: 8px;">Erasure Request Registered!</h3>
+              <p style="color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; max-width: 320px; margin: 0 auto;">Your data erasure request has been successfully recorded. Our database administrator will execute a secure, permanent purge and email a certificate of erasure to you within 48 hours.</p>
+              <div class="ticket-badge" id="ticketBadge">TICKET ID: KNT-DEL-72948</div>
+              <button class="btn-submit outline" style="background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border);" onclick="resetErasureForm()">
+                <i class="fa-solid fa-arrow-rotate-left"></i><span>Submit Another Request</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-container" style="margin-bottom: 16px; display: flex;">
+            <img src="assets/logo-gold.png" alt="Kauntech Logo" class="nav-logo-img">
+            <span class="logo-text">KAUN<span>TECH</span></span>
+          </a>
+          <p>The only offline-first business card scanner engineered for absolute speed, AI enrichment, and strict adherence to India's DPDP Act 2023. We do not retain your data.</p>
+          <div style="font-size: 0.8rem; color: var(--gold); font-family: var(--mono);">
+            <i class="fa-solid fa-shield-halved"></i> AES-256 Encrypted &middot; On-Device
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="index.html#features">Offline Superpowers</a>
+          <a href="index.html#features">AI Enrichment</a>
+          <a href="index.html#workflow">30s Workflow</a>
+          <a href="index.html#pricing">Pricing Plans</a>
+          <a href="index.html#pricing">Top-Ups & Tokens</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Compliance</h4>
+          <a href="index.html#compliance">DPDP Act 2023</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="delete-request.html">Data Deletion Request</a>
+          <a href="privacy.html#google-disclosure">Google API Limited Use</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Stay Updated</h4>
+          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px;">Subscribe to our newsletter for exclusive networking tips and DPDP regulatory updates.</p>
+          <form class="footer-newsletter" onsubmit="event.preventDefault(); alert('Thank you for subscribing to Kauntech updates!');">
+            <input type="email" placeholder="Enter your business email" required>
+            <button type="submit">Subscribe Now</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>&copy; 2026 Kauntech Technologies Pvt. Ltd. All rights reserved.</div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Built with 1 year of hard work, upgraded to new heights with AI.</div>
+        </div>
+        <div class="footer-social">
+          <a href="https://www.linkedin.com/company/120934522/admin/dashboard/" target="_blank" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="https://www.facebook.com/profile.php?id=61589123915607" target="_blank" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/kauntech/" target="_blank" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://kauntech.quora.com/" target="_blank" aria-label="Quora"><i class="fa-brands fa-quora"></i></a>
+          <a href="https://discord.gg/AVYMsrhk" target="_blank" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Simple Hamburger Menu toggle for legal page
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (hamburger && mobileMenu) {
+      hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+      });
+      document.querySelectorAll('.mobile-link').forEach(link => {
+        link.addEventListener('click', () => {
+          hamburger.classList.remove('active');
+          mobileMenu.classList.remove('active');
+        });
+      });
+    }
+
+    // Submit Erasure Request Simulation
+    function submitErasureRequest(event) {
+      event.preventDefault();
+      const submitBtn = document.getElementById('delSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Processing...</span><i class="fa-solid fa-spinner fa-spin"></i>';
+
+      setTimeout(() => {
+        const ticketNum = "KNT-DEL-" + Math.floor(10000 + Math.random() * 90000);
+        document.getElementById('ticketBadge').innerText = "TICKET ID: " + ticketNum;
+        document.getElementById('formContainer').style.display = 'none';
+        document.getElementById('successPanel').style.display = 'flex';
+      }, 1200);
+    }
+
+    // Reset Form
+    function resetErasureForm() {
+      document.getElementById('erasureForm').reset();
+      document.getElementById('successPanel').style.display = 'none';
+      document.getElementById('formContainer').style.display = 'block';
+      const submitBtn = document.getElementById('delSubmitBtn');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>Submit Erasure Request</span><i class="fa-solid fa-trash-can"></i>';
+    }
+  </script>
+</body>
+</html>

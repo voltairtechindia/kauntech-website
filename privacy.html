@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - Kauntech</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="assets/logo-gold.png">
+  <style>
+    .legal-content {
+      padding: 140px 0 100px;
+      min-height: 80vh;
+    }
+    .legal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    }
+    .legal-card h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+    .last-updated {
+      font-family: var(--mono);
+      color: var(--gold);
+      font-size: 0.85rem;
+      margin-bottom: 40px;
+      display: inline-block;
+      background: var(--gold-dim);
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 1px solid rgba(249, 115, 22, 0.2);
+    }
+    .legal-body {
+      color: var(--text-dim);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+    .legal-body h2 {
+      color: var(--text);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .legal-body h2 i {
+      color: var(--indigo);
+      font-size: 1.3rem;
+    }
+    .legal-body h3 {
+      color: var(--text);
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legal-body p {
+      margin-bottom: 20px;
+    }
+    .legal-body ul {
+      margin-bottom: 24px;
+      padding-left: 24px;
+    }
+    .legal-body li {
+      margin-bottom: 10px;
+    }
+    .legal-body strong {
+      color: var(--text);
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .legal-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .legal-table th, .legal-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .legal-table th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      font-weight: 700;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+    }
+    .legal-table tr:last-child td {
+      border-bottom: none;
+    }
+    .alert-box {
+      background: rgba(249, 115, 22, 0.04);
+      border: 1px solid rgba(249, 115, 22, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 36px 0;
+      color: var(--text-dim);
+    }
+    .alert-box h4 {
+      color: var(--gold);
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .alert-box.indigo-alert {
+      background: rgba(129, 140, 248, 0.04);
+      border-color: rgba(129, 140, 248, 0.2);
+    }
+    .alert-box.indigo-alert h4 {
+      color: var(--indigo);
+    }
+    @media (max-width: 768px) {
+      .legal-card {
+        padding: 24px;
+      }
+      .legal-card h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="container">
+      <a href="index.html" class="brand-container">
+        <img src="assets/logo-gold.png" alt="Kauntech Logo" class="nav-logo-img">
+        <span class="logo-text">KAUN<span>TECH</span></span>
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#workflow">How It Works</a></li>
+        <li><a href="index.html#compliance">DPDP Compliance</a></li>
+        <li><a href="index.html#compare">Compare</a></li>
+        <li><a href="index.html#pricing">Pricing & Top-Ups</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="index.html#pricing" class="nav-cta">Start Free Trial</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MOBILE MENU ===== -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html#features" class="mobile-link">Features</a>
+    <a href="index.html#workflow" class="mobile-link">How It Works</a>
+    <a href="index.html#compliance" class="mobile-link">DPDP Compliance</a>
+    <a href="index.html#compare" class="mobile-link">Compare</a>
+    <a href="index.html#pricing" class="mobile-link">Pricing & Top-Ups</a>
+    <div class="mobile-actions">
+      <a href="index.html#pricing" class="nav-cta">Start Free Trial</a>
+    </div>
+  </div>
+
+  <!-- ===== PRIVACY CONTENT ===== -->
+  <section class="legal-content">
+    <div class="container">
+      <div class="legal-card">
+        <h1 class="grad-text">Privacy Policy</h1>
+        <span class="last-updated"><i class="fa-solid fa-calendar-days"></i> Last Updated: May 20, 2026</span>
+        
+        <div class="legal-body">
+          <p>At <strong>Kauntech</strong>, owned and operated by Kauntech Technologies Pvt. Ltd. ("we", "us", or "our"), your privacy is our core philosophy. We design our offline-first business card scanning ecosystem to guarantee that your contacts remain secure and entirely under your own control.</p>
+          
+          <p>This Privacy Policy explains how we collect, process, disclose, and secure your personal information, specifically in accordance with the <strong>Digital Personal Data Protection (DPDP) Act 2023</strong> of India, and details how our App handles data associated with <strong>Google OAuth integrations</strong>.</p>
+
+          <div class="alert-box indigo-alert">
+            <h4><i class="fa-solid fa-cloud-slash"></i> Our Zero Server-Retention Principle</h4>
+            <p style="margin-bottom: 0;">We do <strong>NOT</strong> view, store, upload, copy, or retain scanned business card images, parsed OCR textual lists, or enriched contact details on Kauntech servers. All contact parsing, local storage, and neural OCR processes run directly on-device. Data synchronization only occurs when you intentionally trigger integrations (such as Google Sheets, WhatsApp, or email drafts) directly to your own accounts.</p>
+          </div>
+
+          <h2><i class="fa-solid fa-clipboard-list"></i> 1. Information We Process & Record</h2>
+          <p>Because Kauntech operates primarily offline, our processing of data is strictly limited. We only process information required to manage subscription tiers, maintain legitimate operational consent, and enable synchronization triggers:</p>
+          
+          <h3>A. Account & Operational Metadata (Stored on Supabase)</h3>
+          <ul>
+            <li><strong>Authentication details:</strong> Name, professional email address, and encrypted passwords or magic-link identifiers.</li>
+            <li><strong>SaaS subscription metadata:</strong> Active subscription tier, total monthly scans logged, and your **K-Tokens** balance.</li>
+            <li><strong>Device security logs:</strong> Device specifications and authorization markers. Under our secure architecture, we log minimal device telemetry strictly to prevent tampering, quota hacks, or credential theft.</li>
+          </ul>
+
+          <h3>B. Leads & OCR Contact Details (Processed 100% On-Device)</h3>
+          <ul>
+            <li><strong>Business Card Scans:</strong> Images captured by your camera are processed locally via on-device ML Kit OCR engines. The raw image and OCR text are never sent to our servers.</li>
+            <li><strong>Parsed Contacts:</strong> Extracted fields (Name, Phone number, Email ID, Company, Role, and physical addresses) are saved in encrypted local storage (`SecureStore`) on your smartphone.</li>
+            <li><strong>Audio Notes:</strong> Voice memos recorded right after pitching a prospect are saved locally on the device as audio clips.</li>
+          </ul>
+
+          <h2><i class="fa-solid fa-arrows-spin"></i> 2. Legitimate Purposes & DPDP Notice</h2>
+          <p>Under the DPDP Act 2023, data processing must strictly serve specified, lawful, and necessary purposes. Kauntech processes your account data solely for the following legitimate purposes:</p>
+          <ul>
+            <li>Providing secure user authentication, password resets, and session recovery.</li>
+            <li>Enabling B2B contact extraction, smart AI enrichment (icebreakers, company details), and on-device formatting fixes.</li>
+            <li>Accurately tracking scans quotas, billing transactions, and K-Token expenditures.</li>
+            <li>Processing direct client requests for customer support or system assistance.</li>
+          </ul>
+
+          <div id="google-disclosure"></div>
+          <h2><i class="fa-brands fa-google"></i> 3. Google OAuth & API User Data Disclosures</h2>
+          <p>The Kauntech App provides voluntary integrations with Google APIs (Google Sheets and Gmail) to automate follow-up workflows. Connecting these integrations triggers the Google OAuth protocol. Below is the precise disclosure of the Google API scopes requested, their specific purposes, and our strict Limited Use policies:</p>
+
+          <div class="table-container">
+            <table class="legal-table">
+              <thead>
+                <tr>
+                  <th>Scope Name</th>
+                  <th>API Identifier</th>
+                  <th>Exact Purpose within Kauntech</th>
+                  <th>Processing & Retention</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Google Sheets</strong></td>
+                  <td><code>.../auth/spreadsheets</code></td>
+                  <td>Allows the App to write, append, and organize parsed contacts and leads directly into a Google Sheet spreadsheet selected or created by the user.</td>
+                  <td><strong>On-Device Direct Transfer:</strong> Data is pushed directly from the App to Google Sheets API endpoints. No Google Sheet data passes through or is saved on Kauntech servers.</td>
+                </tr>
+                <tr>
+                  <td><strong>Google Drive (File Scoped)</strong></td>
+                  <td><code>.../auth/drive.file</code></td>
+                  <td>Allows the App to create new spreadsheets and only read/write files that have been created or explicitly opened with the Kauntech App.</td>
+                  <td><strong>Constrained Access:</strong> Restricted strictly to files created by the Kauntech App. The App cannot view or access any other files in your Google Drive.</td>
+                </tr>
+                <tr>
+                  <td><strong>Gmail Send</strong></td>
+                  <td><code>.../auth/gmail.send</code></td>
+                  <td>Enables professionals to send personalized follow-up emails and AI-enriched cold templates directly via their own Gmail account upon scanning a card.</td>
+                  <td><strong>Direct Dispatch:</strong> Drafts are created and sent directly via Google Gmail API. No email body, email metadata, or Google login token is sent to or stored on Kauntech servers.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert-box">
+            <h4><i class="fa-solid fa-shield-halved"></i> Google Limited Use Compliance</h4>
+            <p>Kauntech's use and transfer of information received from Google APIs to any other app will strictly adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" style="color: var(--gold); text-decoration: underline; font-weight: 700;">Google API Services User Data Policy</a>, including the Limited Use requirements. </p>
+            <p><strong>Specifically:</strong></p>
+            <ul style="margin-bottom: 0;">
+              <li>We do <strong>NOT</strong> sell, trade, rent, or transfer Google OAuth user data to third parties, advertising networks, or data brokers.</li>
+              <li>We do <strong>NOT</strong> use Google OAuth user data to display, target, or serve advertisements.</li>
+              <li>We do <strong>NOT</strong> use Google OAuth user data to train, enrich, or build generalized artificial intelligence (AI) or large language models (LLMs). All AI refinement is client-driven or through user-specific cloud tokens.</li>
+              <li>Google API tokens (Access and Refresh) are stored 100% locally and securely in your device's native keychain using <code>expo-secure-store</code> and are fully cleared upon log-out.</li>
+            </ul>
+          </div>
+
+          <h2><i class="fa-solid fa-lock"></i> 4. Data Security & AES-256 Encryption</h2>
+          <p>We implement top-tier technical and organizational security measures to shield your data from accidental loss, leakage, or unauthorized access:</p>
+          <ul>
+            <li><strong>Encrypted Device Databases:</strong> All local database entries, parsed cards, and connected OAuth credentials are secured using AES-256 local keychain encryption.</li>
+            <li><strong>Transport Layer Security:</strong> All communications between the App, Site, and our Supabase backend are encrypted in transit using industry-standard TLS 1.3 protocols.</li>
+            <li><strong>Isolation Protocols:</strong> Third-party API keys and tokens are securely isolated in native keychain storage and cannot be read by other installed applications.</li>
+          </ul>
+
+          <h2><i class="fa-solid fa-scale-balanced"></i> 5. Your DPDP Act Rights (Consent, Access & Deletion)</h2>
+          <p>Under the DPDP Act 2023, Indian citizens have robust statutory rights regarding their digital personal data. We fully support these rights globally:</p>
+          <ul>
+            <li><strong>Right to Withdraw Consent:</strong> You can disconnect your Google Sheets or Gmail integrations at any time from the App's "Settings" panel, instantly revoking all OAuth permissions.</li>
+            <li><strong>Right to Access & Correction:</strong> You have the right to view all account metadata and correct any inaccuracies inside the App profile.</li>
+            <li><strong>Right to Erasure (Deletion):</strong> You can completely erase your local database cache by clearing App storage, and you can submit a deletion request to purge all authentication records from our database. Visit our <a href="delete-request.html" style="color: var(--gold); text-decoration: underline;">Data Deletion Request Portal</a> to submit an erasure request instantly.</li>
+          </ul>
+
+          <h2><i class="fa-solid fa-circle-exclamation"></i> 6. Changes to This Privacy Policy</h2>
+          <p>We may update our Privacy Policy from time to time to accommodate changes in Google Developer Policies, DPDP Act rules, or our offline application workflow. Any updates will be published on this page, and we will update the "Last Updated" timestamp. We recommend checking this page periodically to remain informed about how we safeguard your B2B contacts.</p>
+
+          <h2><i class="fa-solid fa-envelope-open-text"></i> 7. Contact our Privacy Officer</h2>
+          <p>If you have any questions, compliance queries, or complaints regarding our data handling practices or Google OAuth integrations, please contact our designated Grievance & Privacy Officer:</p>
+          <p style="font-family: var(--mono); font-size: 0.9rem; color: var(--gold); border-left: 2px solid var(--gold); padding-left: 16px;">
+            Kauntech Technologies Pvt. Ltd.<br>
+            Attn: Data Protection Officer / Grievance Redressal<br>
+            Email: voltairtechindia@gmail.com<br>
+            Address: Mumbai, Maharashtra, India
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-container" style="margin-bottom: 16px; display: flex;">
+            <img src="assets/logo-gold.png" alt="Kauntech Logo" class="nav-logo-img">
+            <span class="logo-text">KAUN<span>TECH</span></span>
+          </a>
+          <p>The only offline-first business card scanner engineered for absolute speed, AI enrichment, and strict adherence to India's DPDP Act 2023. We do not retain your data.</p>
+          <div style="font-size: 0.8rem; color: var(--gold); font-family: var(--mono);">
+            <i class="fa-solid fa-shield-halved"></i> AES-256 Encrypted &middot; On-Device
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="index.html#features">Offline Superpowers</a>
+          <a href="index.html#features">AI Enrichment</a>
+          <a href="index.html#workflow">30s Workflow</a>
+          <a href="index.html#pricing">Pricing Plans</a>
+          <a href="index.html#pricing">Top-Ups & Tokens</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Compliance</h4>
+          <a href="index.html#compliance">DPDP Act 2023</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="delete-request.html">Data Deletion Request</a>
+          <a href="privacy.html#google-disclosure">Google API Limited Use</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Stay Updated</h4>
+          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px;">Subscribe to our newsletter for exclusive networking tips and DPDP regulatory updates.</p>
+          <form class="footer-newsletter" onsubmit="event.preventDefault(); alert('Thank you for subscribing to Kauntech updates!');">
+            <input type="email" placeholder="Enter your business email" required>
+            <button type="submit">Subscribe Now</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>&copy; 2026 Kauntech Technologies Pvt. Ltd. All rights reserved.</div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Built with 1 year of hard work, upgraded to new heights with AI.</div>
+        </div>
+        <div class="footer-social">
+          <a href="https://www.linkedin.com/company/120934522/admin/dashboard/" target="_blank" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="https://www.facebook.com/profile.php?id=61589123915607" target="_blank" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/kauntech/" target="_blank" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://kauntech.quora.com/" target="_blank" aria-label="Quora"><i class="fa-brands fa-quora"></i></a>
+          <a href="https://discord.gg/AVYMsrhk" target="_blank" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Simple Hamburger Menu toggle for legal page
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (hamburger && mobileMenu) {
+      hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+      });
+      document.querySelectorAll('.mobile-link').forEach(link => {
+        link.addEventListener('click', () => {
+          hamburger.classList.remove('active');
+          mobileMenu.classList.remove('active');
+        });
+      });
+    }
+  </script>
+</body>
+</html>

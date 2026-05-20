@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service - Kauntech</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="icon" type="image/png" href="assets/logo-gold.png">
+  <style>
+    .legal-content {
+      padding: 140px 0 100px;
+      min-height: 80vh;
+    }
+    .legal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    }
+    .legal-card h1 {
+      font-size: 2.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+    .last-updated {
+      font-family: var(--mono);
+      color: var(--gold);
+      font-size: 0.85rem;
+      margin-bottom: 40px;
+      display: inline-block;
+      background: var(--gold-dim);
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 1px solid rgba(249, 115, 22, 0.2);
+    }
+    .legal-body {
+      color: var(--text-dim);
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+    .legal-body h2 {
+      color: var(--text);
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-top: 40px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+    .legal-body h2 i {
+      color: var(--indigo);
+      font-size: 1.3rem;
+    }
+    .legal-body p {
+      margin-bottom: 20px;
+    }
+    .legal-body ul, .legal-body ol {
+      margin-bottom: 24px;
+      padding-left: 24px;
+    }
+    .legal-body li {
+      margin-bottom: 10px;
+    }
+    .legal-body strong {
+      color: var(--text);
+    }
+    .table-container {
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .legal-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .legal-table th, .legal-table td {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .legal-table th {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      font-weight: 700;
+      font-family: var(--mono);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 1px;
+    }
+    .legal-table tr:last-child td {
+      border-bottom: none;
+    }
+    .alert-box {
+      background: rgba(129, 140, 248, 0.05);
+      border: 1px solid rgba(129, 140, 248, 0.2);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 32px 0;
+      color: var(--text-dim);
+    }
+    .alert-box h4 {
+      color: var(--indigo);
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @media (max-width: 768px) {
+      .legal-card {
+        padding: 24px;
+      }
+      .legal-card h1 {
+        font-size: 2.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav class="navbar scrolled" id="navbar">
+    <div class="container">
+      <a href="index.html" class="brand-container">
+        <img src="assets/logo-gold.png" alt="Kauntech Logo" class="nav-logo-img">
+        <span class="logo-text">KAUN<span>TECH</span></span>
+      </a>
+
+      <ul class="nav-links" id="nav-links">
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#workflow">How It Works</a></li>
+        <li><a href="index.html#compliance">DPDP Compliance</a></li>
+        <li><a href="index.html#compare">Compare</a></li>
+        <li><a href="index.html#pricing">Pricing & Top-Ups</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="index.html#pricing" class="nav-cta">Start Free Trial</a>
+      </div>
+
+      <button class="hamburger" id="hamburger" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ===== MOBILE MENU ===== -->
+  <div class="mobile-menu" id="mobile-menu">
+    <a href="index.html#features" class="mobile-link">Features</a>
+    <a href="index.html#workflow" class="mobile-link">How It Works</a>
+    <a href="index.html#compliance" class="mobile-link">DPDP Compliance</a>
+    <a href="index.html#compare" class="mobile-link">Compare</a>
+    <a href="index.html#pricing" class="mobile-link">Pricing & Top-Ups</a>
+    <div class="mobile-actions">
+      <a href="index.html#pricing" class="nav-cta">Start Free Trial</a>
+    </div>
+  </div>
+
+  <!-- ===== TERMS CONTENT ===== -->
+  <section class="legal-content">
+    <div class="container">
+      <div class="legal-card">
+        <h1 class="grad-text">Terms of Service</h1>
+        <span class="last-updated"><i class="fa-solid fa-calendar-days"></i> Last Updated: May 20, 2026</span>
+        
+        <div class="legal-body">
+          <p>Welcome to <strong>Kauntech</strong>. These Terms of Service ("Terms") govern your access to and use of the Kauntech mobile application ("App"), the website located at <a href="https://kauntech.com" style="color: var(--gold); text-decoration: underline;">kauntech.com</a> ("Site"), and all related software services, AI processing utilities, and sync integrations offered by Kauntech Technologies Pvt. Ltd. ("Kauntech", "we", "us", or "our").</p>
+          
+          <p>By downloading the App, creating an account, subscribing to a plan, or using any part of our services, you agree to be bound by these Terms. If you do not agree to these Terms, you must immediately cease all use of our Site and App.</p>
+
+          <h2><i class="fa-solid fa-user-check"></i> 1. Eligibility & User Accounts</h2>
+          <p>To use Kauntech, you must be a corporate entity, business association, or an individual acting in a professional capacity who is at least 18 years of age and capable of forming a binding contract under applicable laws (including the Indian Contract Act, 1872).</p>
+          <p>When creating an account, you agree to:</p>
+          <ul>
+            <li>Provide accurate, current, and complete registration information.</li>
+            <li>Maintain the security and confidentiality of your credentials (including API keys, Supabase credentials, and device authentication states).</li>
+            <li>Promptly notify us of any unauthorized account access or data security incidents.</li>
+            <li>Accept sole responsibility for all activities that occur under your account, including any scanned contact details or external API actions triggered.</li>
+          </ul>
+
+          <h2><i class="fa-solid fa-tablet-screen-button"></i> 2. License & App Usage</h2>
+          <p>Subject to your strict compliance with these Terms, Kauntech grants you a limited, non-exclusive, non-transferable, revocable, non-sublicensable license to download and install a copy of the App on an authorized mobile device solely for your professional B2B lead capture and contact management purposes.</p>
+          <p>You strictly agree <strong>NOT</strong> to:</p>
+          <ul>
+            <li>Modify, disassemble, decompile, reverse-engineer, decrypt, or hack the App, Supabase Edge Functions, or the OCR engine.</li>
+            <li>Use any automated scraping, bots, scripts, or manual database extraction tools to scrape, collect, or monitor Site content or other user profiles.</li>
+            <li>Bypass or attempt to bypass any device anti-tampering algorithms, quota limits, or security mechanisms built into the licensing engine.</li>
+            <li>Use the App to capture, process, or sync personal sensitive details of any individual without obtaining prior, specific, and informed consent in compliance with the DPDP Act 2023.</li>
+          </ul>
+
+          <h2><i class="fa-solid fa-coins"></i> 3. Subscription Plans, Billing & K-Tokens</h2>
+          <p>Kauntech operates on a Software-as-a-Service (SaaS) subscription model combined with a credit economy powered by <strong>K-Tokens</strong>. Different subscription tiers contain different scan quotas and token allocations:</p>
+          
+          <div class="table-container">
+            <table class="legal-table">
+              <thead>
+                <thead>
+                  <tr>
+                    <th>Subscription Tier</th>
+                    <th>Scan Quota / Month</th>
+                    <th>Included K-Tokens / Month</th>
+                    <th>AI Capabilities Included</th>
+                  </tr>
+                </thead>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Free</strong></td>
+                  <td>49 lifetime scans</td>
+                  <td>50 tokens</td>
+                  <td>Standard OCR & Basic Custom Fields</td>
+                </tr>
+                <tr>
+                  <td><strong>Pro</strong></td>
+                  <td>500 scans</td>
+                  <td>1,000 tokens (1,250 on annual)</td>
+                  <td>On-Device AI Fix, AI Intel Enrichment</td>
+                </tr>
+                <tr>
+                  <td><strong>Ultra</strong></td>
+                  <td>1,500 scans</td>
+                  <td>3,000 tokens</td>
+                  <td>AI Strategy, Indian Languages Support</td>
+                </tr>
+                <tr>
+                  <td><strong>Custom</strong></td>
+                  <td>Unlimited</td>
+                  <td>Custom Agreement</td>
+                  <td>Dedicated models & on-premises storage</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p><strong>Tokens Consumption Economy:</strong> The premium on-device and edge AI tools consume K-Tokens seamlessly. The billing rate per request is defined as follows:</p>
+          <ul>
+            <li><strong>AI Fix</strong> (1 Token per use): Automated grammatical, capitalization, or formatting corrections.</li>
+            <li><strong>AI Intel</strong> (2 Tokens per scan): Deep enrichment of company background, founder intelligence, and size.</li>
+            <li><strong>AI Strategy</strong> (3 Tokens per scan): Generation of customized B2B cold email opener sequences and sales pitches.</li>
+          </ul>
+          <p>Subscribers are billed in advance on a recurring monthly or annual billing cycle. All payments are securely processed by authorized third-party PSPs (payment service providers) and bank rails. Subscriptions automatically renew unless canceled at least 24 hours prior to the next billing cycle. All purchases and token top-ups are non-refundable.</p>
+
+          <h2><i class="fa-solid fa-circle-nodes"></i> 4. Third-Party Integrations & Google OAuth</h2>
+          <p>Kauntech provides integrations that allow you to sync captured leads directly to third-party tools, including <strong>Google Sheets</strong>, <strong>Gmail</strong>, WhatsApp, and Telegram. By connecting these integrations, you agree to these specific terms:</p>
+          <ul>
+            <li><strong>Integrations Authorization:</strong> Connecting your Google account initiates the Google OAuth protocol. You authorize Kauntech to request access to the specific scopes necessary to carry out the operations (e.g., creating and writing contacts to Google Sheets, sending email drafts via Gmail).</li>
+            <li><strong>Data Direct Dispatch:</strong> All data transmitted via Google OAuth is sent directly from your device to Google API endpoints using the authorized access token. We never route, cache, view, or retain your Google Sheets documents or Gmail drafts on our core servers.</li>
+            <li><strong>Service Terms:</strong> You must comply with all third-party Terms of Service (e.g., Google Terms of Service, Google API Services User Data Policy) when accessing these integrations.</li>
+          </ul>
+
+          <div class="alert-box">
+            <h4><i class="fa-solid fa-shield-halved"></i> Google Limited Use Compliance</h4>
+            <p style="margin-bottom: 0;">Kauntech's use and transfer of information received from Google APIs to any other app will strictly adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" style="color: var(--indigo); text-decoration: underline; font-weight: 700;">Google API Services User Data Policy</a>, including the Limited Use requirements. We do not use, transfer, sell, or analyze your Google API data for generalized AI training or marketing.</p>
+          </div>
+
+          <h2><i class="fa-solid fa-shield-halved"></i> 5. DPDP Act 2023 & Privacy</h2>
+          <p>Your privacy and data transparency are paramount. By using Kauntech, you agree to the collection, processing, and storage of account credentials, plans metadata, and consent tokens as outlined in our <strong>Privacy Policy</strong>.</p>
+          <p>Because Kauntech is designed to comply with India's <strong>Digital Personal Data Protection (DPDP) Act 2023</strong>, you agree that you are the <i>Data Fiduciary</i> or <i>Data Processor</i> for any contacts you scan. You must ensure you have a legitimate, legal basis (such as informed, specific consent or legitimate B2B corporate interactions) before scanning or enriching anyone's physical business card or digital contact details.</p>
+
+          <h2><i class="fa-solid fa-skull-crossbones"></i> 6. Disclaimers & Limitation of Liability</h2>
+          <p>THE SITE, APP, AND SERVICES ARE PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED. KAUNTECH TECHNOLOGIES PVT. LTD. DISCLAIMS ALL WARRANTIES, INCLUDING BUT NOT LIMITED TO, MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OCR ACCURACY, AI ENRICHMENT RELIABILITY, AND NON-INFRINGEMENT.</p>
+          <p>IN NO EVENT SHALL KAUNTECH BE LIABLE FOR ANY INDIRECT, SPECIAL, INCIDENTAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR LOSS OF PROFITS, DATA, USE, GOODWILL, OR BUSINESS INTERRUPTIONS, ARISING OUT OF OR IN CONNECTION WITH THE USE OF OR INABILITY TO USE THE APP OR SERVICES, REGARDLESS OF THE LEGAL THEORY, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p>
+
+          <h2><i class="fa-solid fa-gavel"></i> 7. Governing Law & Dispute Resolution</h2>
+          <p>These Terms and your relationship with Kauntech shall be governed by, construed, and enforced in accordance with the laws of <strong>India</strong>, without regard to conflict of law principles. Any legal action, dispute, or proceeding arising under or in connection with these Terms shall be subject to the exclusive jurisdiction of the competent courts located in <strong>Mumbai, Maharashtra, India</strong>.</p>
+
+          <h2><i class="fa-solid fa-circle-info"></i> 8. Changes to These Terms</h2>
+          <p>We reserve the right, at our sole discretion, to modify, update, or replace these Terms at any time. If a revision is material, we will provide at least 15 days' notice prior to any new terms taking effect via an in-app alert or notification on our Site. Your continued use of the App or Site following the expiration of the notice period constitutes your binding acceptance of the updated Terms.</p>
+
+          <h2><i class="fa-solid fa-envelope-open-text"></i> 9. Contact Us</h2>
+          <p>If you have any questions, concerns, or legal disputes regarding these Terms of Service, please contact our legal compliance team:</p>
+          <p style="font-family: var(--mono); font-size: 0.9rem; color: var(--gold); border-left: 2px solid var(--gold); padding-left: 16px;">
+            Kauntech Technologies Pvt. Ltd.<br>
+            Attn: Legal Compliance & Grievance Officer<br>
+            Email: voltairtechindia@gmail.com<br>
+            Address: Mumbai, Maharashtra, India
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-container" style="margin-bottom: 16px; display: flex;">
+            <img src="assets/logo-gold.png" alt="Kauntech Logo" class="nav-logo-img">
+            <span class="logo-text">KAUN<span>TECH</span></span>
+          </a>
+          <p>The only offline-first business card scanner engineered for absolute speed, AI enrichment, and strict adherence to India's DPDP Act 2023. We do not retain your data.</p>
+          <div style="font-size: 0.8rem; color: var(--gold); font-family: var(--mono);">
+            <i class="fa-solid fa-shield-halved"></i> AES-256 Encrypted &middot; On-Device
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <a href="index.html#features">Offline Superpowers</a>
+          <a href="index.html#features">AI Enrichment</a>
+          <a href="index.html#workflow">30s Workflow</a>
+          <a href="index.html#pricing">Pricing Plans</a>
+          <a href="index.html#pricing">Top-Ups & Tokens</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Compliance</h4>
+          <a href="index.html#compliance">DPDP Act 2023</a>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+          <a href="delete-request.html">Data Deletion Request</a>
+          <a href="privacy.html#google-disclosure">Google API Limited Use</a>
+        </div>
+
+        <div class="footer-col">
+          <h4>Stay Updated</h4>
+          <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 12px;">Subscribe to our newsletter for exclusive networking tips and DPDP regulatory updates.</p>
+          <form class="footer-newsletter" onsubmit="event.preventDefault(); alert('Thank you for subscribing to Kauntech updates!');">
+            <input type="email" placeholder="Enter your business email" required>
+            <button type="submit">Subscribe Now</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div>&copy; 2026 Kauntech Technologies Pvt. Ltd. All rights reserved.</div>
+          <div style="font-size: 0.8rem; color: var(--text-dim);">Built with 1 year of hard work, upgraded to new heights with AI.</div>
+        </div>
+        <div class="footer-social">
+          <a href="https://www.linkedin.com/company/120934522/admin/dashboard/" target="_blank" aria-label="LinkedIn"><i class="fa-brands fa-linkedin-in"></i></a>
+          <a href="https://www.facebook.com/profile.php?id=61589123915607" target="_blank" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/kauntech/" target="_blank" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://kauntech.quora.com/" target="_blank" aria-label="Quora"><i class="fa-brands fa-quora"></i></a>
+          <a href="https://discord.gg/AVYMsrhk" target="_blank" aria-label="Discord"><i class="fa-brands fa-discord"></i></a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Simple Hamburger Menu toggle for legal page
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (hamburger && mobileMenu) {
+      hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+      });
+      document.querySelectorAll('.mobile-link').forEach(link => {
+        link.addEventListener('click', () => {
+          hamburger.classList.remove('active');
+          mobileMenu.classList.remove('active');
+        });
+      });
+    }
+  </script>
+</body>
+</html>
