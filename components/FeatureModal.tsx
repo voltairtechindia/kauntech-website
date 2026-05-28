@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const items = [
   { icon: "fa-solid fa-bolt", label: "On-Device Neural OCR" },
@@ -16,6 +17,7 @@ const items = [
 ];
 
 export default function FeatureModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -57,7 +59,7 @@ export default function FeatureModal({ open, onClose }: { open: boolean; onClose
           type="button"
           onClick={() => {
             onClose();
-            window.location.hash = "#pricing";
+            router.push("/pricing");
           }}
         >
           <span>Explore Pricing Plans</span>

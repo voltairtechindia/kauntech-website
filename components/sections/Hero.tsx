@@ -21,7 +21,7 @@ export default function Hero() {
           </p>
 
           <div className="hero-ctas">
-            <Link href="/#pricing" className="btn-primary">
+            <Link href="/pricing" className="btn-primary">
               <span>Start Free Trial</span>
               <i className="fa-solid fa-arrow-right" />
             </Link>

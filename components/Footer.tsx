@@ -26,16 +26,16 @@ export default function Footer() {
 
           <div className="footer-col">
             <h4>Product</h4>
-            <Link href="/#features">Offline Superpowers</Link>
-            <Link href="/#features">AI Enrichment</Link>
-            <Link href="/#workflow">30s Workflow</Link>
-            <Link href="/#pricing">Pricing Plans</Link>
-            <Link href="/#pricing">Top-Ups & Tokens</Link>
+            <Link href="/features">Offline Superpowers</Link>
+            <Link href="/features">AI Enrichment</Link>
+            <Link href="/how-it-works">30s Workflow</Link>
+            <Link href="/pricing">Pricing Plans</Link>
+            <Link href="/pricing">Top-Ups & Tokens</Link>
           </div>
 
           <div className="footer-col">
             <h4>Compliance</h4>
-            <Link href="/#compliance">DPDP Act 2023</Link>
+            <Link href="/compliance">DPDP Act 2023</Link>
             <Link href="/privacy">Privacy Policy</Link>
             <Link href="/terms">Terms of Service</Link>
             <Link href="/delete-request">Data Deletion Request</Link>

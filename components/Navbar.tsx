@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const links = [
-  { href: "/#features", label: "Features" },
-  { href: "/#workflow", label: "How It Works" },
-  { href: "/#compliance", label: "DPDP Compliance" },
-  { href: "/#compare", label: "Compare" },
-  { href: "/#pricing", label: "Pricing & Top-Ups" },
+  { href: "/features", label: "Features" },
+  { href: "/how-it-works", label: "How It Works" },
+  { href: "/compliance", label: "DPDP Compliance" },
+  { href: "/compare", label: "Compare" },
+  { href: "/pricing", label: "Pricing & Top-Ups" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [offline, setOffline] = useState(false);
@@ -39,7 +42,9 @@ export default function Navbar() {
           <ul className="nav-links" id="nav-links">
             {links.map((l) => (
               <li key={l.href}>
-                <Link href={l.href}>{l.label}</Link>
+                <Link href={l.href} className={pathname === l.href ? "active" : undefined}>
+                  {l.label}
+                </Link>
               </li>
             ))}
           </ul>
@@ -54,7 +59,7 @@ export default function Navbar() {
               <span className="status-dot" />
               <span>{offline ? "Offline Mode" : "Online Mode"}</span>
             </button>
-            <Link href="/#pricing" className="nav-cta">
+            <Link href="/pricing" className="nav-cta">
               Start Free Trial
             </Link>
           </div>
@@ -87,7 +92,7 @@ export default function Navbar() {
             <span className="status-dot" />
             <span>{offline ? "Offline Mode" : "Online Mode"}</span>
           </button>
-          <Link href="/#pricing" className="nav-cta" onClick={closeMobile}>
+          <Link href="/pricing" className="nav-cta" onClick={closeMobile}>
             Start Free Trial
           </Link>
         </div>
