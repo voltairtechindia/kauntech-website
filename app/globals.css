@@ -2205,21 +2205,33 @@ section {
 }
 
 /* ===== ANIMATIONS ===== */
-.reveal { 
-  opacity: 0; 
-  transform: translateY(30px); 
-  transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+@keyframes reveal-in {
+  from { transform: translateY(24px); }
+  to   { transform: translateY(0); }
 }
 
-.reveal.visible { 
-  opacity: 1; 
-  transform: translateY(0); 
+/* Entrance animation plays on load via pure CSS so above-the-fold content
+   (the LCP element) paints immediately and never waits for hydration/JS.
+   We animate transform only (not opacity) so the element is "painted" from
+   the first frame — an opacity fade would defer LCP. .visible still honored. */
+.reveal {
+  opacity: 1;
+  animation: reveal-in 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-delay-1 { animation-delay: 0.1s; }
+.reveal-delay-2 { animation-delay: 0.2s; }
+.reveal-delay-3 { animation-delay: 0.3s; }
+.reveal-delay-4 { animation-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { animation: none; opacity: 1; transform: none; }
+}
 
 /* ===== MOBILE NAV ===== */
 .mobile-menu { 

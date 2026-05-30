@@ -5,12 +5,13 @@ import "./extra.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
+import FontAwesome from "@/components/FontAwesome";
 
 const SITE_URL = "https://kauntech.com";
 
 const firaSans = Fira_Sans({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   variable: "--font-fira-sans",
   display: "swap",
 });
@@ -20,6 +21,7 @@ const firaCode = Fira_Code({
   weight: ["400", "500", "600"],
   variable: "--font-fira-code",
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -138,10 +140,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${firaSans.variable} ${firaCode.variable}`}>
       <head>
         <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
@@ -156,6 +154,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <FontAwesome />
         <ScrollReveal />
         <Navbar />
         {children}
