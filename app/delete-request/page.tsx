@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Submit a DPDP Act 2023 / Google OAuth data deletion request. Disconnect integrations, purge local scans, or request a full database erasure.",
   alternates: { canonical: "/delete-request" },
-  robots: { index: true, follow: true },
+  robots: { index: false, follow: false },
   openGraph: {
     title: "Data Deletion Request Portal | Kauntech",
     description:

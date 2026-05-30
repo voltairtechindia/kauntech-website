@@ -10,15 +10,17 @@ const SITE_URL = "https://kauntech.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Kauntech — The Offline-First Business Card Scanner | DPDP Compliant",
+    default: "AI Business Card Scanner — Offline & DPDP Compliant | Kauntech",
     template: "%s | Kauntech",
   },
   description:
-    "Kauntech is the ONLY business card scanner that works completely offline while maintaining DPDP Act compliance. Capture, enrich, and sync contacts anywhere in 30 seconds.",
+    "Kauntech is India's first 100% offline AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant — no scanned data leaves your device.",
   keywords: [
-    "offline business card scanner",
+    "offline business card scanner India",
+    "AI visiting card scanner",
+    "scan business cards without internet",
+    "DPDP compliant contact app",
     "OCR contact scanner",
-    "DPDP compliant lead capture",
     "AI business card reader",
     "secure contact sync",
     "offline lead automation",
@@ -47,7 +49,10 @@ export const metadata: Metadata = {
       "Capture, enrich, and automate contact management in 30 seconds without internet. 100% DPDP Act 2023 compliant.",
     images: ["/assets/app-home.jpg"],
   },
-  icons: { icon: "/assets/logo-gold.png" },
+  icons: {
+    icon: "/assets/logo-gold.png",
+    apple: "/assets/logo-gold.png",
+  },
 };
 
 export const viewport: Viewport = {
@@ -80,6 +85,35 @@ const orgLd = {
   },
 };
 
+const organizationLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Kauntech Technologies Pvt. Ltd.",
+  url: SITE_URL + "/",
+  logo: SITE_URL + "/assets/logo-gold.png",
+  email: "voltairtechindia@gmail.com",
+  foundingLocation: {
+    "@type": "Place",
+    name: "Mumbai, India",
+  },
+  sameAs: [],
+};
+
+const websiteLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Kauntech",
+  url: SITE_URL + "/",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: SITE_URL + "/?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -91,6 +125,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteLd) }}
         />
       </head>
       <body>
