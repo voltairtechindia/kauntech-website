@@ -118,8 +118,12 @@ export default function Hero() {
 
             <div className="anim-screen screen-1" style={{ padding: 0, display: "block" }}>
               <img
-                src="/assets/app-home.jpg"
-                alt="Kauntech App"
+                src="/assets/app-home.webp"
+                alt="Kauntech app home screen showing scanned business card contacts"
+                width={460}
+                height={1024}
+                decoding="async"
+                fetchPriority="high"
                 style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 44 }}
               />
             </div>
@@ -127,8 +131,12 @@ export default function Hero() {
             <div className="anim-screen screen-2" style={{ padding: 0, background: "#000" }}>
               <div className="camera-view" style={{ border: "none", borderRadius: 44 }}>
                 <img
-                  src="/assets/harshal_business_card.png"
-                  alt="Card"
+                  src="/assets/harshal_business_card.webp"
+                  alt="Business card being scanned by Kauntech's offline OCR engine"
+                  width={800}
+                  height={800}
+                  loading="lazy"
+                  decoding="async"
                   style={{ width: "100%", height: "100%", objectFit: "cover", opacity: 0.9 }}
                 />
                 <div className="scan-line" />
@@ -150,7 +158,7 @@ export default function Hero() {
             <div className="anim-screen screen-3">
               <div className="app-header">
                 <div className="app-brand">
-                  <img src="/assets/logo-gold.png" alt="Icon" />
+                  <img src="/assets/logo-gold.webp" alt="Kauntech logo" width={28} height={28} decoding="async" />
                   <span>KAUNTECH AI</span>
                 </div>
               </div>
@@ -202,8 +210,12 @@ export default function Hero() {
                 }}
               >
                 <img
-                  src="/assets/logo-gold.png"
+                  src="/assets/logo-gold.webp"
                   alt="Kauntech Logo"
+                  width={80}
+                  height={80}
+                  loading="lazy"
+                  decoding="async"
                   style={{
                     width: 80,
                     filter: "drop-shadow(0 0 20px rgba(249, 115, 22, 0.4))",

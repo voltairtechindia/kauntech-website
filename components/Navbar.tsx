@@ -33,7 +33,7 @@ export default function Navbar() {
       <nav className={`navbar${scrolled ? " scrolled" : ""}`} id="navbar">
         <div className="container">
           <Link href="/" className="brand-container" onClick={closeMobile}>
-            <img src="/assets/logo-gold.png" alt="Kauntech Logo" className="nav-logo-img" />
+            <img src="/assets/logo-gold.webp" alt="Kauntech Logo" className="nav-logo-img" width={40} height={40} decoding="async" />
             <span className="logo-text">
               KAUN<span>TECH</span>
             </span>

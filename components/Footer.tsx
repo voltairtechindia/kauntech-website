@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="footer-grid">
           <div className="footer-brand">
             <Link href="/" className="brand-container" style={{ marginBottom: 16, display: "flex" }}>
-              <img src="/assets/logo-gold.png" alt="Kauntech Logo" className="nav-logo-img" />
+              <img src="/assets/logo-gold.webp" alt="Kauntech Logo" className="nav-logo-img" width={40} height={40} loading="lazy" decoding="async" />
               <span className="logo-text">
                 KAUN<span>TECH</span>
               </span>
@@ -75,7 +75,7 @@ export default function Footer() {
           </div>
           <div className="footer-social">
             <a
-              href="https://www.linkedin.com/company/120934522/admin/dashboard/"
+              href="https://www.linkedin.com/company/120934522/"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"

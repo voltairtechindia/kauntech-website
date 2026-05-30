@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Fira_Sans, Fira_Code } from "next/font/google";
 import "./globals.css";
 import "./extra.css";
 import Navbar from "@/components/Navbar";
@@ -6,6 +7,20 @@ import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 
 const SITE_URL = "https://kauntech.com";
+
+const firaSans = Fira_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-fira-sans",
+  display: "swap",
+});
+
+const firaCode = Fira_Code({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-fira-code",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -40,14 +55,12 @@ export const metadata: Metadata = {
     title: "Kauntech — The Offline-First Business Card Scanner",
     description:
       "Capture, enrich, and automate contact management in 30 seconds without internet. 100% DPDP Act 2023 compliant.",
-    images: [{ url: "/assets/app-home.jpg", width: 1200, height: 630, alt: "Kauntech App" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Kauntech — The Offline-First Business Card Scanner",
     description:
       "Capture, enrich, and automate contact management in 30 seconds without internet. 100% DPDP Act 2023 compliant.",
-    images: ["/assets/app-home.jpg"],
   },
   icons: {
     icon: "/assets/logo-gold.png",
@@ -96,7 +109,13 @@ const organizationLd = {
     "@type": "Place",
     name: "Mumbai, India",
   },
-  sameAs: [],
+  sameAs: [
+    "https://www.linkedin.com/company/120934522/",
+    "https://www.facebook.com/profile.php?id=61589123915607",
+    "https://www.instagram.com/kauntech/",
+    "https://kauntech.quora.com/",
+    "https://discord.gg/AVYMsrhk",
+  ],
 };
 
 const websiteLd = {
@@ -116,8 +135,9 @@ const websiteLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${firaSans.variable} ${firaCode.variable}`}>
       <head>
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
