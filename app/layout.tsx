@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import FontAwesome from "@/components/FontAwesome";
 
-const SITE_URL = "https://kauntech.com";
+const SITE_URL = "https://www.kauntech.com";
 
 const firaSans = Fira_Sans({
   subsets: ["latin"],

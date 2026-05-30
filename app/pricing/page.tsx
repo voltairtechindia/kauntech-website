@@ -38,7 +38,7 @@ const pricingLd = {
         unitCode: "MON",
       },
       availability: "https://schema.org/InStock",
-      url: "https://kauntech.com/pricing",
+      url: "https://www.kauntech.com/pricing",
     },
     {
       "@type": "Offer",
@@ -53,7 +53,7 @@ const pricingLd = {
         unitCode: "MON",
       },
       availability: "https://schema.org/InStock",
-      url: "https://kauntech.com/pricing",
+      url: "https://www.kauntech.com/pricing",
     },
     {
       "@type": "Offer",
@@ -68,7 +68,7 @@ const pricingLd = {
         unitCode: "MON",
       },
       availability: "https://schema.org/InStock",
-      url: "https://kauntech.com/pricing",
+      url: "https://www.kauntech.com/pricing",
     },
   ],
 };

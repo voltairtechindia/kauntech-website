@@ -29,7 +29,7 @@ export default function TermsPage() {
               govern your access to and use of the Kauntech mobile application (&quot;App&quot;),
               the website located at{" "}
               <a
-                href="https://kauntech.com"
+                href="https://www.kauntech.com"
                 style={{ color: "var(--gold)", textDecoration: "underline" }}
               >
                 kauntech.com
