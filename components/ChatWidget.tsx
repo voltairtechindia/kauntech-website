@@ -5,62 +5,75 @@ import { useEffect, useRef, useState } from "react";
 const PRESETS = [
   "How does offline work?",
   "What is DPDP compliance?",
-  "Explain AI tokens",
+  "Explain K-Tokens",
   "What are the pricing plans?",
   "Is my data stored on servers?",
 ];
 
-type Msg = { from: "bot" | "user"; text: string; fallback?: boolean };
+type Msg = { from: "bot" | "user"; text: string; error?: boolean };
 
-function responseFor(input: string): { text: string; fallback?: boolean } {
-  const m = input.toLowerCase();
-  if (m.includes("offline"))
-    return {
-      text: "Kauntech works 100% offline! OCR, audio notes, and data storage happen securely on your device. We sync to the cloud only when you reconnect.",
-    };
-  if (m.includes("dpdp") || m.includes("compliance"))
-    return {
-      text: "We are fully DPDP Act 2023 compliant. We record specific consent, process data locally, and offer a transparent audit ledger. We don't save your images or contacts on our servers.",
-    };
-  if (m.includes("token") || m.includes("ai"))
-    return {
-      text: "AI Tokens power our advanced features. AI Intel costs 2 tokens per scan. Pro plans include 1,000 tokens monthly. You can also earn free tokens by following our social media pages and competing in our community Q&A if you are a Pro or Ultra user!",
-    };
-  if (m.includes("price") || m.includes("cost") || m.includes("plan"))
-    return {
-      text: "We offer flexible plans: Free (49 scans), Pro (₹499/mo), Ultra (₹999/mo), and Custom enterprise suites. Top-ups are also available anytime.",
-    };
-  if (m.includes("data") || m.includes("stored") || m.includes("server"))
-    return {
-      text: "We do not save or store your scanned images or contact details on our servers. Your data belongs to you and stays securely on your device until you decide to sync it to your own CRM.",
-    };
-  return {
-    text: "I'm sorry, I cannot answer that specific question right now. Please provide your details, and our admin will revert back to your email ID shortly.",
-    fallback: true,
-  };
+const SESSION_KEY = "kauntech_chat_session";
+
+/** Stable per-browser session id so a conversation threads together server-side. */
+function getSessionId(): string {
+  try {
+    let id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = "sess_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return "sess_ephemeral_" + Date.now().toString(36);
+  }
 }
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [showPresets, setShowPresets] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
-  }, [messages]);
+  }, [messages, busy]);
 
-  const submit = (text: string) => {
+  const submit = async (text: string) => {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || busy) return;
     setShowPresets(false);
     setMessages((prev) => [...prev, { from: "user", text: trimmed }]);
     setInput("");
-    setTimeout(() => {
-      const r = responseFor(trimmed);
-      setMessages((prev) => [...prev, { from: "bot", text: r.text, fallback: r.fallback }]);
-    }, 500);
+    setBusy(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: trimmed,
+          session_id: getSessionId(),
+          page_url: typeof location !== "undefined" ? location.href : undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(`Request failed (${res.status})`);
+      const data = (await res.json()) as { reply: string };
+      setMessages((prev) => [...prev, { from: "bot", text: data.reply }]);
+    } catch (err) {
+      console.error("[kauntech-chat]", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          error: true,
+          text: "Sorry, I couldn't reach the assistant just now. Please share your details below and our team will email you shortly.",
+        },
+      ]);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -95,7 +108,7 @@ export default function ChatWidget() {
         <div className="chat-body" ref={bodyRef}>
           <div className="chat-msg bot">
             Hello! I am your Kauntech AI Specialist. Have questions about our 100% offline
-            architecture, AI Tokens economy, or India&apos;s DPDP Act 2023 compliance? Choose a
+            architecture, K-Tokens, pricing, or India&apos;s DPDP Act 2023 compliance? Choose a
             preset or ask me anything!
             {showPresets && (
               <div className="chat-preset-chips">
@@ -115,9 +128,18 @@ export default function ChatWidget() {
           {messages.map((m, i) => (
             <div key={i} className={`chat-msg ${m.from}`}>
               {m.text}
-              {m.fallback && <FallbackForm />}
+              {m.error && <FallbackForm />}
             </div>
           ))}
+          {busy && (
+            <div className="chat-msg bot" aria-live="polite">
+              <span className="chat-typing">
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
+          )}
         </div>
 
         <form
@@ -132,9 +154,10 @@ export default function ChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your question here..."
+            disabled={busy}
             required
           />
-          <button type="submit">
+          <button type="submit" disabled={busy || !input.trim()}>
             <i className="fa-solid fa-paper-plane" />
           </button>
         </form>

@@ -10,6 +10,7 @@ const links = [
   { href: "/compliance", label: "DPDP Compliance" },
   { href: "/compare", label: "Compare" },
   { href: "/pricing", label: "Pricing & Top-Ups" },
+  { href: "/blog", label: "Blog" },
   { href: "/contact", label: "Contact" },
 ];
 

@@ -31,6 +31,7 @@ export default function Footer() {
             <Link href="/how-it-works">30s Workflow</Link>
             <Link href="/pricing">Pricing Plans</Link>
             <Link href="/pricing">Top-Ups & Tokens</Link>
+            <Link href="/blog">Blog</Link>
           </div>
 
           <div className="footer-col">

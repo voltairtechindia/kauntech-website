@@ -22,18 +22,47 @@ export default function Contact() {
     e.preventDefault();
     const form = e.currentTarget;
     setSubmitting(true);
+    const data = new FormData(form);
+
+    // Canonical store: Supabase via our own API route (returns real success).
+    let ok = false;
     try {
-      const data = new FormData(form);
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.get("Name"),
+          company: data.get("Company"),
+          phone: data.get("Phone"),
+          email: data.get("Email"),
+          message: data.get("Message"),
+          website: data.get("website"), // honeypot — bots fill this
+          page_url: typeof location !== "undefined" ? location.href : undefined,
+        }),
+      });
+      ok = res.ok;
+    } catch (err) {
+      console.error(err);
+    }
+
+    // Best-effort mirror to the existing Google Sheet (fire-and-forget).
+    try {
       await fetch(SCRIPT_URL, { method: "POST", body: data, mode: "no-cors" });
     } catch (err) {
       console.error(err);
-    } finally {
+    }
+
+    if (ok) {
       alert(
         "Thank you! Your message has been successfully shared. Our team will revert as soon as possible."
       );
       form.reset();
-      setSubmitting(false);
+    } else {
+      alert(
+        "Sorry, we couldn't submit your message just now. Please email voltairtechindia@gmail.com and we'll get right back to you."
+      );
     }
+    setSubmitting(false);
   };
 
   return (
@@ -88,6 +117,15 @@ export default function Contact() {
             onSubmit={handleSubmit}
             style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "left" }}
           >
+            {/* Honeypot: hidden from humans; bots that fill it are dropped server-side. */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+            />
             <div
               style={{
                 display: "grid",

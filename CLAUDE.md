@@ -64,6 +64,44 @@ components/
 - Canonical URLs, OG tags, Twitter cards set in root layout
 - `sitemap.ts` and `robots.ts` generate XML/txt dynamically
 
+## RAG Chatbot (in-app, server-side)
+The site chatbot ([components/ChatWidget.tsx](components/ChatWidget.tsx)) is a real
+retrieval-augmented assistant, ported from the `rag-chatbot-kauntech/` scaffold into
+Next.js (no separate Python service). Flow: widget → `POST /api/chat` → embed query
+(Gemini) → `match_documents` pgvector RPC (Supabase) → Gemini grounded reply →
+best-effort conversation logging + `after()` analytics.
+- Engine lives in [lib/rag/](lib/rag/): `config`, `supabase`, `gemini`, `prompts`,
+  `retriever`, `db`, `ingest`, `analytics`, `chat`, and `data/knowledge-base.ts`.
+- Schema: [supabase/migrations/](supabase/migrations/) (`0001_init` → `0002_rls` →
+  `0003_hardening` → `0004_contact` → `0005_blog`).
+  pgvector 768-dim; RLS on with no policies (anon key gets zero access).
+- Knowledge base: [lib/rag/data/knowledge-base.ts](lib/rag/data/knowledge-base.ts) —
+  edit then re-seed via `POST /api/ingest {"seed":true}` with `X-Admin-Key`.
+- `POST /api/ingest {"documents":[...]}` (admin-gated) lets n8n push new docs (e.g. blog
+  posts as `doc_type:"blog"`) without redeploying.
+- Env (server-only, set in Vercel): `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`,
+  `GOOGLE_API_KEY`, `ADMIN_API_KEY`. See `.env.local.example`. Setup steps: `RAG_SETUP.md`.
+- **Model rule:** the active Gemini key is new-generation — `gemini-2.0-flash` and
+  `text-embedding-004` are NOT available (404). Use `gemini-2.5-flash` (generation,
+  thinking disabled) + `gemini-embedding-001` @ 768 dims. Don't revert to the older models.
+
+## Blog (n8n → Supabase → site, display-only)
+The site **never authors** posts — n8n creates them and POSTs to the site, which only
+**renders** them. Full pipeline guide: [BLOG_PIPELINE.md](BLOG_PIPELINE.md).
+- Schema: `blog_posts` ([supabase/migrations/0005_blog.sql](supabase/migrations/0005_blog.sql)).
+  RLS on, no policies → server reads via service-role (same posture as the rest).
+- Media: public Supabase Storage bucket `blog-media` (100 MB/file). Photos via
+  `cover_image` / inline Markdown / `media[]`; videos via `media[]` as `type:"video"`
+  (self-hosted mp4/webm) or `type:"embed"` (YouTube/Vimeo, best for long video).
+- Engine: [lib/blog/](lib/blog/) (`types`, `db`, `util`). Pages: [app/blog/](app/blog/)
+  (`page.tsx` index, `[slug]/page.tsx` article) — server components, ISR `revalidate=300`.
+  Markdown rendered by [components/Markdown.tsx](components/Markdown.tsx) (react-markdown +
+  remark-gfm, no raw HTML); media by [components/BlogMedia.tsx](components/BlogMedia.tsx).
+- Write path: `POST /api/blog` ([app/api/blog/route.ts](app/api/blog/route.ts)), admin-gated
+  by `X-Admin-Key`. Upserts by `slug` AND (when `status:"published"`) embeds the post into
+  the RAG store (`doc_type:"blog"`), so the chatbot can cite it. `DELETE /api/blog?slug=`
+  removes both. Admin auth shared via [lib/admin-auth.ts](lib/admin-auth.ts).
+
 ## Business Context
 - Product: Kauntech Android/iOS app (business card scanner)
 - Company: Kauntech Technologies Pvt. Ltd.
