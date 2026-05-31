@@ -5,23 +5,17 @@ import { useState } from "react";
 const SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbztbMN_DrSEfxk7F6gljRxpYBp7qhkybE0on_Jfc5JvtIAg7ymdZCDVHVd3Szm3pPj0/exec";
 
-const fieldStyle: React.CSSProperties = {
-  padding: "14px 18px",
-  borderRadius: 12,
-  background: "var(--bg)",
-  border: "1px solid var(--border)",
-  color: "#fff",
-  fontFamily: "var(--font)",
-  fontSize: "1rem",
-};
+type Status = { kind: "success" | "error"; text: string } | null;
 
 export default function Contact() {
   const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<Status>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     setSubmitting(true);
+    setStatus(null);
     const data = new FormData(form);
 
     // Canonical store: Supabase via our own API route (returns real success).
@@ -53,14 +47,16 @@ export default function Contact() {
     }
 
     if (ok) {
-      alert(
-        "Thank you! Your message has been successfully shared. Our team will revert as soon as possible."
-      );
+      setStatus({
+        kind: "success",
+        text: "Thank you! Your message has been received — our team will revert as soon as possible.",
+      });
       form.reset();
     } else {
-      alert(
-        "Sorry, we couldn't submit your message just now. Please email voltairtechindia@gmail.com and we'll get right back to you."
-      );
+      setStatus({
+        kind: "error",
+        text: "Sorry, we couldn't submit your message just now. Please email voltairtechindia@gmail.com and we'll get right back to you.",
+      });
     }
     setSubmitting(false);
   };
@@ -115,15 +111,27 @@ export default function Contact() {
 
           <form
             onSubmit={handleSubmit}
-            style={{ display: "flex", flexDirection: "column", gap: 20, textAlign: "left" }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              textAlign: "left",
+              position: "relative",
+              zIndex: 1,
+            }}
           >
-            {/* Honeypot: hidden from humans; bots that fill it are dropped server-side. */}
+            {/* Honeypot: hidden from humans; bots that fill it are dropped server-side.
+                The data-*-ignore attrs stop password managers from autofilling it,
+                which would otherwise silently drop a real user's submission. */}
             <input
               type="text"
               name="website"
               tabIndex={-1}
               autoComplete="off"
               aria-hidden="true"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
             />
             <div
@@ -141,9 +149,9 @@ export default function Contact() {
                   type="text"
                   id="cName"
                   name="Name"
-                  placeholder="e.g. Harshal Vadgama"
+                  placeholder="e.g. Priya Sharma"
                   required
-                  style={fieldStyle}
+                  className="contact-field"
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -154,9 +162,9 @@ export default function Contact() {
                   type="text"
                   id="cCompany"
                   name="Company"
-                  placeholder="e.g. Kauntech AI"
+                  placeholder="e.g. Acme Logistics Pvt. Ltd."
                   required
-                  style={fieldStyle}
+                  className="contact-field"
                 />
               </div>
             </div>
@@ -176,9 +184,9 @@ export default function Contact() {
                   type="tel"
                   id="cPhone"
                   name="Phone"
-                  placeholder="e.g. +91 98765 43210"
+                  placeholder="e.g. +91 90000 12345"
                   required
-                  style={fieldStyle}
+                  className="contact-field"
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -189,9 +197,9 @@ export default function Contact() {
                   type="email"
                   id="cEmail"
                   name="Email"
-                  placeholder="e.g. business@kauntech.com"
+                  placeholder="e.g. priya@acmelogistics.in"
                   required
-                  style={fieldStyle}
+                  className="contact-field"
                 />
               </div>
             </div>
@@ -204,9 +212,10 @@ export default function Contact() {
                 id="cMessage"
                 name="Message"
                 rows={4}
-                placeholder="Tell us about your requirements, event dates, or custom feature requests..."
+                placeholder="Tell us your team size, daily card volume, and any custom features or integrations you need..."
                 required
-                style={{ ...fieldStyle, resize: "vertical" }}
+                className="contact-field"
+                style={{ resize: "vertical" }}
               />
             </div>
 
@@ -236,6 +245,40 @@ export default function Contact() {
                 <i className={submitting ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-paper-plane"} />
               </button>
             </div>
+
+            {status && (
+              <div
+                role="status"
+                aria-live="polite"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "14px 18px",
+                  borderRadius: 12,
+                  fontSize: "0.95rem",
+                  lineHeight: 1.5,
+                  background:
+                    status.kind === "success"
+                      ? "rgba(34,197,94,0.12)"
+                      : "rgba(239,68,68,0.12)",
+                  border:
+                    status.kind === "success"
+                      ? "1px solid rgba(34,197,94,0.45)"
+                      : "1px solid rgba(239,68,68,0.45)",
+                  color: status.kind === "success" ? "#4ade80" : "#f87171",
+                }}
+              >
+                <i
+                  className={
+                    status.kind === "success"
+                      ? "fa-solid fa-circle-check"
+                      : "fa-solid fa-circle-exclamation"
+                  }
+                />
+                <span>{status.text}</span>
+              </div>
+            )}
           </form>
         </div>
       </div>

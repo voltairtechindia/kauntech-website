@@ -18,7 +18,6 @@ export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -51,15 +50,6 @@ export default function Navbar() {
           </ul>
 
           <div className="nav-actions">
-            <button
-              className="offline-status-pill"
-              onClick={() => setOffline((v) => !v)}
-              title="Click to simulate offline mode"
-              type="button"
-            >
-              <span className="status-dot" />
-              <span>{offline ? "Offline Mode" : "Online Mode"}</span>
-            </button>
             <Link href="/pricing" className="nav-cta">
               Start Free Trial
             </Link>
@@ -85,14 +75,6 @@ export default function Navbar() {
           </Link>
         ))}
         <div className="mobile-actions">
-          <button
-            className="offline-status-pill"
-            onClick={() => setOffline((v) => !v)}
-            type="button"
-          >
-            <span className="status-dot" />
-            <span>{offline ? "Offline Mode" : "Online Mode"}</span>
-          </button>
           <Link href="/pricing" className="nav-cta" onClick={closeMobile}>
             Start Free Trial
           </Link>

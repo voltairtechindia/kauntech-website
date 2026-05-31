@@ -352,3 +352,29 @@
   .legal-card h1 { font-size: 2.2rem; }
   .form-box { padding: 24px; }
 }
+
+/* ====== Contact form fields — distinct bordered style + focus glow ====== */
+.contact-field {
+  width: 100%;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  /* Distinct from the default thin var(--border): thicker, slightly brighter. */
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.contact-field::placeholder {
+  color: rgba(255, 255, 255, 0.32);
+}
+.contact-field:hover {
+  border-color: rgba(255, 255, 255, 0.26);
+}
+.contact-field:focus {
+  outline: none;
+  border-color: var(--gold);
+  background: rgba(249, 115, 22, 0.06);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
+}
