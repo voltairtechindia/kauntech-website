@@ -102,6 +102,29 @@ The site **never authors** posts — n8n creates them and POSTs to the site, whi
   the RAG store (`doc_type:"blog"`), so the chatbot can cite it. `DELETE /api/blog?slug=`
   removes both. Admin auth shared via [lib/admin-auth.ts](lib/admin-auth.ts).
 
+## Careers + AI HRM (site intake → Supabase → admin HR)
+Public hiring + AI candidate screening. Full guide: [CAREERS_HRM.md](CAREERS_HRM.md).
+- Schema: [supabase/migrations/0008_careers.sql](supabase/migrations/0008_careers.sql) —
+  `job_openings`, `job_applications` (incl. `embedding vector(768)`), the
+  `match_candidates` pgvector RPC, and a **private** `resumes` Storage bucket.
+  RLS on, no policies (service-role only); same posture as the rest.
+- **Site (public):** `/career` ([app/career/](app/career/)) lists open roles +
+  [components/CareerForm.tsx](components/CareerForm.tsx) collects an application +
+  resume (PDF/DOCX, consent required). `POST /api/careers/apply` stores the file in
+  the private bucket + inserts the row, then `after()` parses it. Engine:
+  [lib/careers/](lib/careers/) (`parse.ts` = Gemini multimodal for PDF / `mammoth`
+  for DOCX → structured JSON + embedding). `POST /api/careers/parse` (admin-gated)
+  re-runs parsing.
+- **Admin (kauntech-admin):** HR suite under `/careers` — applicant inbox, candidate
+  detail (resume via signed URL, pipeline status/rating/notes, fit analysis, screening
+  questions), job-openings CRUD, **AI shortlist** (`/careers/jobs/[id]/shortlist`), and
+  a **resume chatbot** (`/careers/chat`). AI in `lib/hr-ai.ts` (recall via
+  `match_candidates` + staged Gemini scoring); its own Gemini client (`lib/ai.ts`) uses
+  the SAME `GOOGLE_API_KEY`. Job writes go direct via service-role (no RAG sync).
+- **Privacy (DPDP):** resumes are PRIVATE (signed-URL only), consent-gated, and resume
+  embeddings live ONLY in `job_applications` — they are NEVER ingested into the public
+  `documents` RAG store, so the site chatbot can't leak applicant data.
+
 ## Business Context
 - Product: Kauntech Android/iOS app (business card scanner)
 - Company: Kauntech Technologies Pvt. Ltd.

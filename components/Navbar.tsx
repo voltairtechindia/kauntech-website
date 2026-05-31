@@ -11,6 +11,7 @@ const links = [
   { href: "/compare", label: "Compare" },
   { href: "/pricing", label: "Pricing & Top-Ups" },
   { href: "/blog", label: "Blog" },
+  { href: "/career", label: "Careers" },
   { href: "/contact", label: "Contact" },
 ];
 

@@ -109,3 +109,39 @@ export async function generateJson(
     return {};
   }
 }
+
+/**
+ * Structured JSON completion grounded by an inline file (PDF, image, …).
+ * Used to parse uploaded resumes: Gemini reads the document natively (columns,
+ * tables, layout) and returns structured JSON. `file.data` is base64-encoded.
+ */
+export async function generateJsonFromFile(
+  systemPrompt: string,
+  prompt: string,
+  file: { mimeType: string; data: string },
+): Promise<Record<string, unknown>> {
+  const res = await client().models.generateContent({
+    model: config.llmModel,
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { inlineData: { mimeType: file.mimeType, data: file.data } },
+          { text: prompt },
+        ],
+      },
+    ],
+    config: {
+      systemInstruction: systemPrompt,
+      temperature: 0,
+      responseMimeType: "application/json",
+      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 8192,
+    },
+  });
+  try {
+    return JSON.parse((res.text ?? "{}").trim()) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
