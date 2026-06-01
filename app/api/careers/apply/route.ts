@@ -165,7 +165,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         detail:
-          "We couldn't submit your application just now. Please try again, or email voltairtechindia@gmail.com.",
+          "We couldn't submit your application just now. Please try again, or email business@voltairtech.com.",
       },
       { status: 500 },
     );

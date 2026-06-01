@@ -38,5 +38,5 @@ export const config = {
   // --- Brand (shapes the assistant persona — see prompts.ts) ---
   brandName: "Kauntech",
   appName: "Kauntech AI Specialist",
-  supportEmail: "voltairtechindia@gmail.com",
+  supportEmail: "business@voltairtech.com",
 } as const;

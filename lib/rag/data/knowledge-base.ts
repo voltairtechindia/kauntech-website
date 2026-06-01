@@ -27,11 +27,11 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "Google Sheets, Gmail, WhatsApp or Telegram — in under 30 seconds. It is built by Kauntech Technologies " +
       "Pvt. Ltd. (Mumbai, India). Kauntech is positioned as India's first 100% offline AI business card scanner " +
       "and is fully compliant with India's Digital Personal Data Protection (DPDP) Act 2023. " +
-      "Support email: voltairtechindia@gmail.com.",
+      "Support email: business@voltairtech.com.",
     metadata: {
       company: "Kauntech Technologies Pvt. Ltd.",
       platforms: ["Android", "iOS"],
-      support_email: "voltairtechindia@gmail.com",
+      support_email: "business@voltairtech.com",
       location: "Mumbai, India",
     },
   },
@@ -177,7 +177,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "Custom plan: contact sales (\"Let's Talk\" pricing). For large corporations needing white-labeling, custom LLMs or " +
       "massive event capacity. Includes Unlimited Scans & Tokens, On-Premise Storage options, Custom Hardware " +
       "Integrations, an Advanced Analytics Dashboard, a dedicated Account Manager, and complete White Labeling. " +
-      "Contact voltairtechindia@gmail.com to discuss.",
+      "Contact business@voltairtech.com to discuss.",
     metadata: { name: "Custom", price: "custom" },
   },
   {
@@ -272,7 +272,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Download the Kauntech app on Android or iOS and start on the Free plan (49 scans, 50 K-Tokens, 100% offline). You " +
       "can upgrade to Pro or Ultra anytime for more scans, K-Tokens and AI features. For enterprise needs (white-labeling, " +
-      "on-premise storage, custom LLMs), contact the team at voltairtechindia@gmail.com.",
+      "on-premise storage, custom LLMs), contact the team at business@voltairtech.com.",
     metadata: { category: "get_started" },
   },
 

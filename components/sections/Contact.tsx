@@ -55,7 +55,7 @@ export default function Contact() {
     } else {
       setStatus({
         kind: "error",
-        text: "Sorry, we couldn't submit your message just now. Please email voltairtechindia@gmail.com and we'll get right back to you.",
+        text: "Sorry, we couldn't submit your message just now. Please email business@voltairtech.com and we'll get right back to you.",
       });
     }
     setSubmitting(false);

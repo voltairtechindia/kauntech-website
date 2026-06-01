@@ -128,6 +128,6 @@ Public hiring + AI candidate screening. Full guide: [CAREERS_HRM.md](CAREERS_HRM
 ## Business Context
 - Product: Kauntech Android/iOS app (business card scanner)
 - Company: Kauntech Technologies Pvt. Ltd.
-- Support email: voltairtechindia@gmail.com
+- Support email: business@voltairtech.com
 - Plans: Free, Pro (₹499/mo), Enterprise (₹999/mo)
 - Compliance: India DPDP Act 2023 is a key differentiator — handle carefully

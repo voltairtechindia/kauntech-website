@@ -128,7 +128,7 @@ export default function RecruitmentPrivacyPage() {
             <p>
               Under the DPDP Act 2023 you have the right to access, correct, and erase your data,
               and to withdraw consent. To exercise any of these, email us at{" "}
-              <a href="mailto:voltairtechindia@gmail.com">voltairtechindia@gmail.com</a> with the
+              <a href="mailto:business@voltairtech.com">business@voltairtech.com</a> with the
               email address you applied with, and we will action your request and delete your
               resume and details.
             </p>
@@ -138,7 +138,7 @@ export default function RecruitmentPrivacyPage() {
             </h2>
             <p>
               Kauntech Technologies Pvt. Ltd. — Data Protection contact:{" "}
-              <a href="mailto:voltairtechindia@gmail.com">voltairtechindia@gmail.com</a>.
+              <a href="mailto:business@voltairtech.com">business@voltairtech.com</a>.
             </p>
           </div>
         </div>

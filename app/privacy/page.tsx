@@ -314,7 +314,7 @@ export default function PrivacyPage() {
               <br />
               Attn: Data Protection Officer / Grievance Redressal
               <br />
-              Email: voltairtechindia@gmail.com
+              Email: business@voltairtech.com
               <br />
               Address: Mumbai, Maharashtra, India
             </p>

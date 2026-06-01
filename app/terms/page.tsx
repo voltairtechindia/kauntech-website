@@ -412,7 +412,7 @@ export default function TermsPage() {
               <br />
               Attn: Legal Compliance &amp; Grievance Officer
               <br />
-              Email: voltairtechindia@gmail.com
+              Email: business@voltairtech.com
               <br />
               Address: Mumbai, Maharashtra, India
             </p>

@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[contact] insert failed", err);
     return NextResponse.json(
-      { detail: "Could not submit. Please email voltairtechindia@gmail.com." },
+      { detail: "Could not submit. Please email business@voltairtech.com." },
       { status: 500 },
     );
   }

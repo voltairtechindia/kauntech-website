@@ -107,7 +107,7 @@ const organizationLd = {
   name: "Kauntech Technologies Pvt. Ltd.",
   url: SITE_URL + "/",
   logo: SITE_URL + "/assets/logo-gold.png",
-  email: "voltairtechindia@gmail.com",
+  email: "business@voltairtech.com",
   foundingLocation: {
     "@type": "Place",
     name: "Mumbai, India",

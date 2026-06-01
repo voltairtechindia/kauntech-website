@@ -177,7 +177,7 @@ export default function Hero() {
                   </div>
                 </div>
                 <div className="ex-field field-email">
-                  <i className="fa-solid fa-envelope" /> voltairtechindia@gmail.com
+                  <i className="fa-solid fa-envelope" /> business@voltairtech.com
                   <div className="action-toast gm-toast">
                     <i className="fa-solid fa-paper-plane" /> Drafted &amp; Sent ✓✓
                   </div>
