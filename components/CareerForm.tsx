@@ -97,104 +97,43 @@ export default function CareerForm({
         </div>
       </div>
 
-      <div className="grid-2">
-        <div>
-          <label htmlFor="ap_phone">Phone</label>
-          <input
-            id="ap_phone"
-            name="phone"
-            type="tel"
-            placeholder="e.g. +91 90000 12345"
-            className="contact-field"
-          />
-        </div>
-        <div>
-          <label htmlFor="ap_location">Location</label>
-          <input
-            id="ap_location"
-            name="location"
-            type="text"
-            placeholder="e.g. Bengaluru, India"
-            className="contact-field"
-          />
-        </div>
-      </div>
-
-      <div className="grid-2">
-        <div>
-          <label htmlFor="ap_role">Role applying for</label>
-          {lockJob && defaultJobSlug ? (
-            <>
-              <input type="hidden" name="job_slug" value={defaultJobSlug} />
-              <input
-                type="text"
-                className="contact-field"
-                value={jobs.find((j) => j.slug === defaultJobSlug)?.title ?? "This role"}
-                disabled
-              />
-            </>
-          ) : (
-            <select
-              id="ap_role"
-              name="job_slug"
-              defaultValue={defaultJobSlug ?? ""}
+      <div>
+        <label htmlFor="ap_role">Role applying for</label>
+        {lockJob && defaultJobSlug ? (
+          <>
+            <input type="hidden" name="job_slug" value={defaultJobSlug} />
+            <input
+              type="text"
               className="contact-field"
-            >
-              <option value="">General / open application</option>
-              {jobs.map((j) => (
-                <option key={j.slug} value={j.slug}>
-                  {j.title}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-        <div>
-          <label htmlFor="ap_years">Years of experience</label>
-          <input
-            id="ap_years"
-            name="years_experience"
-            type="number"
-            min={0}
-            max={60}
-            step={0.5}
-            placeholder="e.g. 3"
+              value={jobs.find((j) => j.slug === defaultJobSlug)?.title ?? "This role"}
+              disabled
+            />
+          </>
+        ) : (
+          <select
+            id="ap_role"
+            name="job_slug"
+            defaultValue={defaultJobSlug ?? ""}
             className="contact-field"
-          />
-        </div>
-      </div>
-
-      <div className="grid-2">
-        <div>
-          <label htmlFor="ap_linkedin">LinkedIn URL</label>
-          <input
-            id="ap_linkedin"
-            name="linkedin_url"
-            type="url"
-            placeholder="https://linkedin.com/in/…"
-            className="contact-field"
-          />
-        </div>
-        <div>
-          <label htmlFor="ap_portfolio">Portfolio / GitHub URL</label>
-          <input
-            id="ap_portfolio"
-            name="portfolio_url"
-            type="url"
-            placeholder="https://github.com/…"
-            className="contact-field"
-          />
-        </div>
+          >
+            <option value="">General / open application</option>
+            {jobs.map((j) => (
+              <option key={j.slug} value={j.slug}>
+                {j.title}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="apply-row-pair">
         <div>
-          <label htmlFor="ap_cover">Cover note</label>
+          <label htmlFor="ap_cover">Cover note (optional)</label>
           <textarea
             id="ap_cover"
             name="cover_note"
             rows={4}
-            placeholder="Tell us briefly why you're a great fit for this role…"
+            placeholder="Anything not in your resume — why you're a great fit, availability, notice period…"
             className="contact-field"
             style={{ resize: "vertical" }}
           />
