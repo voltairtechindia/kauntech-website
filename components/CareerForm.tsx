@@ -187,35 +187,37 @@ export default function CareerForm({
         </div>
       </div>
 
-      <div>
-        <label htmlFor="ap_cover">Cover note</label>
-        <textarea
-          id="ap_cover"
-          name="cover_note"
-          rows={4}
-          placeholder="Tell us briefly why you're a great fit for this role…"
-          className="contact-field"
-          style={{ resize: "vertical" }}
-        />
-      </div>
+      <div className="apply-row-pair">
+        <div>
+          <label htmlFor="ap_cover">Cover note</label>
+          <textarea
+            id="ap_cover"
+            name="cover_note"
+            rows={4}
+            placeholder="Tell us briefly why you're a great fit for this role…"
+            className="contact-field"
+            style={{ resize: "vertical" }}
+          />
+        </div>
 
-      <div>
-        <label htmlFor="ap_resume">Resume * (PDF or DOCX, max 10 MB)</label>
-        <div className="file-field">
-          <label className="btn-secondary" style={{ cursor: "pointer", padding: "12px 22px" }}>
-            <i className="fa-solid fa-paperclip" />
-            <span>Choose file</span>
-            <input
-              id="ap_resume"
-              name="resume"
-              type="file"
-              accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              required
-              hidden
-              onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
-            />
-          </label>
-          <span className="file-name">{fileName || "No file selected"}</span>
+        <div>
+          <label htmlFor="ap_resume">Resume * (PDF or DOCX, max 10 MB)</label>
+          <div className="file-field">
+            <label className="btn-secondary" style={{ cursor: "pointer", padding: "12px 22px" }}>
+              <i className="fa-solid fa-paperclip" />
+              <span>Choose file</span>
+              <input
+                id="ap_resume"
+                name="resume"
+                type="file"
+                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                required
+                hidden
+                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? "")}
+              />
+            </label>
+            <span className="file-name">{fileName || "No file selected"}</span>
+          </div>
         </div>
       </div>
 
@@ -224,8 +226,13 @@ export default function CareerForm({
         <span>
           I consent to Kauntech Technologies storing and processing my resume and the
           details above for recruitment purposes, in line with the{" "}
-          <a href="/privacy" target="_blank" rel="noreferrer" style={{ color: "var(--gold)" }}>
-            Privacy Policy
+          <a
+            href="/recruitment-privacy"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--gold)" }}
+          >
+            Recruitment Privacy Notice
           </a>
           . *
         </span>

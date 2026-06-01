@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import CareerForm from "@/components/CareerForm";
+import ApplyModal from "@/components/ApplyModal";
 import Markdown from "@/components/Markdown";
 import { getJob, listOpenJobs } from "@/lib/careers/db";
 
@@ -153,18 +153,12 @@ export default async function JobDetailPage({
           </div>
         ) : null}
 
-        <div className="career-apply-box" id="apply">
-          <h2 style={{ fontSize: "1.6rem", fontWeight: 800, margin: "0 0 6px" }}>
-            Apply for {job.title}
-          </h2>
-          <p style={{ color: "var(--text-dim)", marginTop: 0 }}>
-            Attach your resume (PDF or DOCX). We review every application.
-          </p>
-          <CareerForm
-            jobs={[{ slug: job.slug, title: job.title }]}
-            defaultJobSlug={job.slug}
-            lockJob
-          />
+        <div className="job-apply-banner">
+          <div>
+            <h2>Ready to apply?</h2>
+            <p>Takes a couple of minutes — just your details and a resume.</p>
+          </div>
+          <ApplyModal jobSlug={job.slug} jobTitle={job.title} />
         </div>
       </article>
     </main>

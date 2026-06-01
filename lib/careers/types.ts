@@ -66,4 +66,6 @@ export interface JobApplicationInsert {
   resume_path: string;
   resume_filename: string | null;
   resume_mime: string | null;
+  consent_given: boolean;
+  consent_at: string | null;
 }

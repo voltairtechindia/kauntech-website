@@ -157,6 +157,8 @@ export async function POST(req: Request) {
       resume_path: path,
       resume_filename: file.name || null,
       resume_mime: mime,
+      consent_given: true,
+      consent_at: new Date().toISOString(),
     });
   } catch (err) {
     console.error("[careers] application insert failed", err);
