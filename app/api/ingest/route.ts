@@ -7,6 +7,8 @@
  * POST /api/ingest  { "seed": true }          -> (re)load the built-in Kauntech KB
  * POST /api/ingest  { "documents": [ ... ] }  -> upsert arbitrary documents
  *      each document: { doc_type, content, external_id?, title?, metadata? }
+ * POST /api/ingest  { "flushCache": true }    -> clear the chatbot response cache
+ *      (use after a prompt/model change — those don't go through ingest())
  * GET  /api/ingest                            -> document counts by doc_type
  *
  * Blog pipeline: n8n inserts a row into `blog_posts`, then POSTs the post here
@@ -16,6 +18,7 @@
 import { NextResponse } from "next/server";
 
 import { isAdmin } from "@/lib/admin-auth";
+import { clearChatCache } from "@/lib/rag/cache";
 import { KNOWLEDGE_BASE } from "@/lib/rag/data/knowledge-base";
 import { countDocuments } from "@/lib/rag/db";
 import { ingest } from "@/lib/rag/ingest";
@@ -43,6 +46,12 @@ export async function POST(req: Request) {
     body = (await req.json()) as Record<string, unknown>;
   } catch {
     body = {};
+  }
+
+  // Flush the chat cache without re-ingesting (e.g. after a prompt/model change).
+  if (body.flushCache === true) {
+    await clearChatCache();
+    return NextResponse.json({ ok: true, flushed: "chat_cache" });
   }
 
   let documents: IngestDocument[];

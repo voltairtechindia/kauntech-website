@@ -3,6 +3,7 @@
  * upserts, and conversation/message/insight logging. All calls go through the
  * server-side service-role client.
  */
+import { clearChatCache } from "./cache";
 import { getSupabase } from "./supabase";
 import type { RetrievedDoc } from "./types";
 
@@ -66,6 +67,10 @@ export async function deleteDocument(
     .eq("doc_type", docType)
     .eq("external_id", externalId);
   if (error) throw error;
+
+  // RAG store changed → drop cached chat answers (mirrors ingest()). Covers
+  // blog DELETE and the unpublish path, both of which route through here.
+  await clearChatCache();
 }
 
 export async function countDocuments(): Promise<Record<string, number>> {

@@ -150,8 +150,10 @@ fails OPEN on store error, tunable `LIMITS`).
 - **Chatbot response cache:** [lib/rag/cache.ts](lib/rag/cache.ts) + `chat_cache` table
   ([0013](supabase/migrations/0013_chat_cache.sql)). `handleChat` checks a sha256 of the
   normalized question and, on a hit, returns the stored reply WITHOUT any Gemini call
-  (still logs the transcript). Cleared wholesale on every `ingest()` so answers can't go
-  stale. Big saver for the widget's preset chips.
+  (still logs the transcript). Big saver for the widget's preset chips. Invalidation:
+  cleared on every `ingest()` AND every `deleteDocument()` (i.e. ANY RAG change — adds,
+  blog publish, unpublish, blog DELETE), plus a manual `POST /api/ingest {flushCache:true}`
+  for prompt/model changes that don't touch the store; 7-day TTL is the backstop.
 
 ## Data deletion portal (DPDP Right-to-Erasure — for APP users)
 The `/delete-request` page is the erasure mechanism for **Kauntech APP** users (and what
