@@ -19,6 +19,14 @@ import { after, NextResponse } from "next/server";
 import { getJob, insertApplication } from "@/lib/careers/db";
 import { runParse } from "@/lib/careers/parse";
 import { uploadResume } from "@/lib/careers/storage";
+import {
+  LIMITS,
+  SUPPORT_EMAIL,
+  getClientIp,
+  istDay,
+  retryAfterSeconds,
+  rlHit,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +56,27 @@ function resolveType(file: File): { mime: string; ext: string } | null {
 }
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+
+  // Anti-flood burst limit (per IP).
+  const burst = await rlHit(
+    `apply:burst:${ip}`,
+    LIMITS.applyBurst.limit,
+    LIMITS.applyBurst.windowSeconds,
+  );
+  if (!burst.allowed) {
+    return NextResponse.json(
+      {
+        detail:
+          "You're submitting too quickly. Please wait a moment and try again.",
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds(burst.resetAt)) },
+      },
+    );
+  }
+
   let form: FormData;
   try {
     form = await req.formData();
@@ -119,6 +148,25 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { detail: "Resume exceeds the 10 MB limit." },
       { status: 400 },
+    );
+  }
+
+  // Per-IP daily cap (only valid applications count) — also throttles the
+  // background Gemini resume parse + private-bucket upload each one triggers.
+  const daily = await rlHit(
+    `apply:day:${istDay()}:${ip}`,
+    LIMITS.applyDaily.limit,
+    LIMITS.applyDaily.windowSeconds,
+  );
+  if (!daily.allowed) {
+    return NextResponse.json(
+      {
+        detail: `You've submitted several applications today. Please email ${SUPPORT_EMAIL}, or try again tomorrow.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds(daily.resetAt)) },
+      },
     );
   }
 

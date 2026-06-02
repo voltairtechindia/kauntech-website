@@ -20,6 +20,7 @@ export default function Contact() {
 
     // Canonical store: Supabase via our own API route (returns real success).
     let ok = false;
+    let detail = "";
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -35,6 +36,12 @@ export default function Contact() {
         }),
       });
       ok = res.ok;
+      if (!ok) {
+        const j = (await res.json().catch(() => null)) as {
+          detail?: string;
+        } | null;
+        if (j && typeof j.detail === "string") detail = j.detail;
+      }
     } catch (err) {
       console.error(err);
     }
@@ -55,7 +62,9 @@ export default function Contact() {
     } else {
       setStatus({
         kind: "error",
-        text: "Sorry, we couldn't submit your message just now. Please email business@voltairtech.com and we'll get right back to you.",
+        text:
+          detail ||
+          "Sorry, we couldn't submit your message just now. Please email business@voltairtech.com and we'll get right back to you.",
       });
     }
     setSubmitting(false);

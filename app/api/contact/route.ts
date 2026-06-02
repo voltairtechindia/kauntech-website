@@ -12,6 +12,14 @@
 import { NextResponse } from "next/server";
 
 import { insertContactSubmission } from "@/lib/contact";
+import {
+  LIMITS,
+  SUPPORT_EMAIL,
+  getClientIp,
+  istDay,
+  retryAfterSeconds,
+  rlHit,
+} from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +31,27 @@ function str(v: unknown): string {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+
+  // Anti-flood burst limit (per IP).
+  const burst = await rlHit(
+    `contact:burst:${ip}`,
+    LIMITS.contactBurst.limit,
+    LIMITS.contactBurst.windowSeconds,
+  );
+  if (!burst.allowed) {
+    return NextResponse.json(
+      {
+        detail:
+          "You're submitting too quickly. Please wait a moment and try again.",
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds(burst.resetAt)) },
+      },
+    );
+  }
+
   let body: Record<string, unknown> = {};
   try {
     body = (await req.json()) as Record<string, unknown>;
@@ -64,6 +93,24 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { detail: "company/phone too long." },
       { status: 400 },
+    );
+  }
+
+  // Per-IP daily cap (only valid submissions count).
+  const daily = await rlHit(
+    `contact:day:${istDay()}:${ip}`,
+    LIMITS.contactDaily.limit,
+    LIMITS.contactDaily.windowSeconds,
+  );
+  if (!daily.allowed) {
+    return NextResponse.json(
+      {
+        detail: `You've sent several messages today. Please email ${SUPPORT_EMAIL} directly, or try again tomorrow.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds(daily.resetAt)) },
+      },
     );
   }
 

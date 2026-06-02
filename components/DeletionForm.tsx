@@ -5,20 +5,60 @@ import { useState } from "react";
 export default function DeletionForm() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [ticket, setTicket] = useState("KNT-DEL-72948");
+  const [ticket, setTicket] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (submitting) return;
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    setError("");
     setSubmitting(true);
-    setTimeout(() => {
-      const num = "KNT-DEL-" + Math.floor(10000 + Math.random() * 90000);
-      setTicket(num);
-      setSubmitted(true);
+
+    try {
+      const res = await fetch("/api/delete-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: data.get("full_name"),
+          email: data.get("email"),
+          scope: data.get("scope"),
+          details: data.get("details"),
+          consent: data.get("consent") === "on",
+          website: data.get("website"), // honeypot — bots fill this
+          page_url: typeof location !== "undefined" ? location.href : undefined,
+        }),
+      });
+      const json = (await res.json().catch(() => null)) as {
+        ok?: boolean;
+        ticket?: string;
+        detail?: string;
+      } | null;
+
+      if (res.ok && json?.ticket) {
+        setTicket(json.ticket);
+        setSubmitted(true);
+        form.reset();
+      } else {
+        setError(
+          json?.detail ||
+            "Sorry, we couldn't submit your request just now. Please email business@voltairtech.com.",
+        );
+      }
+    } catch {
+      setError(
+        "Sorry, we couldn't reach the server. Please email business@voltairtech.com and we'll process it manually.",
+      );
+    } finally {
       setSubmitting(false);
-    }, 1200);
+    }
   };
 
-  const reset = () => setSubmitted(false);
+  const reset = () => {
+    setSubmitted(false);
+    setError("");
+  };
 
   return (
     <div className="form-box">
@@ -34,24 +74,49 @@ export default function DeletionForm() {
           </p>
 
           <form className="deletion-form" onSubmit={handleSubmit}>
+            {/* Honeypot — hidden from real users; bots fill it and get dropped. */}
+            <input
+              type="text"
+              name="website"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: "-9999px",
+                width: 1,
+                height: 1,
+                opacity: 0,
+              }}
+            />
+
             <div className="form-group">
               <label htmlFor="delName">Full Name</label>
               <input
                 type="text"
                 id="delName"
+                name="full_name"
                 placeholder="Your account profile name"
+                maxLength={200}
                 required
               />
             </div>
 
             <div className="form-group">
               <label htmlFor="delEmail">Registered Email ID</label>
-              <input type="email" id="delEmail" placeholder="e.g. name@company.com" required />
+              <input
+                type="email"
+                id="delEmail"
+                name="email"
+                placeholder="e.g. name@company.com"
+                maxLength={320}
+                required
+              />
             </div>
 
             <div className="form-group">
               <label htmlFor="delType">Erasure Scope</label>
-              <select id="delType" required defaultValue="">
+              <select id="delType" name="scope" required defaultValue="">
                 <option value="" disabled>
                   Select deletion type...
                 </option>
@@ -68,20 +133,31 @@ export default function DeletionForm() {
               <label htmlFor="delDetails">Grievance / Additional Instructions</label>
               <textarea
                 id="delDetails"
+                name="details"
                 rows={4}
+                maxLength={5000}
                 placeholder="Describe your erasure requirements or reasons..."
                 required
               />
             </div>
 
             <div className="checkbox-group">
-              <input type="checkbox" id="delConsent" required />
+              <input type="checkbox" id="delConsent" name="consent" required />
               <label htmlFor="delConsent">
                 I explicitly confirm that I wish to permanently delete the selected data. I
                 understand that profile erasure is irreversible, will void active subscriptions,
                 and completely wipe my accumulated K-Tokens balance.
               </label>
             </div>
+
+            {error && (
+              <p
+                role="alert"
+                style={{ color: "#f87171", fontSize: "0.88rem", marginBottom: 12 }}
+              >
+                {error}
+              </p>
+            )}
 
             <button type="submit" className="btn-submit" disabled={submitting}>
               <span>{submitting ? "Processing..." : "Submit Erasure Request"}</span>

@@ -58,9 +58,21 @@ export default function ChatWidget() {
           page_url: typeof location !== "undefined" ? location.href : undefined,
         }),
       });
-      if (!res.ok) throw new Error(`Request failed (${res.status})`);
-      const data = (await res.json()) as { reply: string };
-      setMessages((prev) => [...prev, { from: "bot", text: data.reply }]);
+      const data = (await res.json().catch(() => null)) as {
+        reply?: string;
+        detail?: string;
+      } | null;
+      if (!res.ok) {
+        // Rate-limit / quota / validation errors carry a friendly `detail`;
+        // show it as a normal reply. Only fall back to the lead-capture form
+        // when we got nothing usable back (a real outage).
+        if (data?.detail) {
+          setMessages((prev) => [...prev, { from: "bot", text: data.detail! }]);
+          return;
+        }
+        throw new Error(`Request failed (${res.status})`);
+      }
+      setMessages((prev) => [...prev, { from: "bot", text: data?.reply ?? "" }]);
     } catch (err) {
       console.error("[kauntech-chat]", err);
       setMessages((prev) => [

@@ -7,6 +7,13 @@
  * is best-effort: if Supabase is unreachable we still answer (statelessly) so
  * a logging blip never takes the bot down.
  */
+import {
+  bumpCacheHit,
+  getCachedReply,
+  isCacheable,
+  putCachedReply,
+  questionHash,
+} from "./cache";
 import { config } from "./config";
 import {
   addMessages,
@@ -29,6 +36,40 @@ export async function handleChat(args: {
   sessionId: string;
   pageUrl?: string | null;
 }): Promise<ChatResult> {
+  // 0. Response cache — if this exact (normalized) question was answered
+  // recently, return it WITHOUT calling Gemini (embed + generate). We still
+  // log the transcript so multi-turn history stays intact for later turns.
+  const cacheable = isCacheable(args.message);
+  const hash = cacheable ? questionHash(args.message) : "";
+  if (cacheable) {
+    const cached = await getCachedReply(hash);
+    if (cached) {
+      let conversationId: string | null = null;
+      try {
+        conversationId = await getOrCreateConversation(args.sessionId);
+        await addMessages(conversationId, [
+          { role: "user", content: args.message },
+          {
+            role: "assistant",
+            content: cached.reply,
+            metadata: { cache: "hit" },
+          },
+        ]);
+      } catch (err) {
+        console.error("[rag] cache-hit persist failed (continuing)", err);
+      }
+      void bumpCacheHit(hash);
+      return {
+        response: {
+          reply: cached.reply,
+          conversation_id: conversationId,
+          sources: cached.sources,
+        },
+        analytics: conversationId ? { conversationId } : null,
+      };
+    }
+  }
+
   // 1. Retrieve grounded knowledge (core path).
   const docs = await search(args.message);
   const context = buildContext(docs);
@@ -84,6 +125,11 @@ export async function handleChat(args: {
     external_id: d.external_id,
     similarity: Math.round(d.similarity * 1000) / 1000,
   }));
+
+  // Cache the fresh answer for next time (best-effort, non-blocking).
+  if (cacheable) {
+    void putCachedReply(hash, args.message, { reply, sources });
+  }
 
   return {
     response: { reply, conversation_id: conversationId, sources },

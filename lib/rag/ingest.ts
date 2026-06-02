@@ -1,4 +1,5 @@
 /** Document ingestion: embed content and upsert into the pgvector store. */
+import { clearChatCache } from "./cache";
 import { upsertDocuments } from "./db";
 import { embed } from "./gemini";
 import type { IngestDocument } from "./types";
@@ -28,5 +29,9 @@ export async function ingest(
   });
 
   await upsertDocuments(rows);
+
+  // KB changed → drop cached chat answers so they can't go stale.
+  await clearChatCache();
+
   return counts;
 }

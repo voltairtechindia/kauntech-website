@@ -9,6 +9,14 @@
  */
 import { after, NextResponse } from "next/server";
 
+import {
+  LIMITS,
+  SUPPORT_EMAIL,
+  getClientIp,
+  istDay,
+  retryAfterSeconds,
+  rlHit,
+} from "@/lib/rate-limit";
 import { processTurn } from "@/lib/rag/analytics";
 import { handleChat } from "@/lib/rag/chat";
 import type { ChatRequestBody } from "@/lib/rag/types";
@@ -17,6 +25,27 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+
+  // Layer 1 — anti-flood burst limit (per IP, counts every request).
+  const burst = await rlHit(
+    `chat:burst:${ip}`,
+    LIMITS.chatBurst.limit,
+    LIMITS.chatBurst.windowSeconds,
+  );
+  if (!burst.allowed) {
+    return NextResponse.json(
+      {
+        detail:
+          "You're sending messages too quickly. Please wait a few seconds and try again.",
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds(burst.resetAt)) },
+      },
+    );
+  }
+
   let body: ChatRequestBody;
   try {
     body = (await req.json()) as ChatRequestBody;
@@ -39,6 +68,39 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { detail: "session_id is required (6–128 characters)." },
       { status: 400 },
+    );
+  }
+
+  // Layer 2 — per-visitor daily question quota (only valid questions count).
+  const daily = await rlHit(
+    `chat:day:${istDay()}:${ip}`,
+    LIMITS.chatDaily.limit,
+    LIMITS.chatDaily.windowSeconds,
+  );
+  if (!daily.allowed) {
+    return NextResponse.json(
+      {
+        detail: `You've reached today's question limit for the assistant. For more help, email ${SUPPORT_EMAIL} or try again tomorrow.`,
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds(daily.resetAt)) },
+      },
+    );
+  }
+
+  // Layer 3 — global daily ceiling on Gemini calls (bill circuit-breaker).
+  const global = await rlHit(
+    `chat:global:${istDay()}`,
+    LIMITS.chatGlobal.limit,
+    LIMITS.chatGlobal.windowSeconds,
+  );
+  if (!global.allowed) {
+    return NextResponse.json(
+      {
+        detail: `Our assistant is experiencing very high demand right now. Please try again later, or email ${SUPPORT_EMAIL}.`,
+      },
+      { status: 503, headers: { "Retry-After": "3600" } },
     );
   }
 

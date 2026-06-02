@@ -125,6 +125,45 @@ Public hiring + AI candidate screening. Full guide: [CAREERS_HRM.md](CAREERS_HRM
   embeddings live ONLY in `job_applications` — they are NEVER ingested into the public
   `documents` RAG store, so the site chatbot can't leak applicant data.
 
+## Abuse protection / rate limiting (public POST endpoints)
+Durable, per-IP rate limiting on the three public endpoints, backed by Postgres so
+counts hold across serverless instances. Schema:
+[supabase/migrations/0011_rate_limits.sql](supabase/migrations/0011_rate_limits.sql)
+(`rate_limit_counters` + atomic `rl_hit(key, limit, window)` RPC; RLS on, service-role
+only, opportunistic self-cleanup). Engine: [lib/rate-limit.ts](lib/rate-limit.ts)
+(`getClientIp` from `x-forwarded-for`, `istDay` for IST-midnight daily resets, `rlHit`
+fails OPEN on store error, tunable `LIMITS`).
+- **`/api/chat`** (the Gemini-cost path) has 3 layers: burst (anti-flood per IP) →
+  per-visitor **daily question quota** (returns a "contact support / try tomorrow" 429) →
+  **global daily ceiling** (503 circuit-breaker capping total Gemini calls/day).
+- **`/api/contact`** + **`/api/careers/apply`**: per-IP burst + daily caps (apply also
+  throttles the background resume parse + upload). Honeypot still runs first.
+- Clients surface the server `detail` to the user: [ChatWidget.tsx](components/ChatWidget.tsx),
+  [Contact.tsx](components/sections/Contact.tsx), [CareerForm.tsx](components/CareerForm.tsx).
+- Admin-gated writes (`/api/ingest|blog|revalidate|careers/parse`) are NOT rate-limited —
+  they're protected by `X-Admin-Key` ([lib/admin-auth.ts](lib/admin-auth.ts)).
+- **Security headers:** [next.config.ts](next.config.ts) `headers()` sets CSP, HSTS,
+  X-Frame-Options, Referrer-Policy, Permissions-Policy on all routes. CSP allows cdnjs
+  (Font Awesome), the public Supabase origin (blog media), and YouTube/Vimeo embeds;
+  `script/style-src` keep `'unsafe-inline'` (App Router inline bootstrap + JSON-LD; no
+  nonce yet — a future upgrade). `'unsafe-eval'` is dev-only.
+- **Chatbot response cache:** [lib/rag/cache.ts](lib/rag/cache.ts) + `chat_cache` table
+  ([0013](supabase/migrations/0013_chat_cache.sql)). `handleChat` checks a sha256 of the
+  normalized question and, on a hit, returns the stored reply WITHOUT any Gemini call
+  (still logs the transcript). Cleared wholesale on every `ingest()` so answers can't go
+  stale. Big saver for the widget's preset chips.
+
+## Data deletion portal (DPDP Right-to-Erasure — for APP users)
+The `/delete-request` page is the erasure mechanism for **Kauntech APP** users (and what
+Google checks for OAuth verification). [components/DeletionForm.tsx](components/DeletionForm.tsx)
+POSTs to `POST /api/delete-request` ([route](app/api/delete-request/route.ts)), which
+honeypots + rate-limits + validates, then stores the request in `data_deletion_requests`
+([0012](supabase/migrations/0012_deletion_requests.sql), RLS on/service-role only) and
+returns a real `KNT-DEL-XXXXXXXX` ticket. **The team actions the actual erasure against the
+app backend** — this site only captures the request. (Previously the form was a no-op that
+faked a ticket and stored nothing.) Engine: [lib/deletion.ts](lib/deletion.ts).
+  *Follow-up: wire an email/Slack notification + a review view in kauntech-admin.*
+
 ## Business Context
 - Product: Kauntech Android/iOS app (business card scanner)
 - Company: Kauntech Technologies Pvt. Ltd.
