@@ -9,10 +9,12 @@ export default function CareerForm({
   jobs,
   defaultJobSlug,
   lockJob = false,
+  onSubmitted,
 }: {
   jobs: JobOption[];
   defaultJobSlug?: string;
   lockJob?: boolean;
+  onSubmitted?: () => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<Status>(null);
@@ -41,6 +43,7 @@ export default function CareerForm({
         });
         form.reset();
         setFileName("");
+        onSubmitted?.();
       } else {
         setStatus({
           kind: "error",

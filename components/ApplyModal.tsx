@@ -56,6 +56,10 @@ export default function ApplyModal({
               jobs={[{ slug: jobSlug, title: jobTitle }]}
               defaultJobSlug={jobSlug}
               lockJob
+              onSubmitted={() => {
+                // Keep the "Thank you!" confirmation visible briefly, then close.
+                window.setTimeout(() => setOpen(false), 2200);
+              }}
             />
           )}
         </div>
