@@ -2206,6 +2206,185 @@ section {
   transform: scale(1.05);
 }
 
+.chat-input-box button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== IN-CHAT NAVIGATION BUTTONS ===== */
+/* Dynamic "go to page" actions surfaced under a bot reply. */
+.chat-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.chat-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.chat-nav-btn > span {
+  flex: 1;
+}
+
+.chat-nav-btn > i:first-child {
+  color: var(--gold);
+  width: 16px;
+  text-align: center;
+}
+
+.chat-nav-arrow {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  transition: transform 0.2s;
+}
+
+.chat-nav-btn:hover {
+  background: var(--gradient);
+  border-color: transparent;
+  color: #000;
+  transform: translateX(2px);
+}
+
+.chat-nav-btn:hover > i:first-child,
+.chat-nav-btn:hover .chat-nav-arrow {
+  color: #000;
+}
+
+.chat-nav-btn:hover .chat-nav-arrow {
+  transform: translateX(3px);
+  opacity: 1;
+}
+
+/* ===== PROACTIVE CONTEXTUAL TEASER ===== */
+/* Grows out of the launcher when a visitor lingers on a page, asking if they
+   need help with whatever they're currently reading. */
+.chat-teaser {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  width: 320px;
+  max-width: calc(100% - 48px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(249, 115, 22, 0.18);
+  padding: 16px 16px 14px;
+  z-index: 9998;
+  transform-origin: bottom right;
+  animation: teaserPop 0.45s cubic-bezier(0.18, 0.89, 0.32, 1.28) both;
+}
+
+@keyframes teaserPop {
+  from { transform: scale(0.6) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.chat-teaser-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.chat-teaser-close:hover {
+  color: var(--text);
+}
+
+.chat-teaser-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0 14px 0 0;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.chat-teaser-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000;
+  font-size: 0.95rem;
+}
+
+.chat-teaser-text {
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.chat-teaser-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-left: 48px;
+}
+
+.chat-teaser-chip {
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  color: var(--gold);
+  padding: 6px 12px;
+  border-radius: 50px;
+  font-size: 0.78rem;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chat-teaser-chip:hover {
+  background: var(--gold);
+  color: #000;
+}
+
+/* Launcher draws a little attention while the teaser is showing. */
+.chat-widget-btn.nudging {
+  animation: fabNudge 1.6s ease-in-out infinite;
+}
+
+@keyframes fabNudge {
+  0%, 100% { box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4), 0 0 0 0 rgba(249, 115, 22, 0.5); }
+  50%      { box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4), 0 0 0 12px rgba(249, 115, 22, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-teaser { animation: none; }
+  .chat-widget-btn.nudging { animation: none; }
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes reveal-in {
   from { transform: translateY(24px); }
@@ -2316,6 +2495,7 @@ section {
   .comparison-section { padding: 28px 16px; }
   .topups-section { padding: 32px 20px; }
   .chat-widget-window { width: calc(100% - 48px); bottom: 100px; }
+  .chat-teaser { width: calc(100% - 48px); }
   .offline-banner { max-width: calc(100% - 48px); }
 }
 
