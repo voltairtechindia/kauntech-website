@@ -69,7 +69,7 @@ export default function Footer() {
 
         <div className="footer-bottom">
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div>© 2026 Kauntech Technologies Pvt. Ltd. All rights reserved.</div>
+            <div>© 2026 Kauntech. All rights reserved.</div>
             <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
               Built with 1 year of hard work, upgraded to new heights with AI.
             </div>
