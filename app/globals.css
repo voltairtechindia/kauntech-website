@@ -115,11 +115,16 @@ section {
   color: var(--gold); 
 }
 
-.nav-links { 
-  display: flex; 
-  gap: 32px; 
-  list-style: none; 
+.nav-links {
+  display: flex;
+  gap: 32px;
+  list-style: none;
   align-items: center;
+  /* Push the links (and the CTA after them) to the right, next to the logo's
+     opposite edge. The auto margin absorbs the free space so they group on the
+     right; on mobile the links are hidden and space-between keeps the logo and
+     hamburger at opposite ends. */
+  margin-left: auto;
 }
 
 .nav-links a { 
@@ -153,6 +158,7 @@ section {
   display: flex;
   align-items: center;
   gap: 16px;
+  margin-left: 32px;
 }
 
 .offline-status-pill {
@@ -247,6 +253,147 @@ section {
 }
 .hamburger.active span:nth-child(3) {
   transform: translateY(-8px) rotate(-45deg);
+}
+
+/* ===== PRODUCT DROPDOWN (desktop nav) ===== */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  transition: color 0.3s;
+  position: relative;
+}
+
+.nav-dropdown:hover .nav-dropdown-trigger,
+.nav-dropdown:focus-within .nav-dropdown-trigger,
+.nav-dropdown.open .nav-dropdown-trigger,
+.nav-dropdown-trigger.active {
+  color: var(--text);
+}
+
+.nav-dropdown-trigger .caret {
+  font-size: 0.7rem;
+  transition: transform 0.3s ease;
+}
+
+.nav-dropdown:hover .nav-dropdown-trigger .caret,
+.nav-dropdown:focus-within .nav-dropdown-trigger .caret,
+.nav-dropdown.open .nav-dropdown-trigger .caret {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-trigger::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gradient);
+  transition: width 0.3s ease;
+}
+
+.nav-dropdown:hover .nav-dropdown-trigger::after,
+.nav-dropdown.open .nav-dropdown-trigger::after,
+.nav-dropdown-trigger.active::after {
+  width: 100%;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  min-width: 260px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(18, 18, 18, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 1001;
+}
+
+/* invisible bridge so the cursor can cross the gap without losing :hover */
+.nav-dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 0;
+  width: 100%;
+  height: 16px;
+}
+
+.nav-dropdown:hover .nav-dropdown-menu,
+.nav-dropdown:focus-within .nav-dropdown-menu,
+.nav-dropdown.open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+.nav-dropdown-menu a {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  transition: background 0.2s, color 0.2s;
+}
+
+/* the underline used by top-level nav links would look wrong on menu rows */
+.nav-dropdown-menu a::after {
+  display: none;
+}
+
+.nav-dropdown-menu a:hover,
+.nav-dropdown-menu a.active {
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--text);
+}
+
+.nav-dropdown-menu a > i {
+  width: 20px;
+  margin-top: 2px;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.nav-dd-label {
+  display: block;
+  font-weight: 600;
+}
+
+.nav-dd-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  font-weight: 400;
+  color: var(--text-dim);
 }
 
 /* ===== HERO ===== */
@@ -2559,6 +2706,48 @@ section {
   margin-top: 20px;
 }
 
+/* Product accordion inside the full-screen mobile menu */
+.mobile-product-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+
+.mobile-product-toggle:hover,
+.mobile-product-toggle.active {
+  color: var(--gold);
+}
+
+.mobile-product-toggle .caret {
+  font-size: 0.85rem;
+  transition: transform 0.3s ease;
+}
+
+.mobile-product-toggle.open .caret {
+  transform: rotate(180deg);
+}
+
+.mobile-sublinks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  margin: -8px 0 4px;
+}
+
+.mobile-menu .mobile-sublink {
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
 /* Inline-grid helpers used by section components. Base = desktop layout;
    collapsed to a single column in the RESPONSIVE block below. */
 .token-econ-grid {
@@ -2585,12 +2774,8 @@ section {
   .topups-grid { grid-template-columns: 1fr; }
 }
 
-/* ---- Tablets: hamburger nav + 2-up grids ---- */
+/* ---- Tablets: 2-up grids ---- */
 @media (max-width: 1024px) {
-  /* The 8 full nav links no longer fit alongside the logo + CTA. */
-  .nav-links, .nav-actions { display: none; }
-  .hamburger { display: flex; }
-
   .hero .container { grid-template-columns: 1fr; text-align: center; }
   .hero-content { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; }
   .hero p, .hero-subtitle { margin-left: auto; margin-right: auto; }
@@ -2604,6 +2789,15 @@ section {
   .bento-card.tall { grid-row: auto; }
   .compliance-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: repeat(2, 1fr); gap: 40px; }
+}
+
+/* ---- Collapse to the hamburger only once the slim nav would actually run
+   out of room. The 4-item nav (logo · Product/Pricing/Blog/Contact · CTA) fits
+   comfortably on laptops and landscape tablets, so we hold the full nav down to
+   ~860px and only switch to the hamburger on portrait tablets & phones. ---- */
+@media (max-width: 860px) {
+  .nav-links, .nav-actions { display: none; }
+  .hamburger { display: flex; }
 }
 
 /* ---- Phones (large) ---- */
