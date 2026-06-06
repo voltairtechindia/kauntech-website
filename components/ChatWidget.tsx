@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
+import Markdown from "@/components/Markdown";
 import {
   pageContext,
   suggestRoutes,
@@ -66,11 +67,47 @@ export default function ChatWidget() {
   const [teaser, setTeaser] = useState(false);
 
   const bodyRef = useRef<HTMLDivElement>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
   const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
   }, [messages, busy, open]);
+
+  // Keep the chat panel above the on-screen keyboard on phones so the user can
+  // always see the input they're typing into. We size/position the panel to the
+  // visual viewport (which shrinks when the keyboard opens). The near-fullscreen
+  // mobile CSS is the fallback when visualViewport isn't available.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = windowRef.current;
+    if (!vv || !el) return;
+
+    const MARGIN = 12;
+    const apply = () => {
+      // Only take over layout in the mobile full-screen mode; leave desktop alone.
+      if (!open || window.innerWidth > 560) {
+        el.style.removeProperty("top");
+        el.style.removeProperty("bottom");
+        el.style.removeProperty("height");
+        return;
+      }
+      el.style.top = vv.offsetTop + MARGIN + "px";
+      el.style.bottom = "auto";
+      el.style.height = vv.height - MARGIN * 2 + "px";
+    };
+
+    apply();
+    vv.addEventListener("resize", apply);
+    vv.addEventListener("scroll", apply);
+    return () => {
+      vv.removeEventListener("resize", apply);
+      vv.removeEventListener("scroll", apply);
+      el.style.removeProperty("top");
+      el.style.removeProperty("bottom");
+      el.style.removeProperty("height");
+    };
+  }, [open]);
 
   // Resolve the context for the page the visitor is on. Blog articles get their
   // exact title from document.title (set per-page by Next metadata).
@@ -255,7 +292,7 @@ export default function ChatWidget() {
         <i className="fa-solid fa-message" />
       </button>
 
-      <div className={`chat-widget-window${open ? " active" : ""}`}>
+      <div className={`chat-widget-window${open ? " active" : ""}`} ref={windowRef}>
         <div className="chat-header">
           <div className="chat-header-info">
             <div className="chat-avatar"><i className="fa-solid fa-robot" /></div>
@@ -294,7 +331,13 @@ export default function ChatWidget() {
           </div>
           {messages.map((m, i) => (
             <div key={i} className={`chat-msg ${m.from}`}>
-              {m.text}
+              {m.from === "bot" ? (
+                <div className="chat-md">
+                  <Markdown>{m.text}</Markdown>
+                </div>
+              ) : (
+                m.text
+              )}
               {m.error && <FallbackForm />}
               {m.nav && m.nav.length > 0 && (
                 <div className="chat-nav-actions">

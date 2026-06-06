@@ -157,7 +157,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Ultra plan (₹1,299 / month, ₹999 / month annual)",
     content:
       "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The enterprise suite. " +
-      "Includes 1,500 scans per month, 3,000 K-Tokens (1,250 per month on annual), AI Strategy (3 tokens per scan), 10+ " +
+      "Includes 1,500 scans per month, 3,000 K-Tokens (1,250 per month on annual), AI Strategy (6 tokens per scan), 10+ " +
       "Indian languages support, Multi-User Team Collaboration, and Dedicated VIP Support. AR Business Card and NFC Card " +
       "Integration are listed as Coming Soon.",
     metadata: {
@@ -200,13 +200,13 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features and are only consumed when you actively " +
       "use an AI feature. When a plan's scan limit is exhausted, additional scans can also consume tokens flexibly. " +
       "The three AI features and their costs are: AI Fix — 1 token per use (Pro tier; automated contact-formatting fixes); " +
-      "AI Intel — 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 3 tokens per scan " +
+      "AI Intel — 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 6 tokens per scan " +
       "(Ultra tier; comprehensive sales strategies and icebreakers). Example balances: 1,000 K-Tokens can run up to 1,000 " +
-      "AI Fixes or enrich up to 500 cards with AI Intel; 3,000 K-Tokens can generate up to 1,000 AI Strategy outputs.",
+      "AI Fixes or enrich up to 500 cards with AI Intel; 3,000 K-Tokens can generate up to 500 AI Strategy outputs.",
     metadata: {
       ai_fix: "1 token/use",
       ai_intel: "2 tokens/scan",
-      ai_strategy: "3 tokens/scan",
+      ai_strategy: "6 tokens/scan",
     },
   },
   {

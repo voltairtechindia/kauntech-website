@@ -99,9 +99,7 @@ export default function Contact() {
               className="fa-solid fa-envelope-open-text"
               style={{ fontSize: "2rem", color: "var(--gold)" }}
             />
-            <h2 style={{ fontSize: "2.4rem", fontWeight: 900, margin: 0 }}>
-              Get in Touch / Request Demo
-            </h2>
+            <h2 className="contact-heading">Get in Touch / Request Demo</h2>
           </div>
           <p
             style={{
@@ -233,6 +231,7 @@ export default function Contact() {
                 display: "flex",
                 gap: 16,
                 justifyContent: "flex-end",
+                flexWrap: "wrap",
                 marginTop: 10,
               }}
             >

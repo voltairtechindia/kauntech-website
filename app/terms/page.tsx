@@ -155,7 +155,7 @@ export default function TermsPage() {
                 background, founder intelligence, and size.
               </li>
               <li>
-                <strong>AI Strategy</strong> (3 Tokens per scan): Generation of customized B2B cold
+                <strong>AI Strategy</strong> (6 Tokens per scan): Generation of customized B2B cold
                 email opener sequences and sales pitches.
               </li>
             </ul>

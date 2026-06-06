@@ -115,6 +115,14 @@ export default function Footer() {
             >
               <i className="fa-brands fa-discord" />
             </a>
+            <a
+              href="https://www.reddit.com/r/Kauntech/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Reddit"
+            >
+              <i className="fa-brands fa-reddit" />
+            </a>
           </div>
         </div>
       </div>

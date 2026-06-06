@@ -89,10 +89,7 @@ export default function Features() {
               Set up your post-scan automation rules once, and let Kauntech route enriched contacts
               to your favorite tools instantly.
             </p>
-            <ul
-              className="feature-list"
-              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}
-            >
+            <ul className="feature-list feature-2col">
               <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>WhatsApp:</strong> Direct team/group chat routing.</li>
               <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Email:</strong> Auto-compose personalized drafts.</li>
               <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Google Sheets:</strong> Real-time spreadsheet sync.</li>

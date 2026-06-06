@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
@@ -117,13 +118,6 @@ export default function Pricing() {
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Sync</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 100% Offline Mode</li>
             </ul>
-            <button
-              className="price-btn outline"
-              type="button"
-              onClick={() => alert("Simulated: Free Plan Activated! Enjoy your 49 scans.")}
-            >
-              Get Started Free
-            </button>
           </div>
 
           <div className="price-card featured">
@@ -147,15 +141,6 @@ export default function Pricing() {
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Telegram Bot Integration</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Automation</li>
             </ul>
-            <button
-              className="price-btn primary"
-              type="button"
-              onClick={() =>
-                alert("Simulated: Pro Plan selected! Welcome to elite contact automation.")
-              }
-            >
-              Start Pro Trial
-            </button>
           </div>
 
           <div className="price-card ultra">
@@ -172,22 +157,13 @@ export default function Pricing() {
             <ul className="price-features">
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1,500 Scans / month</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3,000 K-Tokens (1,250/mo on Annual)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Strategy (3 tokens/scan)</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Strategy (6 tokens/scan)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 10+ Indian Languages Support</li>
               <li><span className="pf-check"><i className="fa-solid fa-clock" /></span> AR Business Card (Coming Soon)</li>
               <li><span className="pf-check"><i className="fa-solid fa-clock" /></span> NFC Card Integration (Coming Soon)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Multi-User Team Collaboration</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Dedicated VIP Support</li>
             </ul>
-            <button
-              className="price-btn ultra-btn"
-              type="button"
-              onClick={() =>
-                alert("Simulated: Ultra Enterprise Suite selected! Our team will contact you.")
-              }
-            >
-              Go Ultra
-            </button>
           </div>
 
           <div className="price-card">
@@ -208,15 +184,13 @@ export default function Pricing() {
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Account Manager</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Complete White Labeling</li>
             </ul>
-            <button
+            <Link
               className="price-btn outline"
-              type="button"
-              onClick={() =>
-                alert("Simulated: Custom Plan inquiry sent! We will connect soon.")
-              }
+              href="/contact"
+              style={{ display: "block", textAlign: "center", textDecoration: "none" }}
             >
               Contact Sales
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -340,14 +314,7 @@ export default function Pricing() {
             </div>
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: 20,
-              marginTop: 24,
-            }}
-          >
+          <div className="token-econ-grid">
             {[
               {
                 tier: "PRO TIER FEATURE",
@@ -369,9 +336,9 @@ export default function Pricing() {
                 tier: "ULTRA TIER FEATURE",
                 color: "#34d399",
                 name: "AI Strategy",
-                cost: "3",
+                cost: "6",
                 unit: "Tokens / scan",
-                ex: "Example: With 3,000 K-Tokens balance, generate up to 1,000 comprehensive sales strategies & icebreakers.",
+                ex: "Example: With 3,000 K-Tokens balance, generate up to 500 comprehensive sales strategies & icebreakers.",
               },
             ].map((b) => (
               <div

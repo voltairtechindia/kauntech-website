@@ -379,6 +379,13 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
 }
 
+/* Home "Get in Touch" heading — fluid so it never overflows on small phones. */
+.contact-heading {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 900;
+  margin: 0;
+}
+
 /* ============================ Careers ============================ */
 .career-main {
   padding-top: 80px;
@@ -1199,5 +1206,38 @@
   }
   .blog-body {
     font-size: 1rem;
+  }
+}
+
+/* ============================================================
+   Extra responsive polish (legal/portal/forms on small screens)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* Big top padding clears the fixed navbar; trim it on phones. */
+  .legal-content { padding: 104px 0 64px; }
+  .blog-main, .career-main { padding-top: 8px; }
+  .portal-grid { gap: 32px; }
+}
+
+@media (max-width: 560px) {
+  .legal-content { padding: 92px 0 56px; }
+  .legal-card { padding: 22px 18px; }
+  .legal-body { font-size: 0.95rem; }
+  .legal-body h2 { font-size: 1.35rem; }
+  .legal-body h3 { font-size: 1.15rem; }
+  .form-box { padding: 22px 18px; }
+  .career-apply-box { padding: 22px 18px; }
+  .job-apply-banner { padding: 24px 20px; }
+
+  /* Stop iOS Safari from zooming the page when a sub-16px field gains focus,
+     so the text the user types stays readable in place. */
+  .contact-field,
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .career-form .contact-field,
+  .chat-fallback-form input,
+  .chat-fallback-form textarea {
+    font-size: 16px;
   }
 }
