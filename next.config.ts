@@ -23,7 +23,7 @@ const csp = [
   "font-src 'self' https://cdnjs.cloudflare.com data:",
   `img-src 'self' data: blob: ${SUPABASE_ORIGIN}`,
   `media-src 'self' ${SUPABASE_ORIGIN}`,
-  "connect-src 'self' https://script.google.com https://script.googleusercontent.com",
+  "connect-src 'self' https://script.google.com https://script.googleusercontent.com https://va.vercel-scripts.com",
   "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
