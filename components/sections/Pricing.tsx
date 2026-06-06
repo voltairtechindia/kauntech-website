@@ -94,7 +94,7 @@ export default function Pricing() {
               type="button"
             >
               <span>Annual Billing</span>
-              <span className="save-badge">SAVE 20%</span>
+              <span className="save-badge">SAVE up to 23%</span>
             </button>
           </div>
         </div>
@@ -162,9 +162,9 @@ export default function Pricing() {
             <div className="price-name" style={{ color: "var(--indigo)" }}>Ultra</div>
             <div className="price-amount">
               <span className="currency">₹</span>
-              {annual ? "899" : "999"}
+              {annual ? "999" : "1,299"}
               <span className="period">/ month</span>
-              {annual && <div className="annual-price">₹10,788 billed annually</div>}
+              {annual && <div className="annual-price">₹11,988 billed annually</div>}
             </div>
             <div className="price-desc">
               The ultimate enterprise suite with advanced AI, multiple languages, and AR support.
@@ -218,6 +218,92 @@ export default function Pricing() {
               Contact Sales
             </button>
           </div>
+        </div>
+
+        <div className="section-header reveal" style={{ marginTop: 64, marginBottom: 24 }}>
+          <span className="section-label">Need More Power</span>
+          <h2>Token Top-Up Packs</h2>
+          <p>
+            Running low on K-Tokens? Grab a one-time top-up pack anytime to recharge your balance —
+            larger packs cost less per token. Available on any paid plan.
+          </p>
+        </div>
+
+        <div
+          className="topup-grid reveal reveal-delay-1"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+            gap: 20,
+            marginBottom: 64,
+          }}
+        >
+          {[
+            { tokens: "200", price: "99" },
+            { tokens: "600", price: "249" },
+            { tokens: "1,500", price: "549" },
+            { tokens: "4,000", price: "1,299", badge: "Best Value" },
+          ].map((pack) => (
+            <div
+              key={pack.price}
+              style={{
+                position: "relative",
+                background: "var(--bg-card)",
+                border: pack.badge
+                  ? "1px solid var(--gold)"
+                  : "1px solid var(--border)",
+                borderRadius: 16,
+                padding: "28px 24px",
+                textAlign: "center",
+              }}
+            >
+              {pack.badge && (
+                <span
+                  style={{
+                    position: "absolute",
+                    top: -11,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    background: "var(--gold)",
+                    color: "#1a1206",
+                    fontSize: "0.7rem",
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    padding: "4px 12px",
+                    borderRadius: 999,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {pack.badge}
+                </span>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  color: "var(--gold)",
+                  marginBottom: 6,
+                }}
+              >
+                <i className="fa-solid fa-coins" />
+                <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text)" }}>
+                  {pack.tokens}
+                </span>
+              </div>
+              <div
+                style={{ fontSize: "0.85rem", color: "var(--text-dim)", marginBottom: 14 }}
+              >
+                K-Tokens
+              </div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 800 }}>
+                <span style={{ fontSize: "1rem", verticalAlign: "top", marginRight: 2 }}>₹</span>
+                {pack.price}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div

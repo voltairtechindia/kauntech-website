@@ -28,7 +28,7 @@ const FAQS: QA[] = [
   },
   {
     q: "How much does Kauntech cost?",
-    a: "Kauntech offers a free plan with 49 scans and 50 K-Tokens per month. Paid plans are Pro at ₹499/month and Ultra at ₹999/month, plus a Custom plan for enterprises. Annual billing is discounted.",
+    a: "Kauntech offers a free plan with 49 scans and 50 K-Tokens per month. Paid plans are Pro at ₹499/month and Ultra at ₹1,299/month, plus a Custom plan for enterprises. Annual billing is discounted (Pro ₹399/mo, Ultra ₹999/mo on annual).",
   },
 ];
 

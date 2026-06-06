@@ -4,7 +4,7 @@ import Pricing from "@/components/sections/Pricing";
 export const metadata: Metadata = {
   title: "Pricing & Top-Ups — Free, Pro, Ultra & Custom Plans",
   description:
-    "Kauntech pricing: Free (49 scans), Pro (₹499/mo), Ultra (₹999/mo), and Custom enterprise tiers. Understand the K-Tokens economy and AI Intel / Fix / Strategy token costs.",
+    "Kauntech pricing: Free (49 scans), Pro (₹499/mo), Ultra (₹1,299/mo), and Custom enterprise tiers. Understand the K-Tokens economy and AI Intel / Fix / Strategy token costs.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Kauntech Pricing — Free, Pro, Ultra & Custom",
@@ -58,11 +58,11 @@ const pricingLd = {
     {
       "@type": "Offer",
       name: "Ultra Plan",
-      price: "999",
+      price: "1299",
       priceCurrency: "INR",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
-        price: "999",
+        price: "1299",
         priceCurrency: "INR",
         billingIncrement: 1,
         unitCode: "MON",

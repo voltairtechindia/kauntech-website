@@ -90,7 +90,7 @@ const orgLd = {
     "@type": "AggregateOffer",
     priceCurrency: "INR",
     lowPrice: "0",
-    highPrice: "999",
+    highPrice: "1299",
     offerCount: "3",
   },
   publisher: {

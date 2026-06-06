@@ -154,17 +154,17 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "plan",
     external_id: "PLAN-ULTRA",
-    title: "Ultra plan (₹999 / month, ₹899 / month annual)",
+    title: "Ultra plan (₹1,299 / month, ₹999 / month annual)",
     content:
-      "Ultra plan: ₹999 per month, or ₹899 per month on annual billing (₹10,788 billed annually). The enterprise suite. " +
+      "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The enterprise suite. " +
       "Includes 1,500 scans per month, 3,000 K-Tokens (1,250 per month on annual), AI Strategy (3 tokens per scan), 10+ " +
       "Indian languages support, Multi-User Team Collaboration, and Dedicated VIP Support. AR Business Card and NFC Card " +
       "Integration are listed as Coming Soon.",
     metadata: {
       name: "Ultra",
-      price_monthly: "₹999",
-      price_annual_monthly: "₹899",
-      price_annual_total: "₹10,788",
+      price_monthly: "₹1,299",
+      price_annual_monthly: "₹999",
+      price_annual_total: "₹11,988",
       scans: 1500,
       k_tokens: 3000,
     },
@@ -185,8 +185,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "PLAN-BILLING",
     title: "Billing & annual discount",
     content:
-      "Kauntech offers monthly and annual billing. Annual billing saves about 20%: Pro is ₹399/month (₹4,788/year) and " +
-      "Ultra is ₹899/month (₹10,788/year) on annual plans. Token top-ups are available anytime when you run low.",
+      "Kauntech offers monthly and annual billing. Annual billing saves about 20–23%: Pro is ₹399/month (₹4,788/year, vs " +
+      "₹499/month monthly) and Ultra is ₹999/month (₹11,988/year, vs ₹1,299/month monthly) on annual plans. Token top-ups " +
+      "are available anytime when you run low.",
     metadata: { tags: ["billing", "annual", "discount", "top-up"] },
   },
 
@@ -206,6 +207,27 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       ai_fix: "1 token/use",
       ai_intel: "2 tokens/scan",
       ai_strategy: "3 tokens/scan",
+    },
+  },
+  {
+    doc_type: "plan",
+    external_id: "TOKEN-TOPUP",
+    title: "K-Token top-up packs (one-time recharge: ₹99–₹1,299)",
+    content:
+      "When you run low on K-Tokens you can buy one-time top-up packs anytime to recharge your balance — these are " +
+      "consumable in-app purchases that do not auto-renew, and larger packs cost less per token. The four packs are: " +
+      "200 K-Tokens for ₹99, 600 K-Tokens for ₹249, 1,500 K-Tokens for ₹549, and 4,000 K-Tokens for ₹1,299 (the best " +
+      "value per token). Top-up packs are available on any paid plan and are separate from your monthly/annual plan " +
+      "allocation. All prices are in Indian Rupees (INR).",
+    metadata: {
+      tags: ["top-up", "topup", "tokens", "recharge", "k-tokens", "in-app purchase"],
+      packs: [
+        { tokens: 200, price: "₹99" },
+        { tokens: 600, price: "₹249" },
+        { tokens: 1500, price: "₹549" },
+        { tokens: 4000, price: "₹1,299" },
+      ],
+      currency: "INR",
     },
   },
 
@@ -262,7 +284,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "How much does Kauntech cost?",
     content:
       "Kauntech offers a free plan with 49 scans and 50 K-Tokens. Paid plans are Pro at ₹499/month and Ultra at " +
-      "₹999/month, plus a Custom plan for enterprises. Annual billing is discounted (about 20% off).",
+      "₹1,299/month, plus a Custom plan for enterprises. Annual billing is discounted (Pro ₹399/month, Ultra ₹999/month).",
     metadata: { category: "pricing" },
   },
   {
