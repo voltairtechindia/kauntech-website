@@ -75,7 +75,22 @@ export default function PrivacyPage() {
               <li>
                 <strong>Device security logs:</strong> Device specifications and authorization
                 markers. Under our secure architecture, we log minimal device telemetry strictly to
-                prevent tampering, quota hacks, or credential theft.
+                prevent tampering, quota hacks, or credential theft. This includes a{" "}
+                <strong>one-way hashed, per-install device identifier</strong> (a random value
+                generated on first launch — not your hardware ID, advertising ID, or any cross-app
+                fingerprint) and a <strong>hashed IP address</strong>, used solely to enforce
+                one-free-trial-per-install and to detect fraud. We do not use this data to track you
+                across other apps or for advertising.
+              </li>
+              <li>
+                <strong>Referral program data:</strong> If you join via or share an invite, we store
+                your referral code, the link between a referrer and the friends they invite, and
+                anonymous invite-link click logs (platform, user-agent, and a hashed IP address). We
+                use this only to operate the rewards program and to prevent referral abuse. To save
+                you typing, the sign-up screen may read your clipboard once to auto-fill a referral
+                code you copied from an invite link — iOS shows its standard paste notification, the
+                contents are used solely to detect that code, and nothing is read or stored if no
+                valid code is present. The program is optional and can be ignored at sign-up.
               </li>
             </ul>
 
