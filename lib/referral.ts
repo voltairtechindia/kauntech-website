@@ -26,20 +26,20 @@ export function detectPlatform(ua: string | null): Platform {
   return "other";
 }
 
-// Live App Store listing (published 2026-06). Used as the default so iOS
-// referral links redirect to the store with no env config; IOS_APP_URL can
-// still override it.
-const IOS_APP_STORE_URL = "https://apps.apple.com/in/app/kauntech/id6769254727";
+// Live App Store listing (published 2026-06). Region-less URL so visitors in
+// any country land on their local store (Apple redirects by account region);
+// IOS_APP_URL can still override it.
+const IOS_APP_STORE_URL = "https://apps.apple.com/app/id6769254727";
 
 /**
- * Resolve the store URL for a platform. iOS always resolves (app is live).
- * Android returns null until published (env var unset) — the page then shows a
- * "launching soon" state instead of redirecting.
+ * Resolve the store URL for a platform. The app is live on iOS, so iOS and
+ * desktop/other both go to the App Store listing (it opens in any browser, and
+ * "launching soon" would be wrong now that we're live). Android returns null
+ * until the Play listing exists — that platform still shows "launching soon".
  */
 export function resolveStoreUrl(platform: Platform): string | null {
-  if (platform === "ios") return process.env.IOS_APP_URL || IOS_APP_STORE_URL;
   if (platform === "android") return process.env.ANDROID_APP_URL || null;
-  return null;
+  return process.env.IOS_APP_URL || IOS_APP_STORE_URL;
 }
 
 export async function logReferralClick(opts: {
