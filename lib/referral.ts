@@ -26,13 +26,18 @@ export function detectPlatform(ua: string | null): Platform {
   return "other";
 }
 
+// Live App Store listing (published 2026-06). Used as the default so iOS
+// referral links redirect to the store with no env config; IOS_APP_URL can
+// still override it.
+const IOS_APP_STORE_URL = "https://apps.apple.com/in/app/kauntech/id6769254727";
+
 /**
- * Resolve the store URL for a platform. Returns null when the app isn't
- * published for that platform yet (env var unset) — the page then shows a
+ * Resolve the store URL for a platform. iOS always resolves (app is live).
+ * Android returns null until published (env var unset) — the page then shows a
  * "launching soon" state instead of redirecting.
  */
 export function resolveStoreUrl(platform: Platform): string | null {
-  if (platform === "ios") return process.env.IOS_APP_URL || null;
+  if (platform === "ios") return process.env.IOS_APP_URL || IOS_APP_STORE_URL;
   if (platform === "android") return process.env.ANDROID_APP_URL || null;
   return null;
 }
