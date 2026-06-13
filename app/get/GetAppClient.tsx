@@ -1,0 +1,117 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+// Self-contained inline styles + client-side platform detection so this page
+// can be deleted in one shot when the referral feature is retired (no shared
+// CSS coupling). Detection runs in the browser on the *real* device, which
+// fixes the old bug where a server-side UA redirect would sometimes send an
+// iPhone to Google Play (and Android to the App Store): the server 307 could
+// be cached by the CDN and replayed to the wrong platform, and in-app browsers
+// / link-preview bots send misleading User-Agents.
+const GOLD = "#F59E0B";
+
+type Platform = "ios" | "android" | "other";
+
+function detectClientPlatform(): Platform {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent || "";
+  if (/android/i.test(ua)) return "android";
+  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
+  // iPadOS 13+ reports a desktop "Macintosh" UA; treat touch-capable Macs as iOS.
+  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return "ios";
+  return "other";
+}
+
+export default function GetAppClient({
+  iosUrl,
+  androidUrl,
+}: {
+  iosUrl: string;
+  androidUrl: string;
+}) {
+  // Resolve synchronously on first client render so we never paint a wrong
+  // store, then redirect after a beat so the loader is actually seen.
+  const [target, setTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    const platform = detectClientPlatform();
+    // Everything that isn't Android (iOS + desktop/other) goes to the App Store,
+    // matching the previous server behavior.
+    const url = platform === "android" ? androidUrl : iosUrl;
+    setTarget(url);
+    // Redirect as soon as the device is known. This effect runs right after the
+    // first paint, so the loader is shown for exactly as long as the unavoidable
+    // store-navigation latency — no artificial delay. (There's nothing to wait
+    // for here: /get carries no referral code to copy, unlike /r/[code].)
+    window.location.replace(url);
+  }, [iosUrl, androidUrl]);
+
+  return (
+    <main
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0A0A0C",
+        color: "#FAFAFA",
+        fontFamily:
+          "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+        padding: 24,
+        textAlign: "center",
+      }}
+    >
+      <style>{`@keyframes kt-spin{to{transform:rotate(360deg)}}`}</style>
+
+      <div style={{ position: "relative", width: 96, height: 96, marginBottom: 28 }}>
+        {/* Spinning gold ring around the logo */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            border: "3px solid #27272A",
+            borderTopColor: GOLD,
+            animation: "kt-spin 0.9s linear infinite",
+          }}
+        />
+        <img
+          src="/assets/logo-gold.png"
+          alt="KaunTech"
+          width={56}
+          height={56}
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            borderRadius: 12,
+          }}
+        />
+      </div>
+
+      <h1 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>
+        Getting KaunTech ready…
+      </h1>
+      <p style={{ color: "#A1A1AA", fontSize: 14, lineHeight: 1.5, margin: 0 }}>
+        Taking you to the right app store.
+      </p>
+
+      {target && (
+        <a
+          href={target}
+          style={{
+            marginTop: 28,
+            color: "#71717A",
+            fontSize: 13,
+            textDecoration: "underline",
+          }}
+        >
+          Tap here if you&apos;re not redirected
+        </a>
+      )}
+    </main>
+  );
+}

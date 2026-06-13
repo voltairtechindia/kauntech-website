@@ -6,26 +6,47 @@ import { useEffect, useState } from "react";
 // referral feature is retired (no shared CSS coupling).
 const GOLD = "#F59E0B";
 
+type Platform = "ios" | "android" | "other";
+
+function detectClientPlatform(): Platform {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent || "";
+  if (/android/i.test(ua)) return "android";
+  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
+  // iPadOS 13+ reports a desktop "Macintosh" UA; treat touch-capable Macs as iOS.
+  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return "ios";
+  return "other";
+}
+
 export default function RedirectClient({
   code,
-  storeUrl,
+  iosUrl,
+  androidUrl,
 }: {
   code: string;
-  storeUrl: string | null;
+  iosUrl: string;
+  androidUrl: string;
 }) {
   const [copied, setCopied] = useState(false);
+  // Default to iOS for a deterministic SSR / first-paint render (no hydration
+  // mismatch), then correct to the real platform on the client in the effect
+  // below before the redirect fires.
+  const [storeUrl, setStoreUrl] = useState(iosUrl);
 
   useEffect(() => {
+    // Pick the store from the real device, not a possibly-cached server UA.
+    const platform = detectClientPlatform();
+    const url = platform === "android" ? androidUrl : iosUrl;
+    setStoreUrl(url);
+
     // Best-effort clipboard write so the app's signup screen can auto-fill the
     // code after install. Browsers may block this without a gesture — the code
     // is shown below as a fallback, and there's a manual Copy button.
     navigator.clipboard?.writeText(code).catch(() => {});
 
-    if (storeUrl) {
-      const t = setTimeout(() => window.location.replace(storeUrl), 2200);
-      return () => clearTimeout(t);
-    }
-  }, [code, storeUrl]);
+    const t = setTimeout(() => window.location.replace(url), 2200);
+    return () => clearTimeout(t);
+  }, [code, iosUrl, androidUrl]);
 
   const copy = async () => {
     try {

@@ -27,10 +27,16 @@ export default async function ReferralRedirectPage({
   const h = await headers();
   const ua = h.get("user-agent");
   const ip = (h.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+  // Server-side platform is only used for click analytics. The actual store
+  // redirect is decided on the client (see RedirectClient) from the real
+  // device, so a CDN-cached response or a misleading in-app/unfurler UA can't
+  // send an iPhone to Google Play (or Android to the App Store).
   const platform = detectPlatform(ua);
 
   await logReferralClick({ code, userAgent: ua, ip, platform });
 
-  const storeUrl = resolveStoreUrl(platform);
-  return <RedirectClient code={code} storeUrl={storeUrl} />;
+  // Pass both live store URLs (env overrides preserved) and let the browser pick.
+  const iosUrl = resolveStoreUrl("ios")!;
+  const androidUrl = resolveStoreUrl("android") ?? iosUrl;
+  return <RedirectClient code={code} iosUrl={iosUrl} androidUrl={androidUrl} />;
 }
