@@ -15,6 +15,20 @@ type Platform = "ios" | "android" | "other";
 
 function detectClientPlatform(): Platform {
   if (typeof navigator === "undefined") return "other";
+
+  // Prefer UA Client Hints: navigator.userAgentData.platform reports the true OS
+  // even when Chrome's "Desktop site" mode rewrites the UA string to hide
+  // "Android" (which was sending Android phones to the App Store). Safari/iOS
+  // doesn't implement UA-CH, so iOS falls through to the UA-string check below,
+  // which is reliable there.
+  const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } })
+    .userAgentData;
+  const platform = uaData?.platform;
+  if (platform) {
+    if (/android/i.test(platform)) return "android";
+    if (/ios|iphone|ipad/i.test(platform)) return "ios";
+  }
+
   const ua = navigator.userAgent || "";
   if (/android/i.test(ua)) return "android";
   if (/iphone|ipad|ipod/i.test(ua)) return "ios";
