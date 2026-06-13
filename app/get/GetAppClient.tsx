@@ -16,24 +16,27 @@ type Platform = "ios" | "android" | "other";
 function detectClientPlatform(): Platform {
   if (typeof navigator === "undefined") return "other";
 
-  // Prefer UA Client Hints: navigator.userAgentData.platform reports the true OS
-  // even when Chrome's "Desktop site" mode rewrites the UA string to hide
-  // "Android" (which was sending Android phones to the App Store). Safari/iOS
-  // doesn't implement UA-CH, so iOS falls through to the UA-string check below,
-  // which is reliable there.
+  const ua = navigator.userAgent || "";
+  const touch = navigator.maxTouchPoints || 0;
   const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } })
     .userAgentData;
-  const platform = uaData?.platform;
-  if (platform) {
-    if (/android/i.test(platform)) return "android";
-    if (/ios|iphone|ipad/i.test(platform)) return "ios";
-  }
+  const platform = uaData?.platform || "";
 
-  const ua = navigator.userAgent || "";
-  if (/android/i.test(ua)) return "android";
-  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
-  // iPadOS 13+ reports a desktop "Macintosh" UA; treat touch-capable Macs as iOS.
-  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return "ios";
+  // 1. Trust explicit OS signals (UA Client Hints + UA string).
+  if (/android/i.test(platform) || /android/i.test(ua)) return "android";
+  if (/ios|iphone|ipad/i.test(platform) || /iphone|ipad|ipod/i.test(ua)) return "ios";
+
+  // 2. iPadOS 13+ (and other touch Macs) report a desktop "Macintosh" UA.
+  if (/mac/i.test(platform + ua) && touch > 1) return "ios";
+
+  // 3. Chrome's "Desktop site" mode rewrites a phone's UA to a desktop Linux
+  //    string AND reports platform "Linux" — so neither signal above fires.
+  //    But real Linux/Windows desktops aren't touch-capable, so a touch device
+  //    reporting Linux is almost certainly an Android phone in desktop mode
+  //    (iPads are handled above as Mac; ChromeOS is excluded).
+  if (touch > 0 && /linux/i.test(platform + ua) && !/cros|chrome os/i.test(ua))
+    return "android";
+
   return "other";
 }
 

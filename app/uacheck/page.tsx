@@ -9,17 +9,16 @@ type Platform = "ios" | "android" | "other";
 
 function detectClientPlatform(): Platform {
   if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent || "";
+  const touch = navigator.maxTouchPoints || 0;
   const uaData = (navigator as Navigator & { userAgentData?: { platform?: string } })
     .userAgentData;
-  const platform = uaData?.platform;
-  if (platform) {
-    if (/android/i.test(platform)) return "android";
-    if (/ios|iphone|ipad/i.test(platform)) return "ios";
-  }
-  const ua = navigator.userAgent || "";
-  if (/android/i.test(ua)) return "android";
-  if (/iphone|ipad|ipod/i.test(ua)) return "ios";
-  if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return "ios";
+  const platform = uaData?.platform || "";
+  if (/android/i.test(platform) || /android/i.test(ua)) return "android";
+  if (/ios|iphone|ipad/i.test(platform) || /iphone|ipad|ipod/i.test(ua)) return "ios";
+  if (/mac/i.test(platform + ua) && touch > 1) return "ios";
+  if (touch > 0 && /linux/i.test(platform + ua) && !/cros|chrome os/i.test(ua))
+    return "android";
   return "other";
 }
 
