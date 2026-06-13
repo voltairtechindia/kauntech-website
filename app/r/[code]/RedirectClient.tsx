@@ -156,6 +156,14 @@ export default function RedirectClient({
         {storeUrl ? (
           <a
             href={storeUrl}
+            onClick={(e) => {
+              // Compute the store at tap time so an early tap (before the effect
+              // has corrected `storeUrl`) never lands the user on the wrong
+              // store. The href is only a no-JS fallback.
+              e.preventDefault();
+              const platform = detectClientPlatform();
+              window.location.replace(platform === "android" ? androidUrl : iosUrl);
+            }}
             style={{
               display: "block",
               background: GOLD,
