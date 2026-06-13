@@ -31,14 +31,20 @@ export function detectPlatform(ua: string | null): Platform {
 // IOS_APP_URL can still override it.
 const IOS_APP_STORE_URL = "https://apps.apple.com/app/id6769254727";
 
+// Live Google Play listing (published 2026-06). Clean canonical URL (no
+// pcampaignid share param); ANDROID_APP_URL can still override it.
+const ANDROID_PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.kauntech.bizcard";
+
 /**
- * Resolve the store URL for a platform. The app is live on iOS, so iOS and
- * desktop/other both go to the App Store listing (it opens in any browser, and
- * "launching soon" would be wrong now that we're live). Android returns null
- * until the Play listing exists — that platform still shows "launching soon".
+ * Resolve the store URL for a platform. The app is now live on BOTH stores, so
+ * every platform redirects to an installable listing: Android -> Google Play,
+ * iOS + desktop/other -> App Store. (No platform returns null anymore, so the
+ * "launching soon" interstitial is effectively retired.) Env vars still let us
+ * override either store URL without a code change.
  */
 export function resolveStoreUrl(platform: Platform): string | null {
-  if (platform === "android") return process.env.ANDROID_APP_URL || null;
+  if (platform === "android") return process.env.ANDROID_APP_URL || ANDROID_PLAY_STORE_URL;
   return process.env.IOS_APP_URL || IOS_APP_STORE_URL;
 }
 

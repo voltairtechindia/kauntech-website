@@ -42,10 +42,13 @@ export default function Hero() {
                 marginBottom: 12,
               }}
             >
-              Launching Soon On
+              Now Available On
             </div>
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-              <div
+              <a
+                href="https://play.google.com/store/apps/details?id=com.kauntech.bizcard"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="store-badge"
                 style={{
                   display: "flex",
@@ -55,8 +58,8 @@ export default function Hero() {
                   border: "1px solid rgba(255,255,255,0.1)",
                   padding: "8px 16px",
                   borderRadius: 12,
-                  cursor: "not-allowed",
-                  opacity: 0.8,
+                  cursor: "pointer",
+                  textDecoration: "none",
                 }}
               >
                 <i className="fa-brands fa-google-play" style={{ fontSize: "1.5rem", color: "#fff" }} />
@@ -68,8 +71,11 @@ export default function Hero() {
                     Google Play
                   </span>
                 </div>
-              </div>
-              <div
+              </a>
+              <a
+                href="https://apps.apple.com/app/id6769254727"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="store-badge"
                 style={{
                   display: "flex",
@@ -79,8 +85,8 @@ export default function Hero() {
                   border: "1px solid rgba(255,255,255,0.1)",
                   padding: "8px 16px",
                   borderRadius: 12,
-                  cursor: "not-allowed",
-                  opacity: 0.8,
+                  cursor: "pointer",
+                  textDecoration: "none",
                 }}
               >
                 <i className="fa-brands fa-apple" style={{ fontSize: "1.5rem", color: "#fff" }} />
@@ -92,7 +98,7 @@ export default function Hero() {
                     App Store
                   </span>
                 </div>
-              </div>
+              </a>
             </div>
           </div>
 
