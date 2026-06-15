@@ -2,11 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Fira_Sans, Fira_Code } from "next/font/google";
 import "./globals.css";
 import "./extra.css";
+import "./fa-subset.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
-import FontAwesome from "@/components/FontAwesome";
-import ChatWidget from "@/components/ChatWidget";
+import DeferredChatWidget from "@/components/DeferredChatWidget";
 
 const SITE_URL = "https://www.kauntech.com";
 
@@ -140,7 +140,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${firaSans.variable} ${firaCode.variable}`}>
       <head>
-        <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          href="/fonts/fa-solid-subset.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/fa-brands-subset.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}
@@ -155,12 +168,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <FontAwesome />
         <ScrollReveal />
         <Navbar />
         {children}
         <Footer />
-        <ChatWidget />
+        <DeferredChatWidget />
       </body>
     </html>
   );

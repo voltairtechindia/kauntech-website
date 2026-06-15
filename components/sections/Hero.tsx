@@ -26,7 +26,7 @@ export default function Hero() {
               <i className="fa-solid fa-arrow-right" />
             </Link>
             <button className="btn-secondary" type="button">
-              <i className="fa-solid fa-wifi-slash" />
+              <i className="fa-solid fa-play" />
               <span>See Offline Demo</span>
             </button>
           </div>

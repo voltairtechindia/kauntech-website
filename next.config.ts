@@ -19,8 +19,8 @@ const SUPABASE_ORIGIN = "https://ujzchcirgmveryjavfzk.supabase.co";
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
-  "font-src 'self' https://cdnjs.cloudflare.com data:",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   `img-src 'self' data: blob: ${SUPABASE_ORIGIN}`,
   `media-src 'self' ${SUPABASE_ORIGIN}`,
   "connect-src 'self' https://script.google.com https://script.googleusercontent.com",
