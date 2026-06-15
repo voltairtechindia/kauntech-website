@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
 import DeferredChatWidget from "@/components/DeferredChatWidget";
+import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = "https://www.kauntech.com";
 
@@ -173,6 +174,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Footer />
         <DeferredChatWidget />
+        <Analytics />
       </body>
     </html>
   );
