@@ -70,8 +70,16 @@ export async function handleChat(args: {
     }
   }
 
-  // 1. Retrieve grounded knowledge (core path).
-  const docs = await search(args.message);
+  // 1. Retrieve grounded knowledge. Best-effort: if the embed/match step fails
+  // (after its own retries), degrade to an ungrounded reply rather than 500-ing
+  // the user. The system prompt handles an empty context gracefully ("say
+  // you're not sure and suggest emailing the team").
+  let docs: Awaited<ReturnType<typeof search>> = [];
+  try {
+    docs = await search(args.message);
+  } catch (err) {
+    console.error("[rag] retrieval failed (answering ungrounded)", err);
+  }
   const context = buildContext(docs);
 
   // 2. Load conversation history (best-effort).
@@ -96,8 +104,16 @@ export async function handleChat(args: {
 
   history.push({ role: "user", text: buildChatTurn(context, args.message) });
 
-  // 3. Generate the grounded reply.
-  const reply = await generate(SYSTEM_PROMPT, history);
+  // 3. Generate the grounded reply. Best-effort: if generation still fails
+  // after its retries, return a graceful fallback rather than a hard 500.
+  let reply: string;
+  try {
+    reply = await generate(SYSTEM_PROMPT, history);
+  } catch (err) {
+    console.error("[rag] generation failed (returning fallback)", err);
+    reply =
+      "I'm sorry, I couldn't put together a response just now. Could you rephrase that?";
+  }
 
   // 4. Persist the transcript (best-effort).
   if (conversationId) {

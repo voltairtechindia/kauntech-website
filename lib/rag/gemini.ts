@@ -26,6 +26,40 @@ const TASK = {
   document: "RETRIEVAL_DOCUMENT",
 } as const;
 
+/** A transient Gemini failure worth retrying (rate limit, 5xx, network blip). */
+function isTransient(err: unknown): boolean {
+  const status =
+    typeof err === "object" && err !== null && "status" in err
+      ? Number((err as { status: unknown }).status)
+      : NaN;
+  if (status === 429 || (status >= 500 && status <= 599)) return true;
+  const msg = err instanceof Error ? err.message : String(err);
+  return /\b(429|500|502|503|504)\b|rate.?limit|quota|overloaded|unavailable|deadline|timeout|ETIMEDOUT|ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|fetch failed|network/i.test(
+    msg,
+  );
+}
+
+/**
+ * Run a Gemini call with a few retries on transient failures (exponential
+ * backoff + jitter). Non-transient errors throw immediately. This is the main
+ * defence against the intermittent "assistant hit a snag" 500s — a single
+ * embed/generate blip would otherwise bubble straight to the user.
+ */
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      if (i === attempts - 1 || !isTransient(err)) throw err;
+      const backoff = 300 * 2 ** i + Math.floor(Math.random() * 150);
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+    }
+  }
+  throw lastErr;
+}
+
 /** Embed a single search query (asymmetric with document embeddings). */
 export async function embedQuery(text: string): Promise<number[]> {
   const [vec] = await embed([text], "query");
@@ -44,14 +78,16 @@ export async function embed(
 ): Promise<number[][]> {
   const out: number[][] = [];
   for (const text of texts) {
-    const res = await client().models.embedContent({
-      model: config.embeddingModel,
-      contents: text,
-      config: {
-        taskType: TASK[task],
-        outputDimensionality: config.embeddingDim,
-      },
-    });
+    const res = await withRetry(() =>
+      client().models.embedContent({
+        model: config.embeddingModel,
+        contents: text,
+        config: {
+          taskType: TASK[task],
+          outputDimensionality: config.embeddingDim,
+        },
+      }),
+    );
     const values = res.embeddings?.[0]?.values;
     if (!values || !values.length) {
       throw new Error("Gemini returned an empty embedding.");
@@ -66,21 +102,23 @@ export async function generate(
   systemPrompt: string,
   history: ChatTurn[],
 ): Promise<string> {
-  const res = await client().models.generateContent({
-    model: config.llmModel,
-    contents: history.map((m) => ({
-      role: m.role,
-      parts: [{ text: m.text }],
-    })),
-    config: {
-      systemInstruction: systemPrompt,
-      temperature: config.llmTemperature,
-      maxOutputTokens: config.llmMaxOutputTokens,
-      // 2.5-flash is a thinking model; disable thinking for a fast, cheap chat
-      // widget so reasoning never eats the output-token budget. (0 = DISABLED.)
-      thinkingConfig: { thinkingBudget: 0 },
-    },
-  });
+  const res = await withRetry(() =>
+    client().models.generateContent({
+      model: config.llmModel,
+      contents: history.map((m) => ({
+        role: m.role,
+        parts: [{ text: m.text }],
+      })),
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: config.llmTemperature,
+        maxOutputTokens: config.llmMaxOutputTokens,
+        // 2.5-flash is a thinking model; disable thinking for a fast, cheap chat
+        // widget so reasoning never eats the output-token budget. (0 = DISABLED.)
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    }),
+  );
   const text = (res.text ?? "").trim();
   if (!text) {
     return "I'm sorry, I couldn't put together a response just now. Could you rephrase that?";
@@ -93,16 +131,18 @@ export async function generateJson(
   systemPrompt: string,
   prompt: string,
 ): Promise<Record<string, unknown>> {
-  const res = await client().models.generateContent({
-    model: config.llmModel,
-    contents: prompt,
-    config: {
-      systemInstruction: systemPrompt,
-      temperature: 0,
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 0 },
-    },
-  });
+  const res = await withRetry(() =>
+    client().models.generateContent({
+      model: config.llmModel,
+      contents: prompt,
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0,
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    }),
+  );
   try {
     return JSON.parse((res.text ?? "{}").trim()) as Record<string, unknown>;
   } catch {
@@ -120,25 +160,27 @@ export async function generateJsonFromFile(
   prompt: string,
   file: { mimeType: string; data: string },
 ): Promise<Record<string, unknown>> {
-  const res = await client().models.generateContent({
-    model: config.llmModel,
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType: file.mimeType, data: file.data } },
-          { text: prompt },
-        ],
+  const res = await withRetry(() =>
+    client().models.generateContent({
+      model: config.llmModel,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { inlineData: { mimeType: file.mimeType, data: file.data } },
+            { text: prompt },
+          ],
+        },
+      ],
+      config: {
+        systemInstruction: systemPrompt,
+        temperature: 0,
+        responseMimeType: "application/json",
+        thinkingConfig: { thinkingBudget: 0 },
+        maxOutputTokens: 8192,
       },
-    ],
-    config: {
-      systemInstruction: systemPrompt,
-      temperature: 0,
-      responseMimeType: "application/json",
-      thinkingConfig: { thinkingBudget: 0 },
-      maxOutputTokens: 8192,
-    },
-  });
+    }),
+  );
   try {
     return JSON.parse((res.text ?? "{}").trim()) as Record<string, unknown>;
   } catch {
