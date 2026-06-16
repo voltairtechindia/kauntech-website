@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 // dropdown just collects them under one top-level item.
 const productLinks = [
   { href: "/features", label: "Features", icon: "fa-bolt", desc: "Offline OCR, AI enrichment & automations" },
-  { href: "/how-it-works", label: "How It Works", icon: "fa-wand-magic-sparkles", desc: "Capture, enrich & automate in 30s" },
+  { href: "/how-it-works", label: "How It Works", icon: "fa-circle-nodes", desc: "Capture, enrich & automate in 30s" },
   { href: "/compare", label: "Compare", icon: "fa-scale-balanced", desc: "Kauntech vs. other scanners" },
   { href: "/compliance", label: "DPDP Compliance", icon: "fa-shield-halved", desc: "Built for India's DPDP Act 2023" },
 ];
@@ -113,7 +113,7 @@ export default function Navbar() {
           </ul>
 
           <div className="nav-actions">
-            <Link href="/pricing" className="nav-cta">
+            <Link href="/get" className="nav-cta">
               Start Free Trial
             </Link>
           </div>
@@ -167,7 +167,7 @@ export default function Navbar() {
         ))}
 
         <div className="mobile-actions">
-          <Link href="/pricing" className="nav-cta" onClick={closeMobile}>
+          <Link href="/get" className="nav-cta" onClick={closeMobile}>
             Start Free Trial
           </Link>
         </div>

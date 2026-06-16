@@ -169,8 +169,11 @@ export default function PrivacyPage() {
             <p>
               The Kauntech App provides voluntary integrations with Google APIs (Google Sheets and
               Gmail) to automate follow-up workflows. Connecting these integrations triggers the
-              Google OAuth protocol. Below is the precise disclosure of the Google API scopes
-              requested, their specific purposes, and our strict Limited Use policies:
+              Google OAuth protocol. The App requests only two API scopes — a file-scoped Google
+              Drive scope (which powers the Google Sheets sync) and a Gmail send scope — plus the
+              basic <code>email</code> and <code>profile</code> scopes used to identify your account
+              at sign-in. Below is the precise disclosure of each scope, its specific purpose, and
+              our strict Limited Use policies:
             </p>
 
             <div className="table-container">
@@ -185,29 +188,18 @@ export default function PrivacyPage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td><strong>Google Sheets</strong></td>
-                    <td><code>.../auth/spreadsheets</code></td>
-                    <td>
-                      Allows the App to write, append, and organize parsed contacts and leads
-                      directly into a Google Sheet spreadsheet selected or created by the user.
-                    </td>
-                    <td>
-                      <strong>On-Device Direct Transfer:</strong> Data is pushed directly from the
-                      App to Google Sheets API endpoints. No Google Sheet data passes through or is
-                      saved on Kauntech servers.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td><strong>Google Drive (File Scoped)</strong></td>
+                    <td><strong>Google Sheets sync (Drive, File-Scoped)</strong></td>
                     <td><code>.../auth/drive.file</code></td>
                     <td>
-                      Allows the App to create new spreadsheets and only read/write files that have
-                      been created or explicitly opened with the Kauntech App.
+                      Powers the Google Sheets sync. Lets the App create a spreadsheet and write,
+                      append, and organize parsed contacts and leads into that sheet — limited to
+                      files the App itself created or that you explicitly opened with it.
                     </td>
                     <td>
-                      <strong>Constrained Access:</strong> Restricted strictly to files created by
-                      the Kauntech App. The App cannot view or access any other files in your
-                      Google Drive.
+                      <strong>Constrained, On-Device Direct Transfer:</strong> Access is restricted
+                      strictly to files created by the Kauntech App — it cannot view or access any
+                      other files in your Google Drive. Data is pushed directly from the App to the
+                      Google API; no Sheet data passes through or is saved on Kauntech servers.
                     </td>
                   </tr>
                   <tr>
