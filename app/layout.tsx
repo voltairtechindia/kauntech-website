@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s | Kauntech",
   },
   description:
-    "Kauntech is India's first 100% offline AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant — no scanned data leaves your device.",
+    "Kauntech is India's offline-first AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant — scanning runs on your device and cloud backup is optional, so you choose what syncs.",
   keywords: [
     "offline business card scanner India",
     "AI visiting card scanner",
@@ -85,7 +85,7 @@ const orgLd = {
   operatingSystem: "Android, iOS",
   applicationCategory: "BusinessApplication",
   description:
-    "India's premier 100% offline business card scanner and OCR app with AI enrichment and multi-channel automation. Fully adheres to the DPDP Act 2023.",
+    "India's premier offline-first business card scanner and OCR app with AI enrichment and multi-channel automation. Fully adheres to the DPDP Act 2023.",
   url: SITE_URL + "/",
   offers: {
     "@type": "AggregateOffer",

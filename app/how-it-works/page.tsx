@@ -19,7 +19,7 @@ const howToLd = {
   "@type": "HowTo",
   name: "How to Capture, Enrich and Automate a Business Card with Kauntech",
   description:
-    "From physical card to CRM sync in under 30 seconds using Kauntech's 100% offline OCR workflow.",
+    "From physical card to CRM sync in under 30 seconds using Kauntech's offline-first OCR workflow.",
   totalTime: "PT30S",
   step: [
     {

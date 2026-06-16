@@ -3,7 +3,7 @@ import { ImageResponse } from "next/og";
 // Native Next.js file-based OG image — generates a correct 1200x630 social card.
 // Auto-applied to og:image and twitter:image for every route.
 export const alt =
-  "Kauntech — India's first 100% offline AI business card scanner, DPDP Act 2023 compliant";
+  "Kauntech — India's offline-first AI business card scanner, DPDP Act 2023 compliant";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -74,7 +74,7 @@ export default function OpengraphImage() {
             maxWidth: 900,
           }}
         >
-          Scan, enrich & sync contacts in 30 seconds — 100% on-device.
+          Scan, enrich & sync contacts in 30 seconds — on-device first.
         </div>
 
         <div style={{ display: "flex", gap: 16, marginTop: 44 }}>

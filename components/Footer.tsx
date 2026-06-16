@@ -16,11 +16,11 @@ export default function Footer() {
             </Link>
             <p>
               The only offline-first business card scanner engineered for absolute speed, AI
-              enrichment, and strict adherence to India&apos;s DPDP Act 2023. We do not retain your
-              data.
+              enrichment, and strict adherence to India&apos;s DPDP Act 2023. You stay in control of
+              your data — disable cloud backup or delete it anytime.
             </p>
             <div style={{ fontSize: "0.8rem", color: "var(--gold)", fontFamily: "var(--mono)" }}>
-              <i className="fa-solid fa-shield-halved" /> AES-256 Encrypted · On-Device
+              <i className="fa-solid fa-shield-halved" /> AES-256 Encrypted · On-Device OCR
             </div>
           </div>
 

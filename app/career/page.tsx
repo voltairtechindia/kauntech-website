@@ -12,7 +12,7 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: "Careers — Build the future of offline-first networking at Kauntech",
   description:
-    "Join Kauntech and help build India's first 100% offline, DPDP-compliant AI business card scanner. See open roles and apply with your resume.",
+    "Join Kauntech and help build India's first offline-first, DPDP-compliant AI business card scanner. See open roles and apply with your resume.",
   alternates: { canonical: "/career" },
   openGraph: {
     title: "Careers at Kauntech",
@@ -67,7 +67,7 @@ export default async function CareersPage() {
         <span className="career-eyebrow">Careers at Kauntech</span>
         <h1>Build privacy-first AI that ships offline.</h1>
         <p>
-          We&apos;re a small, fast team making the first 100% offline, DPDP-compliant AI
+          We&apos;re a small, fast team making the first offline-first, DPDP-compliant AI
           business card scanner. If you care about on-device intelligence, clean
           engineering, and real user privacy — we&apos;d love to meet you.
         </p>

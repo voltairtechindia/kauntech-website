@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
-// Hidden, recruitment-specific privacy notice. Unlike the main app Privacy
-// Policy (which describes the offline-first, zero-server-retention product),
-// resume data IS processed server-side — stored in Supabase, parsed by AI, and
+// Hidden, recruitment-specific privacy notice. Like the main app (which is
+// offline-first with optional, user-controlled cloud backup), resume data is
+// processed server-side — stored in Supabase, parsed by AI, and
 // embedded for HR shortlisting. This page documents that honestly. It is
 // intentionally kept out of the sitemap/nav and set to noindex; it's reached
 // only from the careers application consent checkbox.

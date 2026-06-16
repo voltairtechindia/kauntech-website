@@ -116,7 +116,7 @@ export default function Pricing() {
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1 VCard Export</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> CSV Export included</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Sync</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 100% Offline Mode</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Offline-First Mode</li>
             </ul>
           </div>
 

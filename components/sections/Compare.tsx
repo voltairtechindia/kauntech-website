@@ -2,11 +2,11 @@ type Cell = "yes" | "no" | string;
 
 const rows: { feature: string; cells: Cell[] }[] = [
   {
-    feature: "100% Offline Capability",
+    feature: "Offline-First Capability",
     cells: ["yes", "no", "no", "Partial", "no", "Partial"],
   },
   { feature: "DPDP Act 2023 Compliant", cells: ["yes", "Unclear", "Unclear", "no", "Unclear", "yes"] },
-  { feature: "Zero Server Data Retention", cells: ["yes", "no", "no", "no", "no", "no"] },
+  { feature: "You Control What Syncs to Cloud", cells: ["yes", "no", "no", "no", "no", "no"] },
   { feature: "Indian LLM Language Support", cells: ["Coming Soon", "no", "no", "no", "no", "no"] },
   { feature: "Token Based AI Enrichment", cells: ["yes", "no", "yes", "no", "no", "yes"] },
   { feature: "Audio Notes on Scan", cells: ["yes", "no", "no", "yes", "no", "no"] },

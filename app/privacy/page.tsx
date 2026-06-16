@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Kauntech privacy policy — DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle your data on-device.",
+    "Kauntech privacy policy — DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle, store, and protect your data.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     title: "Privacy Policy | Kauntech",
     description:
-      "Kauntech privacy policy — DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle your data on-device.",
+      "Kauntech privacy policy — DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle, store, and protect your data.",
     url: "/privacy",
   },
 };
@@ -41,15 +41,19 @@ export default function PrivacyPage() {
 
             <div className="alert-box indigo-alert">
               <h4>
-                <i className="fa-solid fa-cloud" /> Our Zero Server-Retention Principle
+                <i className="fa-solid fa-cloud" /> Our On-Device-First Principle
               </h4>
               <p style={{ marginBottom: 0 }}>
-                We do <strong>NOT</strong> view, store, upload, copy, or retain scanned business
-                card images, parsed OCR textual lists, or enriched contact details on Kauntech
-                servers. All contact parsing, local storage, and neural OCR processes run directly
-                on-device. Data synchronization only occurs when you intentionally trigger
-                integrations (such as Google Sheets, WhatsApp, or email drafts) directly to your
-                own accounts.
+                Kauntech is built on-device-first: your camera images are read and parsed{" "}
+                <strong>locally on your phone</strong> using on-device OCR, and your contacts are
+                kept in an encrypted database on your device. Cloud backup is{" "}
+                <strong>optional</strong> — on free plans everything stays on your device, and on
+                paid plans you can switch on cloud backup to sync across devices. You choose exactly
+                which categories of data (contacts, notes and tags, AI intelligence, images, and so
+                on) are backed up to your Kauntech account on our servers (hosted on Supabase), and{" "}
+                <strong>anything you don&apos;t select never leaves your device</strong>. You can
+                turn cloud backup off, wipe your cloud data, or delete your account at any time. We
+                never sell your data and never use it for advertising.
               </p>
             </div>
 
@@ -94,21 +98,49 @@ export default function PrivacyPage() {
               </li>
             </ul>
 
-            <h3>B. Leads &amp; OCR Contact Details (Processed 100% On-Device)</h3>
+            <h3>B. Leads &amp; OCR Contact Details (Captured On-Device, Synced to Your Account)</h3>
             <ul>
               <li>
-                <strong>Business Card Scans:</strong> Images captured by your camera are processed
-                locally via on-device ML Kit OCR engines. The raw image and OCR text are never sent
-                to our servers.
+                <strong>Business Card Scans:</strong> Images captured by your camera are read and
+                parsed locally via on-device ML Kit OCR engines. If you enable cloud backup, the
+                card image is also stored in your Kauntech account (Supabase Storage) so you can
+                access it across devices; otherwise it stays on your device. You can delete it or
+                wipe your cloud data at any time.
               </li>
               <li>
                 <strong>Parsed Contacts:</strong> Extracted fields (Name, Phone number, Email ID,
-                Company, Role, and physical addresses) are saved in encrypted local storage
-                (<code>SecureStore</code>) on your smartphone.
+                Company, Role, and physical addresses) are kept on your device. If you enable cloud
+                backup, the categories you choose (contact details, notes and tags, AI intelligence,
+                and so on) are synced to your Kauntech account on our servers; categories you turn
+                off are never uploaded.
               </li>
               <li>
                 <strong>Audio Notes:</strong> Voice memos recorded right after pitching a prospect
                 are saved locally on the device as audio clips.
+              </li>
+            </ul>
+
+            <h3>C. AI Enrichment, Integrations &amp; Sub-Processors</h3>
+            <ul>
+              <li>
+                <strong>AI processing:</strong> When you request AI features (OCR clean-up, company
+                intelligence, icebreakers, lead scoring or strategy), the relevant card text and
+                contact fields are sent to our AI sub-processors —{" "}
+                <strong>OpenRouter</strong> and <strong>Google (Gemini)</strong> — to generate the
+                result, which is then saved against the contact in your account. This data is used
+                only to produce your result and is not used to train their general models.
+              </li>
+              <li>
+                <strong>Integrations you enable:</strong> when you connect Google Sheets, Gmail,
+                Telegram or a webhook, the contact fields you choose are sent to that destination to
+                perform the sync or message you requested. For Telegram, the bot token you provide is
+                stored on our servers so we can deliver your leads to your own chat.
+              </li>
+              <li>
+                <strong>Other processors:</strong> subscription and purchase events are processed by{" "}
+                <strong>RevenueCat</strong>; crash and error diagnostics (with personal fields
+                scrubbed) by <strong>Sentry</strong>. Some of this processing may occur on servers
+                located outside India.
               </li>
             </ul>
 
@@ -226,8 +258,9 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                   We do <strong>NOT</strong> use Google OAuth user data to train, enrich, or build
-                  generalized artificial intelligence (AI) or large language models (LLMs). All AI
-                  refinement is client-driven or through user-specific cloud tokens.
+                  generalized artificial intelligence (AI) or large language models (LLMs). Data
+                  obtained through Google integrations is used only to perform the sync or send
+                  action you request.
                 </li>
                 <li>
                   Google API tokens (Access and Refresh) are stored 100% locally and securely in

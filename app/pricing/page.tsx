@@ -19,7 +19,7 @@ const pricingLd = {
   "@type": "Product",
   name: "Kauntech — Offline Business Card Scanner",
   description:
-    "India's only 100% offline business card scanner with AI enrichment, K-Tokens, and DPDP Act 2023 compliance.",
+    "India's offline-first business card scanner with AI enrichment, K-Tokens, and DPDP Act 2023 compliance.",
   brand: {
     "@type": "Brand",
     name: "Kauntech",

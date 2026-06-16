@@ -8,7 +8,7 @@ type QA = { q: string; a: string };
 const FAQS: QA[] = [
   {
     q: "What is Kauntech?",
-    a: "Kauntech is an AI-powered business card scanner for Android and iOS that works 100% offline. It uses on-device OCR to read visiting cards, enriches contacts with AI, and routes leads to your CRM, Google Sheets, or WhatsApp — in under 30 seconds.",
+    a: "Kauntech is an AI-powered business card scanner for Android and iOS with offline-first scanning. It uses on-device OCR to read visiting cards, enriches contacts with AI, and routes leads to your CRM, Google Sheets, or WhatsApp — in under 30 seconds. Cloud backup is optional and you choose what syncs.",
   },
   {
     q: "Does Kauntech work without internet?",

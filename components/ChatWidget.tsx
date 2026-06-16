@@ -311,7 +311,7 @@ export default function ChatWidget() {
 
         <div className="chat-body" ref={bodyRef}>
           <div className="chat-msg bot">
-            Hello! I am your Kauntech AI Specialist. Have questions about our 100% offline
+            Hello! I am your Kauntech AI Specialist. Have questions about our offline-first
             architecture, K-Tokens, pricing, or India&apos;s DPDP Act 2023 compliance? Choose a
             preset or ask me anything!
             {showPresets && (
