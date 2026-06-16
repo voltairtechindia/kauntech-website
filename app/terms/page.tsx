@@ -115,21 +115,21 @@ export default function TermsPage() {
                 <tbody>
                   <tr>
                     <td><strong>Free</strong></td>
-                    <td>49 lifetime scans</td>
-                    <td>50 tokens</td>
+                    <td>49 scans</td>
+                    <td>100 tokens</td>
                     <td>Standard OCR &amp; Basic Custom Fields</td>
                   </tr>
                   <tr>
                     <td><strong>Pro</strong></td>
                     <td>500 scans</td>
-                    <td>1,000 tokens (1,250 on annual)</td>
+                    <td>1,000 tokens</td>
                     <td>On-Device AI Fix, AI Intel Enrichment</td>
                   </tr>
                   <tr>
                     <td><strong>Ultra</strong></td>
-                    <td>1,500 scans</td>
+                    <td>Unlimited</td>
                     <td>3,000 tokens</td>
-                    <td>AI Strategy, Indian Languages Support</td>
+                    <td>AI Strategy, Team Collaboration &amp; Cloud Backup</td>
                   </tr>
                   <tr>
                     <td><strong>Custom</strong></td>

@@ -170,5 +170,5 @@ faked a ticket and stored nothing.) Engine: [lib/deletion.ts](lib/deletion.ts).
 - Product: Kauntech Android/iOS app (business card scanner)
 - Company: Kauntech Technologies Pvt. Ltd.
 - Support email: business@voltairtech.com
-- Plans: Free, Pro (₹499/mo), Enterprise (₹999/mo)
+- Plans: Free (₹0), Pro (₹499/mo · ₹399/mo annual), Ultra (₹1,299/mo · ₹999/mo annual), Custom (contact sales). K-Token top-up packs: 200/₹99, 600/₹249, 1,500/₹549, 4,000/₹1,299. Plan/feature facts must stay in sync with the app paywall (`app/(tabs)/plan.tsx` in the kauntech-app repo) — it is the source of truth; the RAG KB (`lib/rag/data/knowledge-base.ts`) mirrors it and must be re-seeded after edits.
 - Compliance: India DPDP Act 2023 is a key differentiator — handle carefully

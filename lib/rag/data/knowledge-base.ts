@@ -113,8 +113,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Multi-language support is Coming Soon and currently under development, powered by emerging Indian LLMs. Planned " +
       "capabilities: scan cards in different languages, auto-translate to English instantly, and Smart Reply (send mail/" +
-      "WhatsApp in English or reply in the original language). The Ultra plan lists 10+ Indian languages support. Treat " +
-      "language/translation as upcoming, not available today.",
+      "WhatsApp in English or reply in the original language). Treat language/translation as upcoming, not available today.",
     metadata: { status: "coming_soon", tags: ["translation", "languages"] },
   },
 
@@ -124,13 +123,17 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "PLAN-FREE",
     title: "Free plan (₹0 / forever)",
     content:
-      "Free plan: ₹0 forever. For individual professionals exploring offline business card scanning. Includes 49 scans, " +
-      "50 K-Tokens, 2 Products, 1 VCard export, CSV export, Webhook & WhatsApp Sync, and 100% Offline Mode.",
+      "Free plan: ₹0 forever. For individual professionals exploring offline business card scanning. Includes 49 scans " +
+      "per month, 100 K-Tokens per month, 1 VCard, 2 Products and 2 Templates, QR code & NFC scanning, CSV export, " +
+      "Webhook & WhatsApp Sync, and 100% Offline Mode.",
     metadata: {
       name: "Free",
       price_monthly: "₹0",
       scans: 49,
-      k_tokens: 50,
+      k_tokens: 100,
+      vcards: 1,
+      products: 2,
+      templates: 2,
     },
   },
   {
@@ -139,9 +142,10 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Pro plan (₹499 / month, ₹399 / month annual)",
     content:
       "Pro plan: ₹499 per month, or ₹399 per month on annual billing (₹4,788 billed annually). For active sales " +
-      "professionals who want AI enrichment and CRM automations. Includes 500 scans per month, 1,000 K-Tokens (1,250 on " +
-      "annual), AI Intel (2 tokens per scan), AI Fix (1 token per fix), 4 Products and 4 Templates, Google Sheets & Gmail " +
-      "sync, Telegram bot integration, and Webhook & WhatsApp automation.",
+      "professionals who want AI enrichment and CRM automations. Includes 500 scans per month, 1,000 K-Tokens per month, " +
+      "AI Intel (2 tokens per scan), AI Fix (1 token per fix), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
+      "sync, Telegram bot integration, Webhook & WhatsApp automation, and the ability to unlock more VCard/Product/Template " +
+      "slots with tokens.",
     metadata: {
       name: "Pro",
       price_monthly: "₹499",
@@ -149,6 +153,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       price_annual_total: "₹4,788",
       scans: 500,
       k_tokens: 1000,
+      vcards: 3,
+      products: 4,
+      templates: 4,
     },
   },
   {
@@ -156,17 +163,21 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "PLAN-ULTRA",
     title: "Ultra plan (₹1,299 / month, ₹999 / month annual)",
     content:
-      "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The enterprise suite. " +
-      "Includes 1,500 scans per month, 3,000 K-Tokens (1,250 per month on annual), AI Strategy (6 tokens per scan), 10+ " +
-      "Indian languages support, Multi-User Team Collaboration, and Dedicated VIP Support. AR Business Card and NFC Card " +
-      "Integration are listed as Coming Soon.",
+      "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The top tier, with " +
+      "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (6 tokens per scan, Ultra " +
+      "only), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
+      "storage, Multi-User Team Collaboration (team group access), and Dedicated VIP Support.",
     metadata: {
       name: "Ultra",
       price_monthly: "₹1,299",
       price_annual_monthly: "₹999",
       price_annual_total: "₹11,988",
-      scans: 1500,
+      scans: "unlimited",
       k_tokens: 3000,
+      vcards: 5,
+      products: 8,
+      templates: 6,
+      cloud_storage: "250 MB",
     },
   },
   {
@@ -283,7 +294,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "FAQ-COST",
     title: "How much does Kauntech cost?",
     content:
-      "Kauntech offers a free plan with 49 scans and 50 K-Tokens. Paid plans are Pro at ₹499/month and Ultra at " +
+      "Kauntech offers a free plan with 49 scans and 100 K-Tokens per month. Paid plans are Pro at ₹499/month and Ultra at " +
       "₹1,299/month, plus a Custom plan for enterprises. Annual billing is discounted (Pro ₹399/month, Ultra ₹999/month).",
     metadata: { category: "pricing" },
   },
@@ -292,7 +303,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "FAQ-GET-STARTED",
     title: "How do I get started with Kauntech?",
     content:
-      "Download the Kauntech app on Android or iOS and start on the Free plan (49 scans, 50 K-Tokens, 100% offline). You " +
+      "Download the Kauntech app on Android or iOS and start on the Free plan (49 scans, 100 K-Tokens, 100% offline). You " +
       "can upgrade to Pro or Ultra anytime for more scans, K-Tokens and AI features. For enterprise needs (white-labeling, " +
       "on-premise storage, custom LLMs), contact the team at business@voltairtech.com.",
     metadata: { category: "get_started" },

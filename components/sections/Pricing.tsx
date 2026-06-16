@@ -110,10 +110,10 @@ export default function Pricing() {
               Perfect for individual professionals exploring offline business card scanning.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 49 Scans included</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 50 K-Tokens</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 2 Products</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1 VCard Export</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 49 Scans / month</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 100 K-Tokens / month</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1 VCard · 2 Products · 2 Templates</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> QR Code &amp; NFC Scanning</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> CSV Export included</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Sync</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Offline-First Mode</li>
@@ -133,13 +133,14 @@ export default function Pricing() {
             </div>
             <ul className="price-features">
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 500 Scans / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1,000 K-Tokens (1,250 on Annual)</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1,000 K-Tokens / month</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Intel (2 tokens/scan)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Fix included (1 token/fix)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 4 Products &amp; 4 Templates</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3 VCards · 4 Products · 4 Templates</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Google Sheets &amp; Gmail Sync</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Telegram Bot Integration</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Automation</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Unlock more slots with tokens</li>
             </ul>
           </div>
 
@@ -152,17 +153,17 @@ export default function Pricing() {
               {annual && <div className="annual-price">₹11,988 billed annually</div>}
             </div>
             <div className="price-desc">
-              The ultimate enterprise suite with advanced AI, multiple languages, and AR support.
+              Everything in Pro, plus unlimited scans, AI Strategy, team collaboration, and cloud backup.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1,500 Scans / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3,000 K-Tokens (1,250/mo on Annual)</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Unlimited Scans</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3,000 K-Tokens / month</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Strategy (6 tokens/scan)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 10+ Indian Languages Support</li>
-              <li><span className="pf-check"><i className="fa-solid fa-clock" /></span> AR Business Card (Coming Soon)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-clock" /></span> NFC Card Integration (Coming Soon)</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 5 VCards · 8 Products · 6 Templates</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Company Logo on QR · Custom QR Link</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 250 MB Cloud Storage</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Multi-User Team Collaboration</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Dedicated VIP Support</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Everything in Pro · Dedicated VIP Support</li>
             </ul>
           </div>
 
