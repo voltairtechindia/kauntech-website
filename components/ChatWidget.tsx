@@ -136,10 +136,12 @@ export default function ChatWidget() {
     setMessages((prev) =>
       prev.map((msg, idx) => (idx === index ? { ...msg, animate: false } : msg)),
     );
-    const el = bodyRef.current;
-    if (el) {
-      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-    }
+    setTimeout(() => {
+      const el = bodyRef.current;
+      if (el) {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
+    }, 50);
   }, []);
 
   useEffect(() => {

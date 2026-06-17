@@ -2564,6 +2564,15 @@ section {
   opacity: 1;
 }
 
+/* Animation for chat sub-components expanding below text */
+@keyframes slideDownFadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.chat-nav-actions, .chat-fallback-form {
+  animation: slideDownFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* ===== PROACTIVE CONTEXTUAL TEASER ===== */
 /* Grows out of the launcher when a visitor lingers on a page, asking if they
    need help with whatever they're currently reading. */
