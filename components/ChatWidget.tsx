@@ -17,7 +17,56 @@ type Msg = {
   error?: boolean;
   /** In-app navigation buttons surfaced under a bot reply. */
   nav?: RouteSuggestion[];
+  animate?: boolean;
 };
+
+interface TypewriterTextProps {
+  text: string;
+  onComplete: () => void;
+  onProgress: () => void;
+}
+
+function TypewriterText({ text, onComplete, onProgress }: TypewriterTextProps) {
+  const [displayedText, setDisplayedText] = useState("");
+  const indexRef = useRef(0);
+  const onProgressRef = useRef(onProgress);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onProgressRef.current = onProgress;
+  }, [onProgress]);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
+
+  useEffect(() => {
+    const intervalTime = 18; // ms per step
+    // Granular step size: types exactly 1 letter at a time, scaling slightly for longer replies
+    let charsPerStep = 1;
+    if (text.length > 800) {
+      charsPerStep = 3;
+    } else if (text.length > 400) {
+      charsPerStep = 2;
+    }
+
+    const timer = setInterval(() => {
+      indexRef.current += charsPerStep;
+      if (indexRef.current >= text.length) {
+        setDisplayedText(text);
+        clearInterval(timer);
+        onCompleteRef.current();
+      } else {
+        setDisplayedText(text.slice(0, indexRef.current));
+        onProgressRef.current();
+      }
+    }, intervalTime);
+
+    return () => clearInterval(timer);
+  }, [text]);
+
+  return <Markdown>{displayedText}</Markdown>;
+}
 
 const SESSION_KEY = "kauntech_chat_session";
 const OPENED_KEY = "kauntech_chat_opened"; // user opened the panel this session
@@ -70,8 +119,42 @@ export default function ChatWidget() {
   const windowRef = useRef<HTMLDivElement>(null);
   const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const isAnimating = messages.some((m) => m.animate);
+  const isWide = messages.some((m) => m.text.length > 250 || m.text.includes("```") || m.text.includes("|"));
+
+  const handleProgress = useCallback(() => {
+    const el = bodyRef.current;
+    if (!el) return;
+    const threshold = 120;
+    const isNearBottom = el.scrollHeight - el.clientHeight - el.scrollTop < threshold;
+    if (isNearBottom) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, []);
+
+  const handleComplete = useCallback((index: number) => {
+    setMessages((prev) =>
+      prev.map((msg, idx) => (idx === index ? { ...msg, animate: false } : msg)),
+    );
+    const el = bodyRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }
+  }, []);
+
   useEffect(() => {
-    if (bodyRef.current) bodyRef.current.scrollTop = bodyRef.current.scrollHeight;
+    if (!open) return;
+    const el = bodyRef.current;
+    if (!el) return;
+
+    if (busy) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    } else if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.from === "user") {
+        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+      }
+    }
   }, [messages, busy, open]);
 
   // Keep the chat panel above the on-screen keyboard on phones so the user can
@@ -180,7 +263,7 @@ export default function ChatWidget() {
   const submit = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
-      if (!trimmed || busy) return;
+      if (!trimmed || busy || isAnimating) return;
       setShowPresets(false);
       const asked = trimmed;
       setMessages((prev) => [...prev, { from: "user", text: asked }]);
@@ -206,7 +289,7 @@ export default function ChatWidget() {
           // show it as a normal reply. Only fall back to the lead-capture form
           // when we got nothing usable back (a real outage).
           if (data?.detail) {
-            setMessages((prev) => [...prev, { from: "bot", text: data.detail! }]);
+            setMessages((prev) => [...prev, { from: "bot", text: data.detail!, animate: true }]);
             return;
           }
           throw new Error(`Request failed (${res.status})`);
@@ -216,7 +299,7 @@ export default function ChatWidget() {
         const nav = suggestRoutes(`${asked} ${reply}`, pathname);
         setMessages((prev) => [
           ...prev,
-          { from: "bot", text: reply, nav: nav.length ? nav : undefined },
+          { from: "bot", text: reply, nav: nav.length ? nav : undefined, animate: true },
         ]);
       } catch (err) {
         console.error("[kauntech-chat]", err);
@@ -232,7 +315,7 @@ export default function ChatWidget() {
         setBusy(false);
       }
     },
-    [busy, pathname],
+    [busy, isAnimating, pathname],
   );
 
   const goTo = useCallback(
@@ -259,7 +342,11 @@ export default function ChatWidget() {
           </button>
           <button className="chat-teaser-main" type="button" onClick={openPanel}>
             <span className="chat-teaser-avatar">
-              <i className="fa-solid fa-robot" />
+              <img
+                src="/assets/Kauntech_logo.png"
+                alt="Kauntech Logo"
+                style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "50%", padding: "2px" }}
+              />
             </span>
             <span className="chat-teaser-text">{ctx.nudge}</span>
           </button>
@@ -289,13 +376,23 @@ export default function ChatWidget() {
         type="button"
         style={open ? { transform: "scale(0)", opacity: 0 } : undefined}
       >
-        <i className="fa-solid fa-message" />
+        <img
+          src="/assets/Kauntech_logo.png"
+          alt="Kauntech Logo"
+          style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "50%", padding: "12px" }}
+        />
       </button>
 
-      <div className={`chat-widget-window${open ? " active" : ""}`} ref={windowRef}>
+      <div className={`chat-widget-window${open ? " active" : ""}${isWide ? " wide" : ""}`} ref={windowRef}>
         <div className="chat-header">
           <div className="chat-header-info">
-            <div className="chat-avatar"><i className="fa-solid fa-robot" /></div>
+            <div className="chat-avatar">
+              <img
+                src="/assets/Kauntech_logo.png"
+                alt="Kauntech Logo"
+                style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "50%", padding: "2px" }}
+              />
+            </div>
             <div className="chat-title-box">
               <h4>Kauntech AI Specialist</h4>
               <p>
@@ -321,6 +418,7 @@ export default function ChatWidget() {
                     key={p}
                     className="preset-chip"
                     type="button"
+                    disabled={busy || isAnimating}
                     onClick={() => submit(p)}
                   >
                     {p}
@@ -333,13 +431,21 @@ export default function ChatWidget() {
             <div key={i} className={`chat-msg ${m.from}`}>
               {m.from === "bot" ? (
                 <div className="chat-md">
-                  <Markdown>{m.text}</Markdown>
+                  {m.animate ? (
+                    <TypewriterText
+                      text={m.text}
+                      onComplete={() => handleComplete(i)}
+                      onProgress={handleProgress}
+                    />
+                  ) : (
+                    <Markdown>{m.text}</Markdown>
+                  )}
                 </div>
               ) : (
                 m.text
               )}
               {m.error && <FallbackForm />}
-              {m.nav && m.nav.length > 0 && (
+              {!m.animate && m.nav && m.nav.length > 0 && (
                 <div className="chat-nav-actions">
                   {m.nav.map((n) => (
                     <button
@@ -380,10 +486,10 @@ export default function ChatWidget() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your question here..."
-            disabled={busy}
+            disabled={busy || isAnimating}
             required
           />
-          <button type="submit" disabled={busy || !input.trim()} aria-label="Send">
+          <button type="submit" disabled={busy || isAnimating || !input.trim()} aria-label="Send">
             <i className="fa-solid fa-paper-plane" />
           </button>
         </form>
