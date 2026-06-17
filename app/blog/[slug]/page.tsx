@@ -73,6 +73,19 @@ export default async function BlogPostPage({
 
   const related = await listRelatedPosts(post.slug, 3);
   const url = `${SITE_URL}/blog/${post.slug}`;
+  const faq = post.faq ?? [];
+
+  const faqLd = faq.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faq.map((f) => ({
+          "@type": "Question",
+          name: f.q,
+          acceptedAnswer: { "@type": "Answer", text: f.a },
+        })),
+      }
+    : null;
 
   const articleLd = {
     "@context": "https://schema.org",
@@ -101,6 +114,12 @@ export default async function BlogPostPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
       />
+      {faqLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      ) : null}
 
       <article className="container">
         <nav className="blog-breadcrumb">
@@ -148,6 +167,20 @@ export default async function BlogPostPage({
             {post.media.map((item, i) => (
               <BlogMedia key={`${item.type}-${i}`} item={item} />
             ))}
+          </section>
+        ) : null}
+
+        {faq.length ? (
+          <section className="blog-faq" aria-labelledby="blog-faq-heading">
+            <h2 id="blog-faq-heading">Frequently asked questions</h2>
+            <div className="blog-faq-list">
+              {faq.map((f, i) => (
+                <details key={i} className="blog-faq-item" open={i === 0}>
+                  <summary>{f.q}</summary>
+                  <p>{f.a}</p>
+                </details>
+              ))}
+            </div>
           </section>
         ) : null}
       </article>

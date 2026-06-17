@@ -22,6 +22,12 @@ export interface BlogSeo {
   og_image?: string;
 }
 
+/** One question/answer pair in a post's FAQ (rendered + FAQPage JSON-LD). */
+export interface FaqItem {
+  q: string;
+  a: string;
+}
+
 export type BlogStatus = "draft" | "published" | "archived";
 
 /** A full blog post as stored in / returned from Supabase. */
@@ -36,6 +42,7 @@ export interface BlogPost {
   tags: string[];
   author: string;
   seo: BlogSeo;
+  faq: FaqItem[];
   status: BlogStatus;
   reading_minutes: number | null;
   published_at: string | null;
@@ -67,6 +74,7 @@ export interface BlogUpsert {
   tags?: string[];
   author?: string;
   seo?: BlogSeo;
+  faq?: FaqItem[];
   status?: BlogStatus;
   reading_minutes?: number | null;
   published_at?: string | null;

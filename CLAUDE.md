@@ -101,6 +101,14 @@ The site **never authors** posts — n8n creates them and POSTs to the site, whi
   by `X-Admin-Key`. Upserts by `slug` AND (when `status:"published"`) embeds the post into
   the RAG store (`doc_type:"blog"`), so the chatbot can cite it. `DELETE /api/blog?slug=`
   removes both. Admin auth shared via [lib/admin-auth.ts](lib/admin-auth.ts).
+- FAQ: each post carries a `faq` JSONB array (migration `0015`) — Q&A pairs that
+  render as a "Frequently asked questions" accordion + **FAQPage JSON-LD** on
+  `/blog/<slug>` (AEO/GEO), are edited in the kauntech-admin `PostEditor`, can be
+  drafted by its AI copilot (`faq` in the `blog-draft` fence), and are folded into
+  the post's RAG embedding so the chatbot can answer the same questions.
+- `/llms.txt` is a **dynamic route** ([app/llms.txt/route.ts](app/llms.txt/route.ts),
+  5-min ISR) — a DB-backed llmstxt.org manifest for GEO/AEO listing the core
+  marketing pages, published blog posts, and open roles.
 
 ## Careers + AI HRM (site intake → Supabase → admin HR)
 Public hiring + AI candidate screening. Full guide: [CAREERS_HRM.md](CAREERS_HRM.md).

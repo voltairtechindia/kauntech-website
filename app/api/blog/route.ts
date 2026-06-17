@@ -31,7 +31,7 @@ import { NextResponse } from "next/server";
 
 import { isAdmin } from "@/lib/admin-auth";
 import { upsertPost } from "@/lib/blog/db";
-import type { BlogPost, BlogUpsert, MediaItem } from "@/lib/blog/types";
+import type { BlogPost, BlogUpsert, FaqItem, MediaItem } from "@/lib/blog/types";
 import {
   estimateReadingMinutes,
   markdownToPlainText,
@@ -86,6 +86,19 @@ function normalize(
     ? p.tags.filter((t): t is string => typeof t === "string")
     : [];
 
+  // Keep only complete Q&A pairs (both question and answer non-empty).
+  const faq: FaqItem[] = Array.isArray(p.faq)
+    ? (p.faq
+        .map((f) => {
+          if (typeof f !== "object" || f === null) return null;
+          const item = f as Record<string, unknown>;
+          const q = str(item.q);
+          const a = str(item.a);
+          return q && a ? { q, a } : null;
+        })
+        .filter((f): f is FaqItem => f !== null))
+    : [];
+
   const cover =
     typeof p.cover_image === "object" && p.cover_image !== null
       ? (p.cover_image as BlogUpsert["cover_image"])
@@ -117,6 +130,7 @@ function normalize(
       tags,
       author: str(p.author) || "Kauntech",
       seo: seo ?? {},
+      faq,
       status: status as BlogUpsert["status"],
       reading_minutes,
       published_at,
@@ -131,10 +145,14 @@ async function syncRag(post: BlogPost): Promise<void> {
     return;
   }
   const url = `${SITE_URL}/blog/${post.slug}`;
+  const faqText = (post.faq ?? [])
+    .map((f) => `Q: ${f.q}\nA: ${f.a}`)
+    .join("\n\n");
   const parts = [
     post.title,
     post.excerpt ?? "",
     markdownToPlainText(post.body_md),
+    faqText,
   ].filter(Boolean);
   await ingest([
     {
