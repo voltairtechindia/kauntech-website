@@ -75,6 +75,23 @@ export default function Footer() {
             <div style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
               Built with 1 year of hard work, upgraded to new heights with AI.
             </div>
+            <a
+              href="https://www.producthunt.com/products/kauntech-app?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-kauntech-app"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: "inline-block", marginTop: 4 }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1172104&theme=light&t=1781509202784"
+                alt="Kauntech App - Scan. Sync. Sell. Repeat. | Product Hunt"
+                width="250"
+                height="54"
+                style={{ width: "180px", height: "auto", display: "block" }}
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
           </div>
           <div className="footer-social">
             <a

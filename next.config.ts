@@ -21,7 +21,7 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  `img-src 'self' data: blob: ${SUPABASE_ORIGIN}`,
+  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://api.producthunt.com`,
   `media-src 'self' ${SUPABASE_ORIGIN}`,
   "connect-src 'self' https://script.google.com https://script.googleusercontent.com",
   "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
