@@ -376,11 +376,14 @@ export default function ChatWidget() {
         type="button"
         style={open ? { transform: "scale(0)", opacity: 0 } : undefined}
       >
-        <img
-          src="/assets/Kauntech_logo.png"
-          alt="Kauntech Logo"
-          style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "50%", padding: "12px" }}
-        />
+        <span className="chat-widget-btn-avatar">
+          <img
+            src="/assets/Kauntech_logo.png"
+            alt="Kauntech Logo"
+            style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "50%", padding: "2px" }}
+          />
+        </span>
+        <span className="chat-widget-btn-label">Ask Kauntech AI</span>
       </button>
 
       <div className={`chat-widget-window${open ? " active" : ""}${isWide ? " wide" : ""}`} ref={windowRef}>
