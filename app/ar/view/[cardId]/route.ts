@@ -23,7 +23,14 @@ const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min
 const MINDAR = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
 function page(body: string) {
-  return new Response(body, { headers: { "content-type": "text/html; charset=utf-8" } });
+  return new Response(body, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      // Never cache the viewer HTML — the WebView/CDN must always get the latest
+      // (deploys were appearing stale otherwise).
+      "cache-control": "no-store, must-revalidate",
+    },
+  });
 }
 function fallback(message: string) {
   return page(`<!doctype html><html><head><meta charset="utf-8">
@@ -91,11 +98,13 @@ function viewerHtml(view: unknown): string {
   .spin{width:34px;height:34px;border:3px solid rgba(255,255,255,.2);border-top-color:#F59E0B;border-radius:50%;animation:r 1s linear infinite;margin:0 auto 14px}
   @keyframes r{to{transform:rotate(360deg)}}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
-  /* MindAR injects + sizes the camera <video> itself; we only keep the WebGL
-     canvas transparent and above it so the live feed shows through. Don't resize
-     the video here — MindAR aligns the 3D overlay to its own video dimensions. */
+  /* The scene wrapper MUST be full-viewport — MindAR measures this container to
+     size the camera video AND the 3D projection. An unsized wrapper made it
+     letterbox (video shorter than the canvas) and threw the overlay off-card. */
+  #scene{position:fixed;inset:0;width:100%;height:100%}
+  /* Camera feed covers the screen, behind the transparent WebGL canvas. */
+  video{position:fixed !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;z-index:0 !important}
   .a-canvas{background-color:transparent !important;z-index:1 !important}
-  video{z-index:0 !important}
 </style>
 </head>
 <body>
@@ -264,18 +273,17 @@ function viewerHtml(view: unknown): string {
 
     document.getElementById('scene').appendChild(scene);
     log('scene appended, targets=' + count);
+    // MindAR sizes the camera video + 3D projection from the container at init —
+    // in a WebView the full height isn't ready yet, so it letterboxes (black band)
+    // and the overlay lands off-card. Nudge it to recompute as the view settles.
+    function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} }
     scene.addEventListener('loaded', function(){ log('scene loaded'); });
-    scene.addEventListener('renderstart', function(){ log('renderstart'); });
+    scene.addEventListener('renderstart', function(){ log('renderstart'); relayout(); setTimeout(relayout, 500); });
     scene.addEventListener('arReady', function(){
       log('arReady');
       ready();
       hintEl.textContent = 'Point at the card';
-      // MindAR sizes the camera video + projection from the viewport at init —
-      // in a WebView the full height isn't ready yet, so it letterboxes (black
-      // band) and tracking is off. Nudge it to recompute once the view settles.
-      function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} }
-      setTimeout(relayout, 300);
-      setTimeout(relayout, 1200);
+      [100, 400, 900, 1800].forEach(function(ms){ setTimeout(relayout, ms); });
       // Probe the camera video + canvas so a black screen is diagnosable.
       setTimeout(function(){
         try {
