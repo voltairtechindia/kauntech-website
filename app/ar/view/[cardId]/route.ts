@@ -116,6 +116,24 @@ function viewerHtml(view: unknown): string {
     var _ce = console.error;
     console.error = function(){ log('console.error:', Array.prototype.map.call(arguments, String).join(' ')); try { _ce.apply(console, arguments); } catch(e){} };
   } catch(e){}
+  // Unmask worker errors: a window-level "Script error." with no detail is the
+  // signature of MindAR's tracking worker throwing. Wrap Worker so we attach an
+  // error listener and read the REAL message (workers report it to themselves).
+  try {
+    var _Worker = window.Worker;
+    if (_Worker) {
+      var WrappedWorker = function(u, o){
+        var w = new _Worker(u, o);
+        try {
+          w.addEventListener('error', function(e){ log('WORKER error:', (e.message || '?') + ' @ ' + (e.filename || '') + ':' + (e.lineno || '')); });
+          w.addEventListener('messageerror', function(){ log('WORKER messageerror'); });
+        } catch(_){}
+        return w;
+      };
+      WrappedWorker.prototype = _Worker.prototype;
+      window.Worker = WrappedWorker;
+    }
+  } catch(e){}
   window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
   // MindAR/getUserMedia failures surface here, not as window errors.
   window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
