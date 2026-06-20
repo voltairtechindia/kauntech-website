@@ -94,9 +94,9 @@ function viewerHtml(view: unknown): string {
 <div id="hint"></div>
 <div id="scene"></div>
 <script>window.__AR__ = ${json};</script>
-<script src="${AFRAME}"></script>
-<script src="${AFRAME_EXTRAS}"></script>
-<script src="${MINDAR}"></script>
+<script src="${AFRAME}" crossorigin="anonymous"></script>
+<script src="${AFRAME_EXTRAS}" crossorigin="anonymous"></script>
+<script src="${MINDAR}" crossorigin="anonymous"></script>
 <script>
 (function(){
   var D = window.__AR__ || {};
@@ -107,7 +107,9 @@ function viewerHtml(view: unknown): string {
   // Pipe diagnostics back to the native app (Metro console) so a stuck viewer
   // isn't a black box.
   function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
-  window.addEventListener('error', function(e){ log('window error:', e.message); });
+  window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
+  // MindAR/getUserMedia failures surface here, not as window errors.
+  window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
   function fail(t){ log('fail:', t); msgEl.textContent = t; statusEl.classList.remove('hide'); }
   function ready(){ arReadyFired = true; statusEl.classList.add('hide'); }
 
