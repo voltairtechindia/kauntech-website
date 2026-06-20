@@ -14,11 +14,12 @@ export const dynamic = "force-dynamic";
 const APP_URL = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL ?? "";
 const APP_ANON = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_ANON_KEY ?? "";
 
-// MindAR 1.2.5 is built for A-Frame 1.3.0 — pairing it with A-Frame 1.5.0 throws
-// at scene init (masked as a cross-origin "Script error."). Pin the matched set:
-// A-Frame 1.3.0 + aframe-extras 6.1.1 (the 1.3-compatible release).
-const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe-master.min.js";
-const AFRAME_EXTRAS = "https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js";
+// Documented, known-good WebAR pair: A-Frame 1.5.0 + MindAR 1.2.5. aframe-extras
+// was the odd one out — it registers a system that A-Frame chokes on here
+// ("systems[e] is not a constructor"), and it's only needed to LOOP animations
+// on 3D models. Dropped it; animated GLBs just won't auto-loop (acceptable),
+// everything else (models, images, social tiles, video, text) is unaffected.
+const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js";
 const MINDAR = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
 function page(body: string) {
@@ -98,7 +99,6 @@ function viewerHtml(view: unknown): string {
 <div id="scene"></div>
 <script>window.__AR__ = ${json};</script>
 <script src="${AFRAME}" crossorigin="anonymous"></script>
-<script src="${AFRAME_EXTRAS}" crossorigin="anonymous"></script>
 <script src="${MINDAR}" crossorigin="anonymous"></script>
 <script>
 (function(){
@@ -113,6 +113,29 @@ function viewerHtml(view: unknown): string {
   window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
   // MindAR/getUserMedia failures surface here, not as window errors.
   window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
+
+  // Minimal animation-mixer so user-uploaded animated .glb models loop their
+  // built-in animations — replaces aframe-extras (which crashed scene init) with
+  // a plain component (no system registration, so it can't reproduce that crash).
+  if (window.AFRAME && AFRAME.registerComponent && !AFRAME.components['animation-mixer']){
+    AFRAME.registerComponent('animation-mixer', {
+      schema: { clip: { default: '*' }, loop: { default: 'repeat' } },
+      init: function(){
+        var self = this; this.mixer = null;
+        this.el.addEventListener('model-loaded', function(e){
+          try {
+            var model = e.detail && e.detail.model;
+            var clips = model && model.animations;
+            if (!model || !clips || !clips.length) return;
+            self.mixer = new AFRAME.THREE.AnimationMixer(model);
+            clips.forEach(function(c){ self.mixer.clipAction(c).reset().play(); });
+            log('animation-mixer: ' + clips.length + ' clip(s)');
+          } catch(err){ log('animation-mixer err: ' + (err && err.message)); }
+        });
+      },
+      tick: function(t, dt){ if (this.mixer && dt) this.mixer.update(dt / 1000); }
+    });
+  }
   function fail(t){ log('fail:', t); msgEl.textContent = t; statusEl.classList.remove('hide'); }
   function ready(){ arReadyFired = true; statusEl.classList.add('hide'); }
 
@@ -152,6 +175,9 @@ function viewerHtml(view: unknown): string {
       node.setAttribute('width', 0.5); node.setAttribute('height', 0.3);
       node.setAttribute('autoplay', 'true'); node.setAttribute('loop', 'true');
       node.setAttribute('playsinline', 'true');
+      // Mobile browsers block autoplay with sound — muted is required or the
+      // video never starts. (Audio-on video would need a tap-to-unmute flow.)
+      node.setAttribute('muted', 'true');
     } else if (el.type === 'text' && el.text){
       node = document.createElement('a-text');
       node.setAttribute('value', el.text);
@@ -232,8 +258,12 @@ function viewerHtml(view: unknown): string {
       var urls = (D.targets || []).filter(Boolean);
       if (!urls.length){ fail('This card isn\\u2019t set up for AR tracking yet.'); return; }
       log('loading ' + urls.length + ' target image(s)');
-      var imgs = await Promise.all(urls.map(loadImage));
-      log('compiling targets');
+      // Resilient: one bad/missing photo URL shouldn't kill AR — track on
+      // whichever targets load.
+      var results = await Promise.allSettled(urls.map(loadImage));
+      var imgs = results.filter(function(r){ return r.status === 'fulfilled'; }).map(function(r){ return r.value; });
+      if (!imgs.length){ fail('Could not load the card image. Check your connection and try again.'); return; }
+      log('loaded ' + imgs.length + '/' + urls.length + ', compiling');
       var compiler = new window.MINDAR.IMAGE.Compiler();
       await compiler.compileImageTargets(imgs, function(){});
       var buffer = await compiler.exportData();

@@ -134,30 +134,51 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   // Read the printed text off a freshly cropped photo (on-device, no upload, no
   // API key) so we can store it for the app's markerless AR matcher. Best-effort
   // and non-blocking: failures just leave that side's OCR empty.
-  // Newly cropped file → OCR it. Existing remote photo with no stored text yet
-  // → OCR the saved image so re-saving captures it (older cards, or cards set up
-  // before OCR existed). The file branch wins when both are present.
+  // A freshly cropped file → OCR it once (re-OCR whenever the file changes).
   useEffect(() => {
-    const src = frontFile ?? (frontUrl && !frontOcr ? frontUrl : null);
-    if (!src) return;
+    if (!frontFile) return;
     let alive = true;
     setOcrBusy(true);
-    ocrImageSrc(src)
+    ocrImageSrc(frontFile)
       .then((t) => { if (alive && t) setFrontOcr(t); })
       .finally(() => { if (alive) setOcrBusy(false); });
     return () => { alive = false; };
-  }, [frontFile, frontUrl, frontOcr]);
+  }, [frontFile]);
 
   useEffect(() => {
-    const src = backFile ?? (backUrl && !backOcr ? backUrl : null);
-    if (!src) return;
+    if (!backFile) return;
     let alive = true;
     setOcrBusy(true);
-    ocrImageSrc(src)
+    ocrImageSrc(backFile)
       .then((t) => { if (alive && t) setBackOcr(t); })
       .finally(() => { if (alive) setOcrBusy(false); });
     return () => { alive = false; };
-  }, [backFile, backUrl, backOcr]);
+  }, [backFile]);
+
+  // Existing saved photo with no captured text yet → backfill OCR once on load
+  // (older cards, or cards set up before OCR existed) so a re-save captures it.
+  // frontOcr is intentionally not a dep — it's the guard, not a trigger.
+  useEffect(() => {
+    if (frontFile || !frontUrl || frontOcr) return;
+    let alive = true;
+    setOcrBusy(true);
+    ocrImageSrc(frontUrl)
+      .then((t) => { if (alive && t) setFrontOcr(t); })
+      .finally(() => { if (alive) setOcrBusy(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frontUrl, frontFile]);
+
+  useEffect(() => {
+    if (backFile || !backUrl || backOcr) return;
+    let alive = true;
+    setOcrBusy(true);
+    ocrImageSrc(backUrl)
+      .then((t) => { if (alive && t) setBackOcr(t); })
+      .finally(() => { if (alive) setOcrBusy(false); });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [backUrl, backFile]);
   function pickPhoto(side: Side) {
     pendingSide.current = side;
     photoInput.current?.click();
