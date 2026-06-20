@@ -75,6 +75,11 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
         rotationY: Number(el.rotationY) || 0,
         rotationZ: Number(el.rotationZ) || 0,
         scale: Number(el.scale) || 1,
+        // The auto-fit normalization factor. WITHOUT this the viewer rendered
+        // every model at the raw multiplier (a giant car), so it overflowed the
+        // card and looked nowhere near where it was placed. Effective scale in
+        // buildElement = baseScale * scale, matching the editor exactly.
+        baseScale: Number(el.baseScale) > 0 ? Number(el.baseScale) : 1,
         animated: !!el.animated,
         spin: !!el.spin,
       };
