@@ -103,8 +103,13 @@ function viewerHtml(view: unknown): string {
   var statusEl = document.getElementById('status');
   var msgEl = document.getElementById('msg');
   var hintEl = document.getElementById('hint');
-  function fail(t){ msgEl.textContent = t; statusEl.classList.remove('hide'); }
-  function ready(){ statusEl.classList.add('hide'); }
+  var arReadyFired = false;
+  // Pipe diagnostics back to the native app (Metro console) so a stuck viewer
+  // isn't a black box.
+  function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
+  window.addEventListener('error', function(e){ log('window error:', e.message); });
+  function fail(t){ log('fail:', t); msgEl.textContent = t; statusEl.classList.remove('hide'); }
+  function ready(){ arReadyFired = true; statusEl.classList.add('hide'); }
 
   function loadImage(url){
     return new Promise(function(res, rej){
@@ -175,6 +180,9 @@ function viewerHtml(view: unknown): string {
     scene.setAttribute('renderer', 'colorManagement: true, physicallyCorrectLights');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
+    // We drive our own status overlay — kill A-Frame's default (blue, dotted)
+    // loading screen so a stuck camera doesn't just sit on it forever.
+    scene.setAttribute('loading-screen', 'enabled: false');
 
     var cam = document.createElement('a-camera');
     cam.setAttribute('position', '0 0 0');
@@ -203,22 +211,30 @@ function viewerHtml(view: unknown): string {
     }
 
     document.getElementById('scene').appendChild(scene);
-    scene.addEventListener('arReady', function(){ ready(); hintEl.textContent = 'Point at the card'; });
-    scene.addEventListener('arError', function(){ fail('Camera unavailable. Allow camera access and reload.'); });
-    setTimeout(ready, 4500);
+    log('scene appended, targets=' + count);
+    scene.addEventListener('arReady', function(){ log('arReady'); ready(); hintEl.textContent = 'Point at the card'; });
+    scene.addEventListener('arError', function(){ fail('Camera unavailable. Close and reopen, and make sure no other app is using the camera.'); });
+    // Watchdog: if the camera/tracker never comes up, say so instead of hanging.
+    setTimeout(function(){
+      if (!arReadyFired) fail('Camera didn\\u2019t start. Close and reopen AR; if it keeps happening, fully close the app so the camera is free.');
+    }, 11000);
   }
 
   async function init(){
     try {
+      log('init, targets=' + JSON.stringify(D.targets || []));
       if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler){ fail('AR engine failed to load.'); return; }
       var urls = (D.targets || []).filter(Boolean);
       if (!urls.length){ fail('This card isn\\u2019t set up for AR tracking yet.'); return; }
+      log('loading ' + urls.length + ' target image(s)');
       var imgs = await Promise.all(urls.map(loadImage));
+      log('compiling targets');
       var compiler = new window.MINDAR.IMAGE.Compiler();
       await compiler.compileImageTargets(imgs, function(){});
       var buffer = await compiler.exportData();
+      log('compiled, starting scene');
       start(URL.createObjectURL(new Blob([buffer])), imgs.length);
-    } catch(e){ fail('Could not start AR. Make sure camera access is allowed.'); }
+    } catch(e){ log('init error: ' + (e && e.message)); fail('Could not start AR. Make sure camera access is allowed.'); }
   }
   init();
 })();
