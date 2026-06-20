@@ -49,7 +49,10 @@ const buildCsp = (allowEval: boolean) =>
     "font-src 'self' data:",
     `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com`,
     `media-src 'self' blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN}`,
-    `connect-src 'self' blob: data: ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
+    // SUPABASE_ORIGIN is the site project, home of the public `ar-gallery` bucket
+    // (curated 3D models). three.js / a-gltf-model fetch those .glb files here, so
+    // it must be in connect-src for both the editor previews and the WebAR viewer.
+    `connect-src 'self' blob: data: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
     "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
     "worker-src 'self' blob:",
     "object-src 'none'",

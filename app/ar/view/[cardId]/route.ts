@@ -221,7 +221,8 @@ function viewerHtml(view: unknown): string {
     node.setAttribute('position', p[0] + ' ' + p[1] + ' ' + p[2]);
     var rad2deg = function(r){ return (r || 0) * 180 / Math.PI; };
     node.setAttribute('rotation', rad2deg(el.rotationX) + ' ' + rad2deg(el.rotationY) + ' ' + rad2deg(el.rotationZ));
-    var s = el.scale || 1;
+    // Effective scale = auto-fit base (1 on older cards) × user multiplier.
+    var s = (el.baseScale || 1) * (el.scale || 1);
     node.setAttribute('scale', s + ' ' + s + ' ' + s);
     if (el.spin){
       node.setAttribute('animation__spin', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');

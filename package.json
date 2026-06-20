@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@gltf-transform/core": "^4.4.0",
+    "@gltf-transform/extensions": "^4.4.0",
+    "@gltf-transform/functions": "^4.4.0",
     "@google/genai": "^1.9.0",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
@@ -21,6 +24,7 @@
     "react-dom": "^19.1.0",
     "react-markdown": "^9.1.0",
     "remark-gfm": "^4.0.1",
+    "sharp": "^0.35.2",
     "tesseract.js": "^7.0.0",
     "three": "^0.184.0"
   },

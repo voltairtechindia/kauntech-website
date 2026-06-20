@@ -137,7 +137,8 @@ function SelectedElement({
           rotationX: o.rotation.x,
           rotationY: o.rotation.y,
           rotationZ: o.rotation.z,
-          scale: o.scale.x,
+          // The group is scaled by baseScale*scale; store back only the multiplier.
+          scale: o.scale.x / (element.baseScale ?? 1),
         });
       }}
     >
@@ -145,7 +146,7 @@ function SelectedElement({
         ref={ref}
         position={element.position}
         rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]}
-        scale={element.scale}
+        scale={(element.baseScale ?? 1) * element.scale}
       >
         <ElementBody element={element} onSelect={onSelect} selected />
       </group>
@@ -155,7 +156,7 @@ function SelectedElement({
 
 function ElementNode({ element, onSelect }: { element: ArElement; onSelect: Props["onSelect"] }) {
   return (
-    <group position={element.position} rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]} scale={element.scale}>
+    <group position={element.position} rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]} scale={(element.baseScale ?? 1) * element.scale}>
       <ElementBody element={element} onSelect={onSelect} />
     </group>
   );

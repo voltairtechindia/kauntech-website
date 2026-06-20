@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
-import { type ArElement, type ArElementType, DEFAULT_TEXT_COLOR, SOCIAL_PRESETS, normalizeLink, socialPreset } from "@/lib/ar/scene";
+import { type ArElement, type ArElementType, DEFAULT_TEXT_COLOR, normalizeLink, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
@@ -37,6 +37,29 @@ const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u
 let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
 
+// Measure a glb and return the scale that makes its largest dimension ≈ TARGET
+// card-width units, so an icon and a giant car both land at a usable size. This
+// becomes the element's baseScale; the user's Scale slider is a multiplier on it.
+// Best-effort — returns 1 on any failure (then the slider still works).
+const AUTO_FIT_TARGET = 0.3;
+async function fitScaleFor(url: string): Promise<number> {
+  try {
+    // three-stdlib is what drei's useGLTF uses; three's own examples/jsm path is
+    // blocked by its package exports map, so import the loader from there.
+    const [{ GLTFLoader }, THREE] = await Promise.all([
+      import("three-stdlib"),
+      import("three"),
+    ]);
+    const gltf = await new GLTFLoader().loadAsync(url);
+    const size = new THREE.Box3().setFromObject(gltf.scene).getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (!Number.isFinite(maxDim) || maxDim <= 0) return 1;
+    return AUTO_FIT_TARGET / maxDim;
+  } catch {
+    return 1;
+  }
+}
+
 // On-device OCR of a card photo via Tesseract.js (dynamically imported so it
 // never weighs down the initial editor bundle). Accepts a File (freshly cropped)
 // or an image URL (an already-saved photo). Returns trimmed text, or "" on any
@@ -59,6 +82,9 @@ function readElements(model: ArModel | null): ArElement[] {
 function typeLabel(el: ArElement): string {
   if (el.type === "social") return socialPreset(el.platform)?.label ?? "Social";
   if (el.type === "text") return el.text?.trim() ? el.text.trim().slice(0, 22) : "Text";
+  // Gallery / named models carry a label (e.g. "Instagram", "Robotic Arm") so the
+  // Layers list isn't a wall of identical "Model" rows.
+  if (el.label?.trim()) return el.label.trim().slice(0, 22);
   return el.type[0].toUpperCase() + el.type.slice(1);
 }
 
@@ -75,13 +101,16 @@ function elementIcon(el: ArElement): ReactNode {
   return el.type === "social" ? socialIcon(el.platform) : TYPE_ICON[el.type];
 }
 
-type AssetTab = "model" | "image" | "video" | "text" | "social";
+// Social is intentionally NOT an asset tab anymore — social icons are now picked
+// as real 3D models from the KaunTech gallery (the flat social billboards are
+// gone). The `social` element type is kept in scene.ts only so cards published
+// before this change still render.
+type AssetTab = "model" | "image" | "video" | "text";
 const ASSET_TABS: { key: AssetTab; label: string; icon: ReactNode }[] = [
   { key: "model", label: "3D model", icon: <IconBox /> },
   { key: "image", label: "Image", icon: <IconImage /> },
   { key: "video", label: "Video", icon: <IconVideo /> },
   { key: "text", label: "Text", icon: <IconText /> },
-  { key: "social", label: "Social", icon: socialIcon() },
 ];
 
 // Collapsible sidebar section: a header button that toggles its body. Used to
@@ -170,7 +199,7 @@ function TransformSlider({
   );
 }
 
-export default function Editor({ card, model }: { card: OwnerCard; model: ArModel | null; templates?: unknown }) {
+export default function Editor({ card, model, galleryAssets = [] }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; templates?: unknown }) {
   const router = useRouter();
   const [elements, setElements] = useState<ArElement[]>(() => readElements(model));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -370,16 +399,14 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   async function onPickModel(file?: File) {
     if (!file) return;
     const url = await uploadAsset(file, "model");
-    if (url) add({ type: "model", url, animated: true, scale: 0.45, rotationY: 0, position: [0, 0.22, 0.12] });
+    if (!url) return;
+    const baseScale = await fitScaleFor(url);
+    add({ type: "model", url, animated: true, baseScale, scale: 1, rotationY: 0, position: [0, 0.22, 0.12] });
   }
   async function onPickImage(file?: File) {
     if (!file) return;
     const url = await uploadAsset(file, "image");
     if (url) add({ type: "image", url, scale: 0.35, rotationY: 0 });
-  }
-  function addSocial(key: string) {
-    const p = socialPreset(key);
-    add({ type: "social", platform: key, link: "", label: p?.label, scale: 0.3, rotationY: 0 });
   }
   function addVideo() {
     add({ type: "video", url: "", scale: 0.7, rotationY: 0, position: [0, 0.55, 0.05] });
@@ -387,18 +414,32 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   function addText() {
     add({ type: "text", text: card.name || "Your name", color: DEFAULT_TEXT_COLOR, scale: 1, rotationY: 0, position: [0, 0.42, 0.06] });
   }
-  function addGalleryModel(a: GalleryAsset) {
+  async function addGalleryModel(a: GalleryAsset) {
+    // Normalize the model's size on the way in so a car doesn't arrive 100× the
+    // size of an icon. baseScale does the fitting; scale stays a 1× multiplier.
+    const baseScale = await fitScaleFor(a.glbUrl);
     add({
       type: "model",
       url: a.glbUrl,
+      // The model's name so the Layers list reads "Instagram" / "Robotic Arm"
+      // instead of a stack of identical "Model" rows.
+      label: a.name,
       animated: a.animated ?? false,
-      scale: a.defaultScale ?? 0.45,
+      baseScale,
+      scale: 1,
       rotationY: 0,
       position: [0, 0.22, 0.12],
       // Social "coin" models carry their platform so the link field offers the
       // right handle prefix — same UX as a flat social icon, but actually 3D.
       ...(a.platform ? { platform: a.platform, link: "" } : {}),
     });
+  }
+  // Manual rescue for any model that's still the wrong size (e.g. one placed
+  // before auto-fit existed): re-measure and reset to the 1× fitted size.
+  async function fitToCard(el: ArElement) {
+    if (el.type !== "model" || !el.url) return;
+    const baseScale = await fitScaleFor(el.url);
+    update(el.id, { baseScale, scale: 1 });
   }
 
   async function save() {
@@ -477,7 +518,7 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
       ) : null}
 
       {galleryOpen ? (
-        <GalleryPicker onClose={() => setGalleryOpen(false)} onPick={addGalleryModel} />
+        <GalleryPicker assets={galleryAssets} onClose={() => setGalleryOpen(false)} onPick={addGalleryModel} />
       ) : null}
 
       <div className="ar-editor-topbar">
@@ -620,7 +661,7 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
                   </button>
                   <span className="ar-muted ar-asset-hint">Adds a video plane — paste the mp4 link in its properties.</span>
                 </>
-              ) : assetTab === "text" ? (
+              ) : (
                 <>
                   <button className="ar-tab ar-asset-add" onClick={addText}>
                     <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
@@ -628,15 +669,6 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
                   </button>
                   <span className="ar-muted ar-asset-hint">A line of text — edit the words and colour in its properties.</span>
                 </>
-              ) : (
-                <div className="ar-social-grid">
-                  {SOCIAL_PRESETS.map((s) => (
-                    <button key={s.key} className="ar-chip" onClick={() => addSocial(s.key)}>
-                      <span className="ar-chip-ico" style={{ color: s.color }} aria-hidden>{socialIcon(s.key)}</span>
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
               )}
             </div>
           </div>
@@ -788,14 +820,20 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
                 />
               </div>
 
-              {/* Scale. */}
+              {/* Scale — a multiplier of the auto-fit size (1× = fitted). */}
               <div className="ar-transform-group">
                 <span className="ar-label">Size</span>
                 <TransformSlider
                   icon={<IconScale />} label="Scale" unit="×"
-                  value={selected.scale} min={0.05} max={3} step={0.05} fixed={2}
-                  onChange={(v) => update(selected.id, { scale: Math.max(0.05, v) })}
+                  value={selected.scale} min={0.1} max={3} step={0.05} fixed={2}
+                  onChange={(v) => update(selected.id, { scale: Math.max(0.1, v) })}
                 />
+                {selected.type === "model" && selected.url ? (
+                  <button className="ar-btn ar-btn-ghost ar-btn-sm" style={{ marginTop: 8 }}
+                    onClick={() => fitToCard(selected)}>
+                    <IconScale /> Fit to card
+                  </button>
+                ) : null}
               </div>
 
               {/* Viewport gizmo mode — drag the handle in the 3D view instead. */}

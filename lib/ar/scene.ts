@@ -32,7 +32,12 @@ export interface ArElement {
   rotationX?: number;
   /** Rotation around the Z axis (roll), in radians. */
   rotationZ?: number;
+  /** User-facing size as a MULTIPLIER of baseScale (1 = the auto-fit size). */
   scale: number;
+  /** Auto-fit normalization factor set when a model is added, so wildly-sized
+   *  glbs (icon vs. car) all start at a sane size. Effective render scale =
+   *  (baseScale ?? 1) * scale. Absent on older elements → treated as 1. */
+  baseScale?: number;
   /** Play GLB animations (avatars). */
   animated?: boolean;
   /** Continuously self-rotate in the published view. */

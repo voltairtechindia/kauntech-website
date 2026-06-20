@@ -1323,3 +1323,25 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* gallery search */
+.ar-gallery-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-r-md);
+  background: var(--ar-surface);
+}
+.ar-gallery-search:focus-within { border-color: var(--ar-orange); }
+.ar-gallery-search svg { width: 16px; height: 16px; color: var(--ar-text-muted); flex: none; }
+.ar-gallery-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 9px 0;
+  font-size: 14px;
+  color: var(--ar-text);
+}

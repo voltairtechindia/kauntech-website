@@ -16,7 +16,8 @@ export interface GalleryAsset {
   id: string;
   /** Display name shown under the preview. */
   name: string;
-  category: GalleryCategory;
+  /** Legacy grouping — present on older entries; the picker is flat now. */
+  category?: GalleryCategory;
   /** Public .glb URL in the ar-gallery bucket. */
   glbUrl: string;
   /** Loop the glb's baked animation in the editor preview and the viewer. */
@@ -34,7 +35,35 @@ export const GALLERY_CATEGORIES: { key: GalleryCategory; label: string }[] = [
   { key: "objects", label: "Objects" },
 ];
 
+/** Build-time fallback catalogue (bundled). The live catalogue is catalog.json
+ *  in the ar-gallery bucket, so admins can add models without a redeploy. */
 export const AR_GALLERY: GalleryAsset[] = generated as GalleryAsset[];
+
+/** Public URL of the live catalogue in the ar-gallery bucket (site project). */
+const CATALOG_URL = (() => {
+  try {
+    const origin = new URL(process.env.SUPABASE_URL ?? "https://ujzchcirgmveryjavfzk.supabase.co").origin;
+    return `${origin}/storage/v1/object/public/ar-gallery/catalog.json`;
+  } catch {
+    return "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/catalog.json";
+  }
+})();
+
+/**
+ * The live gallery — fetched server-side (editor page) so admin uploads show up
+ * without a rebuild. Falls back to the bundled catalogue if the file is missing
+ * or unreachable. Never throws.
+ */
+export async function fetchGallery(): Promise<GalleryAsset[]> {
+  try {
+    const res = await fetch(CATALOG_URL, { cache: "no-store" });
+    if (!res.ok) return AR_GALLERY;
+    const data = await res.json();
+    return Array.isArray(data) && data.length ? (data as GalleryAsset[]) : AR_GALLERY;
+  } catch {
+    return AR_GALLERY;
+  }
+}
 
 export function galleryByCategory(category: GalleryCategory): GalleryAsset[] {
   return AR_GALLERY.filter((a) => a.category === category);

@@ -1,20 +1,16 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Center, OrbitControls, useGLTF } from "@react-three/drei";
-import {
-  GALLERY_CATEGORIES,
-  galleryByCategory,
-  type GalleryAsset,
-  type GalleryCategory,
-} from "@/lib/ar/gallery";
-import { IconX } from "./icons";
+import type { GalleryAsset } from "@/lib/ar/gallery";
+import { IconSearch, IconX } from "./icons";
 
 /**
- * Modal picker for the curated AR gallery. Each cell renders the actual .glb in a
- * tiny auto-fitted, slowly orbiting canvas so what you see is what lands on the
- * card. One WebGL context per visible cell — keep per-category counts modest.
+ * Modal picker for the curated AR gallery — a flat, searchable grid (no
+ * categories). Each cell renders the actual .glb in a tiny auto-fitted, slowly
+ * orbiting canvas, so what you see is what lands on the card. One WebGL context
+ * per visible cell, so the search keeps the rendered count down.
  */
 function PreviewModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
@@ -52,14 +48,23 @@ function Preview({ asset }: { asset: GalleryAsset }) {
 }
 
 export default function GalleryPicker({
+  assets,
   onClose,
   onPick,
 }: {
+  assets: GalleryAsset[];
   onClose: () => void;
   onPick: (asset: GalleryAsset) => void;
 }) {
-  const [cat, setCat] = useState<GalleryCategory>("social");
-  const items = galleryByCategory(cat);
+  const [q, setQ] = useState("");
+
+  const results = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return assets;
+    return assets.filter((a) =>
+      `${a.name} ${a.category ?? ""} ${a.platform ?? ""}`.toLowerCase().includes(needle),
+    );
+  }, [assets, q]);
 
   return (
     <div className="ar-modal-overlay" onClick={onClose}>
@@ -74,27 +79,27 @@ export default function GalleryPicker({
           <button className="ar-icon-btn" title="Close" onClick={onClose}><IconX /></button>
         </div>
 
-        <div className="ar-gallery-tabs" role="tablist">
-          {GALLERY_CATEGORIES.map((c) => (
-            <button
-              key={c.key}
-              role="tab"
-              aria-selected={cat === c.key}
-              className={`ar-gallery-tab ${cat === c.key ? "is-active" : ""}`}
-              onClick={() => setCat(c.key)}
-            >
-              {c.label}
-            </button>
-          ))}
+        <div className="ar-gallery-search">
+          <IconSearch />
+          <input
+            className="ar-gallery-search-input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search models…"
+            autoFocus
+          />
+          {q ? (
+            <button className="ar-icon-btn" title="Clear" onClick={() => setQ("")}><IconX /></button>
+          ) : null}
         </div>
 
         <div className="ar-gallery-grid">
-          {items.length === 0 ? (
+          {results.length === 0 ? (
             <p className="ar-muted ar-gallery-empty">
-              Nothing in this category yet — more models are on the way.
+              {assets.length === 0 ? "No models yet." : `No models match “${q}”.`}
             </p>
           ) : (
-            items.map((a) => (
+            results.map((a) => (
               <button
                 key={a.id}
                 className="ar-gallery-cell"

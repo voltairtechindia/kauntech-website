@@ -10,18 +10,28 @@
  * (lib/ar/gallery.generated.json) is regenerated. Re-running is idempotent
  * (uploads upsert), so add models and run again any time.
  *
- * Reads SUPABASE_URL + SUPABASE_SERVICE_KEY from .env.local (the AR project).
+ * Reads SUPABASE_URL + SUPABASE_SERVICE_KEY from .env.local — the SITE project
+ * (ujzchcirgmveryjavfzk), which hosts the public `ar-gallery` bucket. NOTE: this
+ * is deliberately NOT the app project (bhpiv…, home of ar-models): the gallery
+ * lives on the site project because that's where this repo has a service key, and
+ * next.config.ts whitelists this origin in the CSP connect-src for both the editor
+ * previews and the WebAR viewer. Keep all three (bucket, catalogue URLs, CSP) on
+ * the same origin or the viewer silently fails to load models.
  */
 import { readdir, readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { NodeIO } from "@gltf-transform/core";
+import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
+import { dedup, prune, quantize, resample, textureCompress, weld } from "@gltf-transform/functions";
+import sharp from "sharp";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
 const BUCKET = "ar-gallery";
-const MAX_BYTES = 3 * 1024 * 1024; // 3 MB — matches the bucket's file_size_limit
+const MAX_BYTES = 10 * 1024 * 1024; // 10 MB — matches the bucket's file_size_limit
 const CATEGORIES = ["social", "arrows", "avatars", "objects"];
 const SOCIAL_KEYS = ["instagram", "linkedin", "x", "facebook", "youtube", "whatsapp", "website", "email"];
 
@@ -37,6 +47,26 @@ function loadEnv() {
     }
   }
   return out;
+}
+
+// Same decoder-free optimization the admin upload uses (textures→WebP, geometry
+// quantized + welded + pruned). No Draco/meshopt — the A-Frame viewer can't
+// decode those. Falls back to the original bytes on any failure.
+async function optimizeGlb(input) {
+  try {
+    const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+    const doc = await io.readBinary(new Uint8Array(input));
+    await doc.transform(
+      dedup(), weld(), resample(), prune(),
+      textureCompress({ encoder: sharp, targetFormat: "webp", resize: [2048, 2048] }),
+      quantize(),
+    );
+    const out = Buffer.from(await io.writeBinary(doc));
+    return out.length < input.length ? out : input;
+  } catch (e) {
+    console.warn(`    optimize failed, using original: ${e?.message}`);
+    return input;
+  }
 }
 
 function slugify(s) {
@@ -107,6 +137,8 @@ async function main() {
         platform = SOCIAL_KEYS.find((k) => slug === k || slug.startsWith(`${k}-`) || slug.includes(k));
       }
 
+      const optimized = await optimizeGlb(buf);
+
       const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${objectPath}`, {
         method: "POST",
         headers: {
@@ -115,7 +147,7 @@ async function main() {
           "Content-Type": "model/gltf-binary",
           "x-upsert": "true",
         },
-        body: buf,
+        body: optimized,
       });
       if (!res.ok) {
         console.error(`  FAIL upload ${objectPath}: ${res.status} ${await res.text()}`);
@@ -132,13 +164,33 @@ async function main() {
         ...(platform ? { platform } : {}),
       });
       uploaded++;
-      console.log(`  ok ${category}/${slug}.glb  (${(size / 1024).toFixed(0)} KB${animated ? ", animated" : ""}${platform ? ", " + platform : ""})`);
+      const savedPct = Math.max(0, Math.round(100 - (100 * optimized.length) / size));
+      console.log(`  ok ${category}/${slug}.glb  (${(size / 1024).toFixed(0)}KB → ${(optimized.length / 1024).toFixed(0)}KB, -${savedPct}%${animated ? ", animated" : ""}${platform ? ", " + platform : ""})`);
     }
   }
 
   entries.sort((a, b) => (a.category + a.name).localeCompare(b.category + b.name));
+  const json = JSON.stringify(entries, null, 2) + "\n";
+
+  // Bundled fallback (build-time) ...
   const outPath = path.join(ROOT, "lib", "ar", "gallery.generated.json");
-  await writeFile(outPath, JSON.stringify(entries, null, 2) + "\n");
+  await writeFile(outPath, json);
+
+  // ... AND the live catalogue in the bucket, which the editor reads at runtime
+  // so admin-added models appear without a redeploy.
+  const catRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/catalog.json`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${KEY}`,
+      apikey: KEY,
+      "Content-Type": "application/json",
+      "Cache-Control": "no-cache",
+      "x-upsert": "true",
+    },
+    body: json,
+  });
+  if (!catRes.ok) console.error(`  WARN: catalog.json upload failed: ${catRes.status} ${await catRes.text()}`);
+  else console.log("  catalog.json published to bucket");
 
   console.log(`\nDone. uploaded=${uploaded} skipped=${skipped}`);
   console.log(`Catalogue written: ${path.relative(ROOT, outPath)} (${entries.length} models)`);
