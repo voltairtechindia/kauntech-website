@@ -89,13 +89,18 @@ export default function ImageCropper({
     const sw = FRAME_W / scale;
     const sh = frameH / scale;
 
-    const outW = 1024;
+    // Higher-res, sharper target = more MindAR feature points = better tracking.
+    // 1440px is a good balance (more detail than 1024 without ballooning the
+    // on-device compile time). High-quality smoothing for crisp edges.
+    const outW = 1440;
     const outH = Math.round(outW / aspect);
     const canvas = document.createElement("canvas");
     canvas.width = outW;
     canvas.height = outH;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, outW, outH);
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
@@ -106,7 +111,7 @@ export default function ImageCropper({
         onConfirm(new File([blob], `${baseName}-crop.jpg`, { type: "image/jpeg" }));
       },
       "image/jpeg",
-      0.9,
+      0.92,
     );
   }
 

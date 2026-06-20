@@ -147,6 +147,34 @@ function viewerHtml(view: unknown): string {
       WW.prototype = _W.prototype; window.Worker = WW;
     }
   } catch(e){}
+  // Force MindAR to open the rear camera at high resolution. By default it takes
+  // whatever getUserMedia gives (often 640x480), and a low-detail feed is the #1
+  // cause of weak image tracking. We merge resolution + a sharp-focus hint into
+  // every video request the page makes (MindAR included).
+  try {
+    var md = navigator.mediaDevices;
+    if (md && md.getUserMedia){
+      var _gum = md.getUserMedia.bind(md);
+      md.getUserMedia = function(c){
+        try {
+          c = c || {};
+          if (c.video){
+            var v = (typeof c.video === 'object') ? c.video : {};
+            if (v.width == null) v.width = { ideal: 1920 };
+            if (v.height == null) v.height = { ideal: 1080 };
+            if (v.facingMode == null) v.facingMode = { ideal: 'environment' };
+            if (v.frameRate == null) v.frameRate = { ideal: 30 };
+            // continuous AF keeps the card sharp as the phone moves — as an
+            // ADVANCED (optional) constraint so it never makes gUM throw.
+            v.advanced = (v.advanced || []).concat([{ focusMode: 'continuous' }]);
+            c.video = v;
+            log('gUM hires video constraints applied');
+          }
+        } catch(e){}
+        return _gum(c);
+      };
+    }
+  } catch(e){}
 })();
 </script>
 <script src="${AFRAME}" crossorigin="anonymous"></script>
@@ -250,8 +278,13 @@ function viewerHtml(view: unknown): string {
       node.setAttribute('value', el.text);
       node.setAttribute('align', 'center');
       node.setAttribute('color', el.color || '#18181b');
-      node.setAttribute('width', 1.2);
+      // Match the editor's fontSize 0.12 (drei Text): a-text glyph size ≈
+      // width / wrapCount, so 1.4 / 16 ≈ 0.0875 → ~0.12 cap height. Without this
+      // (width:1.2, default wrapCount 40) text rendered ~3× too small in AR.
+      node.setAttribute('width', 1.4);
+      node.setAttribute('wrap-count', 16);
       node.setAttribute('baseline', 'center');
+      node.setAttribute('anchor', 'center');
     }
     if (!node) return null;
     var p = el.position || [0,0,0.15];
@@ -387,7 +420,10 @@ function viewerHtml(view: unknown): string {
       var compiler = new window.MINDAR.IMAGE.Compiler();
       // Feature extraction is the slow phase — drive the bar with its real
       // progress callback (0..1) across the 20–70% band so it never looks stuck.
-      await compiler.compileImageTargets(imgs, function(p){ setProg(20 + (Number(p) || 0) * 50); });
+      await compiler.compileImageTargets(imgs, function(p){
+        var pp = Number(p) || 0; if (pp > 1) pp = pp / 100; // MindAR reports 0..1 or 0..100
+        setProg(20 + pp * 50);
+      });
       var buffer = await compiler.exportData();
       setProg(72);
       log('compiled, starting scene');
