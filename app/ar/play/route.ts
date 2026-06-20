@@ -81,8 +81,17 @@ export async function GET() {
       { video: { facingMode: { ideal: 'environment' } }, audio: false },
       { video: true, audio: false }
     ];
-    (function tryNext(i){
-      if (i >= attempts.length){ fail('Allow camera access, then tap to retry.'); return; }
+    (function tryNext(i, lastErr){
+      if (i >= attempts.length){
+        var why = lastErr && lastErr.name ? lastErr.name : 'unknown';
+        var msg = 'Allow camera access, then tap to retry.';
+        if (why === 'NotAllowedError') msg = 'Camera permission was denied. Enable it for KaunTech in Settings, then tap to retry.';
+        else if (why === 'NotFoundError' || why === 'OverconstrainedError') msg = 'No camera found on this device. Tap to retry.';
+        else if (why === 'NotReadableError') msg = 'Camera is busy (another app is using it). Close it, then tap to retry.';
+        else if (why === 'SecurityError' || why === 'TypeError') msg = 'Camera needs a secure (https) connection.';
+        fail(msg + '  [' + why + ']');
+        return;
+      }
       navigator.mediaDevices.getUserMedia(attempts[i])
         .then(function(stream){
           video.srcObject = stream;
@@ -90,8 +99,8 @@ export async function GET() {
           return video.play();
         })
         .then(function(){ requestAnimationFrame(tick); })
-        .catch(function(){ tryNext(i + 1); });
-    })(0);
+        .catch(function(e){ tryNext(i + 1, e); });
+    })(0, null);
   }
 
   errEl.style.cursor = 'pointer';
