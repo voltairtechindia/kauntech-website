@@ -257,8 +257,8 @@ function viewerHtml(view: unknown): string {
       var anchor = document.createElement('a-entity');
       anchor.setAttribute('mindar-image-target', 'targetIndex: ' + i);
       (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
-      anchor.addEventListener('targetFound', function(){ hintEl.textContent = ''; });
-      anchor.addEventListener('targetLost', function(){ hintEl.textContent = 'Point at the card'; });
+      anchor.addEventListener('targetFound', function(){ log('targetFound'); hintEl.textContent = ''; });
+      anchor.addEventListener('targetLost', function(){ log('targetLost'); hintEl.textContent = 'Point at the card'; });
       scene.appendChild(anchor);
     }
 
@@ -270,16 +270,22 @@ function viewerHtml(view: unknown): string {
       log('arReady');
       ready();
       hintEl.textContent = 'Point at the card';
+      // MindAR sizes the camera video + projection from the viewport at init —
+      // in a WebView the full height isn't ready yet, so it letterboxes (black
+      // band) and tracking is off. Nudge it to recompute once the view settles.
+      function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} }
+      setTimeout(relayout, 300);
+      setTimeout(relayout, 1200);
       // Probe the camera video + canvas so a black screen is diagnosable.
       setTimeout(function(){
         try {
           var v = document.querySelector('video');
           var c = document.querySelector('canvas.a-canvas') || document.querySelector('canvas');
-          if (v){ var vs = getComputedStyle(v); log('video ' + v.videoWidth + 'x' + v.videoHeight + ' play=' + (!v.paused) + ' disp=' + vs.display + ' vis=' + vs.visibility + ' z=' + vs.zIndex + ' op=' + vs.opacity); }
+          if (v){ var vs = getComputedStyle(v); log('video ' + v.videoWidth + 'x' + v.videoHeight + ' css=' + vs.width + 'x' + vs.height + ' fit=' + vs.objectFit + ' play=' + (!v.paused)); }
           else { log('video: none'); }
-          if (c){ var cs = getComputedStyle(c); log('canvas bg=' + cs.backgroundColor + ' z=' + cs.zIndex + ' op=' + cs.opacity); }
+          if (c){ var cs = getComputedStyle(c); log('canvas css=' + cs.width + 'x' + cs.height + ' bg=' + cs.backgroundColor); }
         } catch(err){ log('probe err: ' + (err && err.message)); }
-      }, 800);
+      }, 1500);
     });
     scene.addEventListener('arError', function(){ fail('Camera unavailable. Close and reopen, and make sure no other app is using the camera.'); });
     // Watchdog: if the camera/tracker never comes up, say so instead of hanging.
