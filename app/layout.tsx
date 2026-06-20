@@ -3,10 +3,8 @@ import { Fira_Sans, Fira_Code } from "next/font/google";
 import "./globals.css";
 import "./extra.css";
 import "./fa-subset.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
-import DeferredChatWidget from "@/components/DeferredChatWidget";
+import SiteChrome from "@/components/SiteChrome";
 import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = "https://www.kauntech.com";
@@ -170,10 +168,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ScrollReveal />
-        <Navbar />
-        {children}
-        <Footer />
-        <DeferredChatWidget />
+        <SiteChrome>{children}</SiteChrome>
         <Analytics />
       </body>
     </html>

@@ -6,6 +6,23 @@ const isProd = process.env.NODE_ENV === "production";
 // `blog-media` bucket); needed in img-src / media-src.
 const SUPABASE_ORIGIN = "https://ujzchcirgmveryjavfzk.supabase.co";
 
+// The KaunTech *app* Supabase project (auth + ar-models/qr-images storage).
+// Used only by the gated /ar studio: auth fetches (connect-src) + model/QR
+// images (img-src). Derived from env so it tracks the project, with the known
+// origin as a build-time fallback.
+const APP_SUPABASE_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "https://bhpivcapxyfbqekclorp.supabase.co";
+  }
+})();
+
+// Google <model-viewer> + MindAR + A-Frame + jsQR for the AR pages load from jsDelivr.
+const MODEL_VIEWER_CDN = "https://cdn.jsdelivr.net";
+// Vercel Web Analytics debug script (dev); prod serves it same-origin.
+const VERCEL_ANALYTICS = "https://va.vercel-scripts.com";
+
 /**
  * Content-Security-Policy.
  *
@@ -18,12 +35,15 @@ const SUPABASE_ORIGIN = "https://ujzchcirgmveryjavfzk.supabase.co";
  */
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
+  // 'wasm-unsafe-eval' + blob: are required by the /ar/view WebAR viewer (MindAR
+  // runs image tracking in WebAssembly + workers). MODEL_VIEWER_CDN (jsDelivr)
+  // also serves MindAR + A-Frame.
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS}${isProd ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://api.producthunt.com`,
-  `media-src 'self' ${SUPABASE_ORIGIN}`,
-  "connect-src 'self' https://script.google.com https://script.googleusercontent.com",
+  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com`,
+  `media-src 'self' blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN}`,
+  `connect-src 'self' blob: data: ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
   "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
   "worker-src 'self' blob:",
   "object-src 'none'",

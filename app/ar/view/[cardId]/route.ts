@@ -1,0 +1,215 @@
+/**
+ * Public WebAR viewer. Renders the owner's composed scene (3D models with
+ * animation, tappable social icons / images, video) anchored on the printed
+ * card via MindAR image tracking. Standalone HTML, loaded by the app's WebView.
+ * Same family of tech as PlugXR / Kivicube / MyWebAR; swap the engine here for
+ * an 8th Wall project URL later for premium tracking.
+ */
+import { createClient } from "@supabase/supabase-js";
+import { normalizeLink, socialPreset } from "@/lib/ar/scene";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const APP_URL = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL ?? "";
+const APP_ANON = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_ANON_KEY ?? "";
+
+const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js";
+const AFRAME_EXTRAS = "https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js";
+const MINDAR = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
+
+function page(body: string) {
+  return new Response(body, { headers: { "content-type": "text/html; charset=utf-8" } });
+}
+function fallback(message: string) {
+  return page(`<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>body{margin:0;background:#0a0a0a;color:#e6edf3;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:24px}</style>
+</head><body><div><p>${message}</p></div></body></html>`);
+}
+
+export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string }> }) {
+  const { cardId } = await ctx.params;
+  if (!APP_URL || !APP_ANON) return fallback("AR isn’t configured.");
+
+  const supabase = createClient(APP_URL, APP_ANON, { auth: { persistSession: false } });
+  const { data, error } = await supabase.rpc("resolve_ar_model_for_card", { p_card_id: cardId });
+  if (error || !data) return fallback("This card doesn’t have an AR experience yet.");
+
+  const m = data as Record<string, any>;
+  const ref =
+    typeof m.reference_image_path === "string" && /^https?:\/\//i.test(m.reference_image_path)
+      ? m.reference_image_path
+      : null;
+
+  const rawEls = Array.isArray(m.scene?.elements) ? m.scene.elements : [];
+  const elements = rawEls
+    .filter((el: Record<string, any>) => !el.hidden)
+    .map((el: Record<string, any>) => {
+      const p = socialPreset(el.platform);
+      return {
+        type: el.type,
+        url: typeof el.url === "string" ? el.url : null,
+        color: el.type === "text" ? (typeof el.color === "string" ? el.color : "#18181b") : p?.color ?? null,
+        label: el.label ?? p?.label ?? null,
+        text: typeof el.text === "string" ? el.text : null,
+        link: el.link ? normalizeLink(String(el.link)) : null,
+        position: Array.isArray(el.position) ? el.position : [0, 0.2, 0.15],
+        rotationY: Number(el.rotationY) || 0,
+        scale: Number(el.scale) || 1,
+        animated: !!el.animated,
+        spin: !!el.spin,
+      };
+    });
+
+  if (!ref) return fallback("This card isn’t set up for AR tracking yet.");
+
+  return page(viewerHtml({ referenceImageUrl: ref, elements }));
+}
+
+function viewerHtml(view: unknown): string {
+  const json = JSON.stringify(view).replace(/</g, "\\u003c");
+  return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>AR Card</title>
+<style>
+  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif;color:#fff}
+  #status{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:30;background:#0a0a0a}
+  #status.hide{display:none}
+  .spin{width:34px;height:34px;border:3px solid rgba(255,255,255,.2);border-top-color:#F59E0B;border-radius:50%;animation:r 1s linear infinite;margin:0 auto 14px}
+  @keyframes r{to{transform:rotate(360deg)}}
+  #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+</style>
+</head>
+<body>
+<div id="status"><div><div class="spin"></div><div id="msg">Preparing AR…</div></div></div>
+<div id="hint"></div>
+<div id="scene"></div>
+<script>window.__AR__ = ${json};</script>
+<script src="${AFRAME}"></script>
+<script src="${AFRAME_EXTRAS}"></script>
+<script src="${MINDAR}"></script>
+<script>
+(function(){
+  var D = window.__AR__ || {};
+  var statusEl = document.getElementById('status');
+  var msgEl = document.getElementById('msg');
+  var hintEl = document.getElementById('hint');
+  function fail(t){ msgEl.textContent = t; statusEl.classList.remove('hide'); }
+  function ready(){ statusEl.classList.add('hide'); }
+
+  function loadImage(url){
+    return new Promise(function(res, rej){
+      var img = new Image(); img.crossOrigin = 'anonymous';
+      img.onload = function(){ res(img); }; img.onerror = rej; img.src = url;
+    });
+  }
+
+  function buildElement(el){
+    var node;
+    if (el.type === 'model' && el.url){
+      node = document.createElement('a-gltf-model');
+      node.setAttribute('src', el.url);
+      if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat');
+    } else if (el.type === 'image' && el.url){
+      node = document.createElement('a-image');
+      node.setAttribute('src', el.url);
+      node.setAttribute('width', 0.3); node.setAttribute('height', 0.3);
+    } else if (el.type === 'social'){
+      node = document.createElement('a-entity');
+      var bg = document.createElement('a-plane');
+      bg.setAttribute('width', 0.26); bg.setAttribute('height', 0.26);
+      bg.setAttribute('color', el.color || '#0A66C2');
+      bg.setAttribute('material', 'shader: flat');
+      bg.setAttribute('geometry', 'primitive: plane');
+      node.appendChild(bg);
+      var t = document.createElement('a-text');
+      t.setAttribute('value', el.label || 'Link'); t.setAttribute('align', 'center');
+      t.setAttribute('color', '#ffffff'); t.setAttribute('width', 0.6);
+      t.setAttribute('position', '0 0 0.01');
+      node.appendChild(t);
+    } else if (el.type === 'video' && el.url){
+      node = document.createElement('a-video');
+      node.setAttribute('src', el.url);
+      node.setAttribute('width', 0.5); node.setAttribute('height', 0.3);
+      node.setAttribute('autoplay', 'true'); node.setAttribute('loop', 'true');
+      node.setAttribute('playsinline', 'true');
+    } else if (el.type === 'text' && el.text){
+      node = document.createElement('a-text');
+      node.setAttribute('value', el.text);
+      node.setAttribute('align', 'center');
+      node.setAttribute('color', el.color || '#18181b');
+      node.setAttribute('width', 1.2);
+      node.setAttribute('baseline', 'center');
+    }
+    if (!node) return null;
+    var p = el.position || [0,0,0.15];
+    node.setAttribute('position', p[0] + ' ' + p[1] + ' ' + p[2]);
+    node.setAttribute('rotation', '0 ' + ((el.rotationY || 0) * 180 / Math.PI) + ' 0');
+    var s = el.scale || 1;
+    node.setAttribute('scale', s + ' ' + s + ' ' + s);
+    if (el.spin){
+      node.setAttribute('animation__spin', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
+    }
+    if (el.link){
+      node.classList.add('clickable');
+      node.addEventListener('click', function(){ window.open(el.link, '_blank'); });
+    }
+    return node;
+  }
+
+  function start(targetSrc){
+    var scene = document.createElement('a-scene');
+    scene.setAttribute('mindar-image', 'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no');
+    scene.setAttribute('color-space', 'sRGB');
+    scene.setAttribute('renderer', 'colorManagement: true, physicallyCorrectLights');
+    scene.setAttribute('vr-mode-ui', 'enabled: false');
+    scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
+
+    var cam = document.createElement('a-camera');
+    cam.setAttribute('position', '0 0 0');
+    cam.setAttribute('look-controls', 'enabled: false');
+    cam.setAttribute('cursor', 'rayOrigin: mouse');
+    cam.setAttribute('raycaster', 'objects: .clickable');
+    scene.appendChild(cam);
+
+    var light = document.createElement('a-entity');
+    light.setAttribute('light', 'type: ambient; intensity: 1');
+    scene.appendChild(light);
+    var dir = document.createElement('a-entity');
+    dir.setAttribute('light', 'type: directional; intensity: 0.6');
+    dir.setAttribute('position', '1 2 1');
+    scene.appendChild(dir);
+
+    var anchor = document.createElement('a-entity');
+    anchor.setAttribute('mindar-image-target', 'targetIndex: 0');
+    (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
+    scene.appendChild(anchor);
+
+    document.getElementById('scene').appendChild(scene);
+    scene.addEventListener('arReady', function(){ ready(); hintEl.textContent = 'Point at the card'; });
+    scene.addEventListener('arError', function(){ fail('Camera unavailable. Allow camera access and reload.'); });
+    anchor.addEventListener('targetFound', function(){ hintEl.textContent = ''; });
+    anchor.addEventListener('targetLost', function(){ hintEl.textContent = 'Point at the card'; });
+    setTimeout(ready, 4500);
+  }
+
+  async function init(){
+    try {
+      if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler){ fail('AR engine failed to load.'); return; }
+      var img = await loadImage(D.referenceImageUrl);
+      var compiler = new window.MINDAR.IMAGE.Compiler();
+      await compiler.compileImageTargets([img], function(){});
+      var buffer = await compiler.exportData();
+      start(URL.createObjectURL(new Blob([buffer])));
+    } catch(e){ fail('Could not start AR. Make sure camera access is allowed.'); }
+  }
+  init();
+})();
+</script>
+</body>
+</html>`;
+}
