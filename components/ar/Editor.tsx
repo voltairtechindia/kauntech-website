@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, DEFAULT_TEXT_COLOR, SOCIAL_PRESETS, normalizeLink, socialPreset } from "@/lib/ar/scene";
@@ -15,6 +15,11 @@ interface SceneCard {
   frontUrl?: string;
   backUrl?: string;
   target?: Side;
+  // Text OCR'd from each card photo at upload time. Stored alongside the photos
+  // and combined into ar_models.ocr_text so the app's markerless AR scanner can
+  // match a scanned card against what this card actually prints.
+  frontOcr?: string;
+  backOcr?: string;
 }
 function readCard(model: ArModel | null): SceneCard {
   const c = (model?.scene as { card?: SceneCard })?.card;
@@ -24,6 +29,19 @@ const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u
 
 let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
+
+// On-device OCR of a card photo via Tesseract.js (dynamically imported so it
+// never weighs down the initial editor bundle). Returns trimmed text, or "" on
+// any failure — callers must treat it as best-effort.
+async function ocrImageFile(file: File): Promise<string> {
+  try {
+    const Tesseract = (await import("tesseract.js")).default;
+    const { data } = await Tesseract.recognize(file, "eng");
+    return (data.text ?? "").replace(/\s+/g, " ").trim();
+  } catch {
+    return "";
+  }
+}
 
 function readElements(model: ArModel | null): ArElement[] {
   const raw = (model?.scene as { elements?: unknown })?.elements;
@@ -70,6 +88,11 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   const [backPreview, setBackPreview] = useState<string | null>(null);
   const [activeSide, setActiveSide] = useState<Side>(initCard.target ?? "front");
   const [cropFor, setCropFor] = useState<{ side: Side; file: File } | null>(null);
+  // OCR'd text per side. Seeded from what was saved; re-read on the device only
+  // when a side's photo actually changes (a newly cropped file).
+  const [frontOcr, setFrontOcr] = useState<string>(initCard.frontOcr ?? "");
+  const [backOcr, setBackOcr] = useState<string>(initCard.backOcr ?? "");
+  const [ocrBusy, setOcrBusy] = useState(false);
 
   const modelInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
@@ -97,13 +120,38 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
       setFrontFile(null);
       setFrontPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
       setFrontUrl(null);
+      setFrontOcr("");
     } else {
       setBackFile(null);
       setBackPreview((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
       setBackUrl(null);
+      setBackOcr("");
     }
     if (target === side) setTarget(side === "front" ? "back" : "front");
   }
+
+  // Read the printed text off a freshly cropped photo (on-device, no upload, no
+  // API key) so we can store it for the app's markerless AR matcher. Best-effort
+  // and non-blocking: failures just leave that side's OCR empty.
+  useEffect(() => {
+    if (!frontFile) return;
+    let alive = true;
+    setOcrBusy(true);
+    ocrImageFile(frontFile)
+      .then((t) => { if (alive) setFrontOcr(t); })
+      .finally(() => { if (alive) setOcrBusy(false); });
+    return () => { alive = false; };
+  }, [frontFile]);
+
+  useEffect(() => {
+    if (!backFile) return;
+    let alive = true;
+    setOcrBusy(true);
+    ocrImageFile(backFile)
+      .then((t) => { if (alive) setBackOcr(t); })
+      .finally(() => { if (alive) setOcrBusy(false); });
+    return () => { alive = false; };
+  }, [backFile]);
   function pickPhoto(side: Side) {
     pendingSide.current = side;
     photoInput.current?.click();
@@ -224,6 +272,9 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
       else if (frontUrl) fd.set("front_url", frontUrl);
       if (backFile) fd.set("back_image", backFile);
       else if (backUrl) fd.set("back_url", backUrl);
+      // Printed text per side, for the app's markerless AR matcher.
+      if (frontOcr) fd.set("front_ocr", frontOcr);
+      if (backOcr) fd.set("back_ocr", backOcr);
       const res = await fetch("/api/ar/upload", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || "Save failed.");
@@ -267,6 +318,7 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
           <span className="ar-muted">Compose what shows on your card in AR. Drag to place, attach links.</span>
         </div>
         <div className="ar-row">
+          {ocrBusy ? <span className="ar-muted">Reading card text…</span> : null}
           {savedOk ? <span className="ar-saved-pill">Saved</span> : null}
           <a className="ar-btn ar-btn-ghost" href="/ar">← All cards</a>
           <button className="ar-btn ar-btn-primary" onClick={save} disabled={busy}>

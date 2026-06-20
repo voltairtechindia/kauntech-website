@@ -37,10 +37,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
   if (error || !data) return fallback("This card doesn’t have an AR experience yet.");
 
   const m = data as Record<string, any>;
-  const ref =
-    typeof m.reference_image_path === "string" && /^https?:\/\//i.test(m.reference_image_path)
-      ? m.reference_image_path
-      : null;
+  const isHttp = (u: unknown): u is string => typeof u === "string" && /^https?:\/\//i.test(u);
+
+  // AR image targets: both card photos when present (so AR fires whether the
+  // viewer points at the front OR the back), else the single chosen target, else
+  // the legacy QR image. De-duped, order preserved.
+  const sceneCard = (m.scene && typeof m.scene === "object" ? (m.scene as any).card : null) ?? {};
+  let targets: string[] = [sceneCard.frontUrl, sceneCard.backUrl].filter(isHttp);
+  if (targets.length === 0 && isHttp(m.reference_image_path)) targets = [m.reference_image_path];
+  targets = Array.from(new Set(targets));
 
   const rawEls = Array.isArray(m.scene?.elements) ? m.scene.elements : [];
   const elements = rawEls
@@ -62,9 +67,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
       };
     });
 
-  if (!ref) return fallback("This card isn’t set up for AR tracking yet.");
+  if (targets.length === 0) return fallback("This card isn’t set up for AR tracking yet.");
 
-  return page(viewerHtml({ referenceImageUrl: ref, elements }));
+  return page(viewerHtml({ targets, elements }));
 }
 
 function viewerHtml(view: unknown): string {
@@ -161,8 +166,10 @@ function viewerHtml(view: unknown): string {
     return node;
   }
 
-  function start(targetSrc){
+  function start(targetSrc, count){
     var scene = document.createElement('a-scene');
+    // maxTrack: 1 — only one side is ever visible at a time; we still register
+    // every card photo as a target so AR fires for whichever one is shown.
     scene.setAttribute('mindar-image', 'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no');
     scene.setAttribute('color-space', 'sRGB');
     scene.setAttribute('renderer', 'colorManagement: true, physicallyCorrectLights');
@@ -184,27 +191,33 @@ function viewerHtml(view: unknown): string {
     dir.setAttribute('position', '1 2 1');
     scene.appendChild(dir);
 
-    var anchor = document.createElement('a-entity');
-    anchor.setAttribute('mindar-image-target', 'targetIndex: 0');
-    (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
-    scene.appendChild(anchor);
+    // One anchor per target index, each carrying its own copy of the scene
+    // (DOM nodes can't be shared, so rebuild per anchor).
+    for (var i = 0; i < count; i++){
+      var anchor = document.createElement('a-entity');
+      anchor.setAttribute('mindar-image-target', 'targetIndex: ' + i);
+      (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
+      anchor.addEventListener('targetFound', function(){ hintEl.textContent = ''; });
+      anchor.addEventListener('targetLost', function(){ hintEl.textContent = 'Point at the card'; });
+      scene.appendChild(anchor);
+    }
 
     document.getElementById('scene').appendChild(scene);
     scene.addEventListener('arReady', function(){ ready(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('arError', function(){ fail('Camera unavailable. Allow camera access and reload.'); });
-    anchor.addEventListener('targetFound', function(){ hintEl.textContent = ''; });
-    anchor.addEventListener('targetLost', function(){ hintEl.textContent = 'Point at the card'; });
     setTimeout(ready, 4500);
   }
 
   async function init(){
     try {
       if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler){ fail('AR engine failed to load.'); return; }
-      var img = await loadImage(D.referenceImageUrl);
+      var urls = (D.targets || []).filter(Boolean);
+      if (!urls.length){ fail('This card isn\\u2019t set up for AR tracking yet.'); return; }
+      var imgs = await Promise.all(urls.map(loadImage));
       var compiler = new window.MINDAR.IMAGE.Compiler();
-      await compiler.compileImageTargets([img], function(){});
+      await compiler.compileImageTargets(imgs, function(){});
       var buffer = await compiler.exportData();
-      start(URL.createObjectURL(new Blob([buffer])));
+      start(URL.createObjectURL(new Blob([buffer])), imgs.length);
     } catch(e){ fail('Could not start AR. Make sure camera access is allowed.'); }
   }
   init();

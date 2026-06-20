@@ -126,7 +126,21 @@ export async function POST(req: Request) {
     card.custom_qr_url ??
     null;
 
-  scene.card = { frontUrl: frontUrl ?? undefined, backUrl: backUrl ?? undefined, target: targetSide };
+  // Printed text per side (OCR'd in the editor). Stored on scene.card so the
+  // editor can re-seed without re-OCR, and combined into ar_models.ocr_text so
+  // the app's markerless AR matcher (resolve_ar_card_by_text) can match a
+  // scanned card against what this card actually prints.
+  const frontOcr = str(form.get("front_ocr")) || null;
+  const backOcr = str(form.get("back_ocr")) || null;
+  const ocrText = [frontOcr, backOcr].filter(Boolean).join("\n") || null;
+
+  scene.card = {
+    frontUrl: frontUrl ?? undefined,
+    backUrl: backUrl ?? undefined,
+    target: targetSide,
+    frontOcr: frontOcr ?? undefined,
+    backOcr: backOcr ?? undefined,
+  };
 
   const row = {
     id: modelId,
@@ -138,6 +152,7 @@ export async function POST(req: Request) {
     scene,
     glb_path: null,
     reference_image_path: referenceImagePath,
+    ocr_text: ocrText,
     scale: 1,
     orientation: { x: 0, y: 0, z: 0 },
     is_default: true,
