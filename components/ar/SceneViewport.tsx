@@ -41,27 +41,41 @@ export default function SceneViewport({
   onTransform,
 }: Props) {
   return (
-    <Canvas camera={{ position: [0, 0.35, 1.9], fov: 45 }} dpr={[1, 2]} shadows>
+    <Canvas camera={{ position: [0, 1.25, 1.8], fov: 42 }} dpr={[1, 2]} shadows>
       <color attach="background" args={["#f1f0ee"]} />
       <ambientLight intensity={0.95} />
       <hemisphereLight intensity={0.6} color="#ffffff" groundColor="#bdb8b0" />
       <directionalLight position={[3, 5, 4]} intensity={1.2} castShadow />
       <directionalLight position={[-4, 2, -3]} intensity={0.4} />
 
-      {/* The card (tracking target) */}
-      <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
+      {/* Ground: the card lies flat here like a marker on a table, content
+          rises above it — matching how MindAR anchors content on the printed
+          card in real AR. */}
+      <gridHelper args={[6, 30, "#cfcbc3", "#e3e1dd"]} position={[0, -0.012, 0]} />
 
-      <Suspense fallback={null}>
-        {elements.map((el) =>
-          el.hidden ? null : el.id === selectedId ? (
-            <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
-          ) : (
-            <ElementNode key={el.id} element={el} onSelect={onSelect} />
-          ),
-        )}
-      </Suspense>
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        {/* The card (tracking target) */}
+        <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
 
-      <OrbitControls makeDefault enablePan={false} minDistance={0.8} maxDistance={5} />
+        <Suspense fallback={null}>
+          {elements.map((el) =>
+            el.hidden ? null : el.id === selectedId ? (
+              <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
+            ) : (
+              <ElementNode key={el.id} element={el} onSelect={onSelect} />
+            ),
+          )}
+        </Suspense>
+      </group>
+
+      <OrbitControls
+        makeDefault
+        enablePan={false}
+        target={[0, 0.12, 0]}
+        minDistance={0.7}
+        maxDistance={6}
+        maxPolarAngle={Math.PI / 2.05}
+      />
     </Canvas>
   );
 }

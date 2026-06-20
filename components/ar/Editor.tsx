@@ -406,8 +406,35 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
               </div>
             )}
           </div>
+        </aside>
 
-          {/* Element properties — only when something is selected */}
+        {/* Center: flat-ground composer */}
+        <div className="ar-stage">
+          <SceneViewport
+            elements={elements}
+            selectedId={selectedId}
+            mode={mode}
+            referenceImageUrl={trackableCardPhoto}
+            cardColor={viewportCardColor}
+            onSelect={setSelectedId}
+            onTransform={(id, t) => update(id, { position: t.position, rotationY: t.rotationY, scale: t.scale })}
+          />
+          {trackableCardPhoto ? (
+            <div className="ar-stage-thumb" title="The printed card the AR tracks">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={trackableCardPhoto} alt="Card target" />
+              <span>card target</span>
+            </div>
+          ) : (
+            <div className="ar-stage-empty">
+              <p className="ar-stage-empty-title">No card photo yet</p>
+              <p>Upload the printed card under <strong>Card setup</strong> so AR knows what to track.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Right: properties — appears when a layer is selected */}
+        <aside className="ar-props">
           {selected ? (
             <div className="ar-card ar-stack">
               <div className="ar-row ar-between">
@@ -534,34 +561,13 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
               </button>
             </div>
           ) : (
-            <span className="ar-muted" style={{ padding: "0 2px" }}>Select a layer above to edit its link, size and position.</span>
+            <div className="ar-props-empty">
+              <span className="ar-props-empty-ico" aria-hidden>⌖</span>
+              <p className="ar-props-empty-title">Nothing selected</p>
+              <span className="ar-muted">Select a layer to edit its link, size and X / Y / Z position.</span>
+            </div>
           )}
         </aside>
-
-        {/* Right: 3D composer (fills the rest of the width) */}
-        <div className="ar-stage">
-          <SceneViewport
-            elements={elements}
-            selectedId={selectedId}
-            mode={mode}
-            referenceImageUrl={trackableCardPhoto}
-            cardColor={viewportCardColor}
-            onSelect={setSelectedId}
-            onTransform={(id, t) => update(id, { position: t.position, rotationY: t.rotationY, scale: t.scale })}
-          />
-          {trackableCardPhoto ? (
-            <div className="ar-stage-thumb" title="The printed card the AR tracks">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={trackableCardPhoto} alt="Card target" />
-              <span>card target</span>
-            </div>
-          ) : (
-            <div className="ar-stage-empty">
-              <p className="ar-stage-empty-title">No card photo yet</p>
-              <p>Upload the printed card under <strong>Card setup</strong> so AR knows what to track.</p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
