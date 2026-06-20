@@ -91,6 +91,11 @@ function viewerHtml(view: unknown): string {
   .spin{width:34px;height:34px;border:3px solid rgba(255,255,255,.2);border-top-color:#F59E0B;border-radius:50%;animation:r 1s linear infinite;margin:0 auto 14px}
   @keyframes r{to{transform:rotate(360deg)}}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  /* MindAR injects + sizes the camera <video> itself; we only keep the WebGL
+     canvas transparent and above it so the live feed shows through. Don't resize
+     the video here — MindAR aligns the 3D overlay to its own video dimensions. */
+  .a-canvas{background-color:transparent !important;z-index:1 !important}
+  video{z-index:0 !important}
 </style>
 </head>
 <body>
@@ -222,7 +227,9 @@ function viewerHtml(view: unknown): string {
     // every card photo as a target so AR fires for whichever one is shown.
     scene.setAttribute('mindar-image', 'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no');
     scene.setAttribute('color-space', 'sRGB');
-    scene.setAttribute('renderer', 'colorManagement: true, physicallyCorrectLights');
+    // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
+    // so the MindAR camera feed shows behind the 3D content.
+    scene.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights: true; alpha: true');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
     // We drive our own status overlay — kill A-Frame's default (blue, dotted)
@@ -259,7 +266,21 @@ function viewerHtml(view: unknown): string {
     log('scene appended, targets=' + count);
     scene.addEventListener('loaded', function(){ log('scene loaded'); });
     scene.addEventListener('renderstart', function(){ log('renderstart'); });
-    scene.addEventListener('arReady', function(){ log('arReady'); ready(); hintEl.textContent = 'Point at the card'; });
+    scene.addEventListener('arReady', function(){
+      log('arReady');
+      ready();
+      hintEl.textContent = 'Point at the card';
+      // Probe the camera video + canvas so a black screen is diagnosable.
+      setTimeout(function(){
+        try {
+          var v = document.querySelector('video');
+          var c = document.querySelector('canvas.a-canvas') || document.querySelector('canvas');
+          if (v){ var vs = getComputedStyle(v); log('video ' + v.videoWidth + 'x' + v.videoHeight + ' play=' + (!v.paused) + ' disp=' + vs.display + ' vis=' + vs.visibility + ' z=' + vs.zIndex + ' op=' + vs.opacity); }
+          else { log('video: none'); }
+          if (c){ var cs = getComputedStyle(c); log('canvas bg=' + cs.backgroundColor + ' z=' + cs.zIndex + ' op=' + cs.opacity); }
+        } catch(err){ log('probe err: ' + (err && err.message)); }
+      }, 800);
+    });
     scene.addEventListener('arError', function(){ fail('Camera unavailable. Close and reopen, and make sure no other app is using the camera.'); });
     // Watchdog: if the camera/tracker never comes up, say so instead of hanging.
     setTimeout(function(){
