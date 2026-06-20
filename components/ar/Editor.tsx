@@ -31,12 +31,13 @@ let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
 
 // On-device OCR of a card photo via Tesseract.js (dynamically imported so it
-// never weighs down the initial editor bundle). Returns trimmed text, or "" on
-// any failure — callers must treat it as best-effort.
-async function ocrImageFile(file: File): Promise<string> {
+// never weighs down the initial editor bundle). Accepts a File (freshly cropped)
+// or an image URL (an already-saved photo). Returns trimmed text, or "" on any
+// failure — callers must treat it as best-effort.
+async function ocrImageSrc(src: File | string): Promise<string> {
   try {
     const Tesseract = (await import("tesseract.js")).default;
-    const { data } = await Tesseract.recognize(file, "eng");
+    const { data } = await Tesseract.recognize(src, "eng");
     return (data.text ?? "").replace(/\s+/g, " ").trim();
   } catch {
     return "";
@@ -133,25 +134,30 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   // Read the printed text off a freshly cropped photo (on-device, no upload, no
   // API key) so we can store it for the app's markerless AR matcher. Best-effort
   // and non-blocking: failures just leave that side's OCR empty.
+  // Newly cropped file → OCR it. Existing remote photo with no stored text yet
+  // → OCR the saved image so re-saving captures it (older cards, or cards set up
+  // before OCR existed). The file branch wins when both are present.
   useEffect(() => {
-    if (!frontFile) return;
+    const src = frontFile ?? (frontUrl && !frontOcr ? frontUrl : null);
+    if (!src) return;
     let alive = true;
     setOcrBusy(true);
-    ocrImageFile(frontFile)
-      .then((t) => { if (alive) setFrontOcr(t); })
+    ocrImageSrc(src)
+      .then((t) => { if (alive && t) setFrontOcr(t); })
       .finally(() => { if (alive) setOcrBusy(false); });
     return () => { alive = false; };
-  }, [frontFile]);
+  }, [frontFile, frontUrl, frontOcr]);
 
   useEffect(() => {
-    if (!backFile) return;
+    const src = backFile ?? (backUrl && !backOcr ? backUrl : null);
+    if (!src) return;
     let alive = true;
     setOcrBusy(true);
-    ocrImageFile(backFile)
-      .then((t) => { if (alive) setBackOcr(t); })
+    ocrImageSrc(src)
+      .then((t) => { if (alive && t) setBackOcr(t); })
       .finally(() => { if (alive) setOcrBusy(false); });
     return () => { alive = false; };
-  }, [backFile]);
+  }, [backFile, backUrl, backOcr]);
   function pickPhoto(side: Side) {
     pendingSide.current = side;
     photoInput.current?.click();

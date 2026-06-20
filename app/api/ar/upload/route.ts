@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
   const { data: existing } = await supabase
     .from("ar_models")
-    .select("id, reference_image_path")
+    .select("id, reference_image_path, ocr_text")
     .eq("card_id", cardId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -132,7 +132,9 @@ export async function POST(req: Request) {
   // scanned card against what this card actually prints.
   const frontOcr = str(form.get("front_ocr")) || null;
   const backOcr = str(form.get("back_ocr")) || null;
-  const ocrText = [frontOcr, backOcr].filter(Boolean).join("\n") || null;
+  // Don't wipe previously-captured text when a save sends none (e.g. an edit that
+  // didn't re-OCR the photo) — keep whatever the model already had.
+  const ocrText = [frontOcr, backOcr].filter(Boolean).join("\n") || existing?.ocr_text || null;
 
   scene.card = {
     frontUrl: frontUrl ?? undefined,
