@@ -14,8 +14,11 @@ export const dynamic = "force-dynamic";
 const APP_URL = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL ?? "";
 const APP_ANON = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_ANON_KEY ?? "";
 
-const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js";
-const AFRAME_EXTRAS = "https://cdn.jsdelivr.net/npm/aframe-extras@7.5.4/dist/aframe-extras.min.js";
+// MindAR 1.2.5 is built for A-Frame 1.3.0 — pairing it with A-Frame 1.5.0 throws
+// at scene init (masked as a cross-origin "Script error."). Pin the matched set:
+// A-Frame 1.3.0 + aframe-extras 6.1.1 (the 1.3-compatible release).
+const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe-master.min.js";
+const AFRAME_EXTRAS = "https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js";
 const MINDAR = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
 function page(body: string) {
