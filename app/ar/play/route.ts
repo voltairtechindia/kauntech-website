@@ -103,6 +103,17 @@ export async function GET() {
     })(0, null);
   }
 
+  function stopCam(){
+    try {
+      var s = video.srcObject;
+      if (s && s.getTracks){ s.getTracks().forEach(function(t){ t.stop(); }); }
+      video.srcObject = null;
+    } catch(e){}
+  }
+  // Release the camera the moment the page is torn down / navigated away, so the
+  // native app can re-acquire it when AR closes.
+  window.addEventListener('pagehide', stopCam);
+
   errEl.style.cursor = 'pointer';
   errEl.addEventListener('click', boot);
   boot();
