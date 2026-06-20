@@ -110,6 +110,12 @@ function viewerHtml(view: unknown): string {
   // Pipe diagnostics back to the native app (Metro console) so a stuck viewer
   // isn't a black box.
   function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
+  // Forward the page's own console.error — MindAR logs the real failure reason
+  // there even when the worker error reaches us masked as "Script error."
+  try {
+    var _ce = console.error;
+    console.error = function(){ log('console.error:', Array.prototype.map.call(arguments, String).join(' ')); try { _ce.apply(console, arguments); } catch(e){} };
+  } catch(e){}
   window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
   // MindAR/getUserMedia failures surface here, not as window errors.
   window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
@@ -243,6 +249,8 @@ function viewerHtml(view: unknown): string {
 
     document.getElementById('scene').appendChild(scene);
     log('scene appended, targets=' + count);
+    scene.addEventListener('loaded', function(){ log('scene loaded'); });
+    scene.addEventListener('renderstart', function(){ log('renderstart'); });
     scene.addEventListener('arReady', function(){ log('arReady'); ready(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('arError', function(){ fail('Camera unavailable. Close and reopen, and make sure no other app is using the camera.'); });
     // Watchdog: if the camera/tracker never comes up, say so instead of hanging.
@@ -253,6 +261,13 @@ function viewerHtml(view: unknown): string {
 
   async function init(){
     try {
+      // WebView capability probe — MindAR's worker needs these; a missing one is
+      // the usual cause of a masked worker "Script error." in an in-app WebView.
+      log('env OffscreenCanvas=' + (typeof OffscreenCanvas !== 'undefined') +
+          ' createImageBitmap=' + (typeof createImageBitmap !== 'undefined') +
+          ' WASM=' + (typeof WebAssembly !== 'undefined') +
+          ' Worker=' + (typeof Worker !== 'undefined'));
+      log('ua=' + navigator.userAgent);
       log('init, targets=' + JSON.stringify(D.targets || []));
       if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler){ fail('AR engine failed to load.'); return; }
       var urls = (D.targets || []).filter(Boolean);
