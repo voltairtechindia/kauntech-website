@@ -14,12 +14,12 @@ export const dynamic = "force-dynamic";
 const APP_URL = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL ?? "";
 const APP_ANON = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_ANON_KEY ?? "";
 
-// WebAR engine. MindAR 1.2.5 + A-Frame: 1.5.0 threw a masked worker error on
-// device; pin A-Frame 1.4.2 (the release whose bundled THREE matches what MindAR
-// 1.2.5 was built against). No aframe-extras — it registered a system A-Frame
-// rejected ("systems[e] is not a constructor"); animation looping is provided by
-// the tiny inline animation-mixer below instead.
-const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe-master.min.js";
+// WebAR engine: the documented pair, A-Frame 1.5.0 + MindAR 1.2.5. A-Frame
+// evaluates strings as JS at runtime, so the /ar/* CSP must allow 'unsafe-eval'
+// (see next.config.ts) — without it A-Frame half-inits and the scene throws a
+// cascade of masked errors. No aframe-extras (it registered a system A-Frame
+// rejected); animation looping comes from the inline animation-mixer below.
+const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js";
 const MINDAR = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
 function page(body: string) {

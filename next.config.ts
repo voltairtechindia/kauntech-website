@@ -33,32 +33,40 @@ const VERCEL_ANALYTICS = "https://va.vercel-scripts.com";
  * baseline; a nonce-based strict CSP is a future upgrade. `'unsafe-eval'` is
  * added only in dev (Turbopack/HMR needs it) and never ships to production.
  */
-const csp = [
-  "default-src 'self'",
-  // 'wasm-unsafe-eval' + blob: are required by the /ar/view WebAR viewer (MindAR
-  // runs image tracking in WebAssembly + workers). MODEL_VIEWER_CDN (jsDelivr)
-  // also serves MindAR + A-Frame.
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS}${isProd ? "" : " 'unsafe-eval'"}`,
-  "style-src 'self' 'unsafe-inline'",
-  "font-src 'self' data:",
-  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com`,
-  `media-src 'self' blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN}`,
-  `connect-src 'self' blob: data: ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
-  "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'self'",
-  "upgrade-insecure-requests",
-].join("; ");
+// `allowEval` adds 'unsafe-eval' to script-src. A-Frame evaluates strings as JS
+// at runtime, so the /ar/* WebAR pages REQUIRE it (without it A-Frame half-inits
+// and MindAR scene setup throws). It's scoped to /ar/* only (see headers()) so
+// the rest of the site keeps the stricter no-eval policy. Dev always gets it
+// (Turbopack/HMR).
+const buildCsp = (allowEval: boolean) =>
+  [
+    "default-src 'self'",
+    // 'wasm-unsafe-eval' + blob: are required by the /ar/view WebAR viewer (MindAR
+    // runs image tracking in WebAssembly + workers). MODEL_VIEWER_CDN (jsDelivr)
+    // also serves MindAR + A-Frame.
+    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS}${allowEval || !isProd ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self' data:",
+    `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com`,
+    `media-src 'self' blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN}`,
+    `connect-src 'self' blob: data: ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
+    "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'self'",
+    "upgrade-insecure-requests",
+  ].join("; ");
 
-// Permissions-Policy is applied via scoped rules below — NOT here — so the AR
-// pages can enable the camera. (A page getting two Permissions-Policy headers
-// has them intersected to the most-restrictive, so the policy must be set by
-// exactly one matching rule per path.)
+const cspStrict = buildCsp(false); // most of the site — no eval
+const cspAr = buildCsp(true); // /ar/* WebAR pages — A-Frame needs eval
+
+// Both Permissions-Policy AND Content-Security-Policy are applied via scoped
+// rules below — NOT here — so the /ar/* pages get the camera + an eval-permitting
+// CSP. (A page receiving two of the same header has them intersected to the
+// most-restrictive, so each must be set by exactly one matching rule per path.)
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: csp },
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
@@ -68,6 +76,8 @@ const securityHeaders = [
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-DNS-Prefetch-Control", value: "on" },
 ];
+
+const cspHeader = (value: string) => ({ key: "Content-Security-Policy", value });
 
 // camera=() everywhere = no camera. The /ar WebAR pages need the device camera
 // (MindAR image tracking + the QR playground), so they get camera=(self).
@@ -84,13 +94,13 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      // Base security headers on everything (CSP, HSTS, etc.) — no camera policy.
+      // Non-CSP security headers (HSTS, etc.) on everything — no camera, no CSP.
       { source: "/:path*", headers: securityHeaders },
-      // AR pages: allow the same-origin camera.
-      { source: "/ar/:path*", headers: [permissionsPolicy("(self)")] },
-      // Everywhere else (not /ar or /ar/*): deny the camera. Negative lookahead
-      // so AR pages never also receive the restrictive policy.
-      { source: "/((?!ar(?:/|$)).*)", headers: [permissionsPolicy("()")] },
+      // AR pages: same-origin camera + the eval-permitting CSP (A-Frame/MindAR).
+      { source: "/ar/:path*", headers: [permissionsPolicy("(self)"), cspHeader(cspAr)] },
+      // Everywhere else (not /ar or /ar/*): deny the camera + the strict CSP.
+      // Negative lookahead so AR pages get exactly one camera policy AND one CSP.
+      { source: "/((?!ar(?:/|$)).*)", headers: [permissionsPolicy("()"), cspHeader(cspStrict)] },
     ];
   },
   async redirects() {
