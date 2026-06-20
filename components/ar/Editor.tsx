@@ -5,14 +5,16 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, DEFAULT_TEXT_COLOR, SOCIAL_PRESETS, normalizeLink, socialPreset } from "@/lib/ar/scene";
+import type { GalleryAsset } from "@/lib/ar/gallery";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
-  IconImage, IconLink, IconMove, IconRotate, IconScale, IconTarget, IconText,
+  IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconTarget, IconText,
   IconTrash, IconVideo, IconX, socialIcon,
 } from "./icons";
 
 const SceneViewport = dynamic(() => import("./SceneViewport"), { ssr: false });
 const ImageCropper = dynamic(() => import("./ImageCropper"), { ssr: false });
+const GalleryPicker = dynamic(() => import("./GalleryPicker"), { ssr: false });
 type TransformMode = "translate" | "rotate" | "scale";
 type Side = "front" | "back";
 
@@ -72,6 +74,15 @@ const TYPE_ICON: Record<ArElementType, ReactNode> = {
 function elementIcon(el: ArElement): ReactNode {
   return el.type === "social" ? socialIcon(el.platform) : TYPE_ICON[el.type];
 }
+
+type AssetTab = "model" | "image" | "video" | "text" | "social";
+const ASSET_TABS: { key: AssetTab; label: string; icon: ReactNode }[] = [
+  { key: "model", label: "3D model", icon: <IconBox /> },
+  { key: "image", label: "Image", icon: <IconImage /> },
+  { key: "video", label: "Video", icon: <IconVideo /> },
+  { key: "text", label: "Text", icon: <IconText /> },
+  { key: "social", label: "Social", icon: socialIcon() },
+];
 
 // Collapsible sidebar section: a header button that toggles its body. Used to
 // keep the left rail compact. `variant="card"` is a standalone panel; "sub" is
@@ -163,11 +174,13 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   const router = useRouter();
   const [elements, setElements] = useState<ArElement[]>(() => readElements(model));
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [assetTab, setAssetTab] = useState<AssetTab>("model");
   const [mode, setMode] = useState<TransformMode>("translate");
   const [name, setName] = useState(model?.name ?? card.name ?? "");
   const [publish, setPublish] = useState(model?.is_published ?? false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedOnce, setSavedOnce] = useState(!!model);
 
@@ -374,6 +387,19 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
   function addText() {
     add({ type: "text", text: card.name || "Your name", color: DEFAULT_TEXT_COLOR, scale: 1, rotationY: 0, position: [0, 0.42, 0.06] });
   }
+  function addGalleryModel(a: GalleryAsset) {
+    add({
+      type: "model",
+      url: a.glbUrl,
+      animated: a.animated ?? false,
+      scale: a.defaultScale ?? 0.45,
+      rotationY: 0,
+      position: [0, 0.22, 0.12],
+      // Social "coin" models carry their platform so the link field offers the
+      // right handle prefix — same UX as a flat social icon, but actually 3D.
+      ...(a.platform ? { platform: a.platform, link: "" } : {}),
+    });
+  }
 
   async function save() {
     setError(null);
@@ -448,6 +474,10 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
           onCancel={() => setCropFor(null)}
           onConfirm={(cropped) => { setSideImage(cropFor.side, cropped); setActiveSide(cropFor.side); setCropFor(null); }}
         />
+      ) : null}
+
+      {galleryOpen ? (
+        <GalleryPicker onClose={() => setGalleryOpen(false)} onPick={addGalleryModel} />
       ) : null}
 
       <div className="ar-editor-topbar">
@@ -543,37 +573,72 @@ export default function Editor({ card, model }: { card: OwnerCard; model: ArMode
             </div>
           </Collapsible>
 
-          {/* Add to card */}
+          {/* Assets — add models, images, video, text or social, by category */}
           <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
-            <span className="ar-label" style={{ margin: 0 }}>Add to card</span>
-            <div className="ar-add-grid">
-              <button className="ar-tab" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
-                <span className="ar-tab-ico" aria-hidden><IconBox /></span>
-                {uploading === "model" ? "…" : "3D model"}
-              </button>
-              <button className="ar-tab" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
-                <span className="ar-tab-ico" aria-hidden><IconImage /></span>
-                {uploading === "image" ? "…" : "Image"}
-              </button>
-              <button className="ar-tab" onClick={addVideo}>
-                <span className="ar-tab-ico" aria-hidden><IconVideo /></span>
-                Video
-              </button>
-              <button className="ar-tab" onClick={addText}>
-                <span className="ar-tab-ico" aria-hidden><IconText /></span>
-                Text
-              </button>
+            <span className="ar-label" style={{ margin: 0 }}>Assets</span>
+            <div className="ar-asset-tabs" role="tablist">
+              {ASSET_TABS.map((t) => (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={assetTab === t.key}
+                  title={t.label}
+                  className={`ar-asset-tab ${assetTab === t.key ? "is-active" : ""}`}
+                  onClick={() => setAssetTab(t.key)}
+                >
+                  <span className="ar-asset-tab-ico" aria-hidden>{t.icon}</span>
+                </button>
+              ))}
             </div>
-            <Collapsible title="Social links" variant="sub" defaultOpen={false}>
-              <div className="ar-social-grid">
-                {SOCIAL_PRESETS.map((s) => (
-                  <button key={s.key} className="ar-chip" onClick={() => addSocial(s.key)}>
-                    <span className="ar-chip-ico" style={{ color: s.color }} aria-hidden>{socialIcon(s.key)}</span>
-                    {s.label}
+
+            <div className="ar-asset-panel">
+              {assetTab === "model" ? (
+                <>
+                  <button className="ar-tab ar-asset-add ar-asset-gallery" onClick={() => setGalleryOpen(true)}>
+                    <span className="ar-tab-ico" aria-hidden><IconBox /></span>
+                    Choose from KaunTech gallery
                   </button>
-                ))}
-              </div>
-            </Collapsible>
+                  <button className="ar-tab ar-asset-add ar-asset-add-ghost" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
+                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                    {uploading === "model" ? "Uploading…" : "Or upload your own .glb"}
+                  </button>
+                  <span className="ar-muted ar-asset-hint">Pick a ready-made 3D model, or upload a .glb. It floats above the card and can play its animation.</span>
+                </>
+              ) : assetTab === "image" ? (
+                <>
+                  <button className="ar-tab ar-asset-add" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
+                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                    {uploading === "image" ? "Uploading…" : "Add image"}
+                  </button>
+                  <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card.</span>
+                </>
+              ) : assetTab === "video" ? (
+                <>
+                  <button className="ar-tab ar-asset-add" onClick={addVideo}>
+                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                    Add video
+                  </button>
+                  <span className="ar-muted ar-asset-hint">Adds a video plane — paste the mp4 link in its properties.</span>
+                </>
+              ) : assetTab === "text" ? (
+                <>
+                  <button className="ar-tab ar-asset-add" onClick={addText}>
+                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                    Add text
+                  </button>
+                  <span className="ar-muted ar-asset-hint">A line of text — edit the words and colour in its properties.</span>
+                </>
+              ) : (
+                <div className="ar-social-grid">
+                  {SOCIAL_PRESETS.map((s) => (
+                    <button key={s.key} className="ar-chip" onClick={() => addSocial(s.key)}>
+                      <span className="ar-chip-ico" style={{ color: s.color }} aria-hidden>{socialIcon(s.key)}</span>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Layers — always visible */}

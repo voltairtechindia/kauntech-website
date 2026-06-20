@@ -1,0 +1,70 @@
+[
+  {
+    "id": "avatars-business-person",
+    "name": "Business Person",
+    "category": "avatars",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/avatars/business-person.glb",
+    "animated": true
+  },
+  {
+    "id": "objects-robotic-arm",
+    "name": "Robotic Arm",
+    "category": "objects",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/objects/robotic-arm.glb"
+  },
+  {
+    "id": "social-email",
+    "name": "Email",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/email.glb",
+    "platform": "email"
+  },
+  {
+    "id": "social-instagram",
+    "name": "Instagram",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/instagram.glb",
+    "platform": "instagram"
+  },
+  {
+    "id": "social-linkedin",
+    "name": "LinkedIn",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/linkedin.glb",
+    "platform": "linkedin"
+  },
+  {
+    "id": "social-phone",
+    "name": "Phone",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/phone.glb"
+  },
+  {
+    "id": "social-website",
+    "name": "Website",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/website.glb",
+    "platform": "website"
+  },
+  {
+    "id": "social-whatsapp",
+    "name": "WhatsApp",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/whatsapp.glb",
+    "platform": "whatsapp"
+  },
+  {
+    "id": "social-x",
+    "name": "X",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/x.glb",
+    "platform": "x"
+  },
+  {
+    "id": "social-youtube",
+    "name": "YouTube",
+    "category": "social",
+    "glbUrl": "https://ujzchcirgmveryjavfzk.supabase.co/storage/v1/object/public/ar-gallery/social/youtube.glb",
+    "platform": "youtube"
+  }
+]

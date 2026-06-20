@@ -1,0 +1,148 @@
+#!/usr/bin/env node
+/**
+ * Ingest curated .glb models into the KaunTech AR gallery.
+ *
+ *   node scripts/ar-gallery/ingest.mjs [sourceDir]
+ *
+ * sourceDir defaults to ~/Desktop/ar-gallery-models and must contain category
+ * subfolders: social/ arrows/ avatars/ objects/. Each .glb is validated, uploaded
+ * to the public `ar-gallery` Supabase bucket, and the catalogue
+ * (lib/ar/gallery.generated.json) is regenerated. Re-running is idempotent
+ * (uploads upsert), so add models and run again any time.
+ *
+ * Reads SUPABASE_URL + SUPABASE_SERVICE_KEY from .env.local (the AR project).
+ */
+import { readdir, readFile, writeFile, stat } from "node:fs/promises";
+import { existsSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(__dirname, "../..");
+const BUCKET = "ar-gallery";
+const MAX_BYTES = 3 * 1024 * 1024; // 3 MB — matches the bucket's file_size_limit
+const CATEGORIES = ["social", "arrows", "avatars", "objects"];
+const SOCIAL_KEYS = ["instagram", "linkedin", "x", "facebook", "youtube", "whatsapp", "website", "email"];
+
+const SRC = process.argv[2] || path.join(homedir(), "Desktop", "ar-gallery-models");
+
+function loadEnv() {
+  const envPath = path.join(ROOT, ".env.local");
+  const out = {};
+  if (existsSync(envPath)) {
+    for (const line of readFileSync(envPath, "utf8").split("\n")) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+      if (m) out[m[1]] = m[2].replace(/^["']|["']$/g, "");
+    }
+  }
+  return out;
+}
+
+function slugify(s) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+// Proper brand / known casing — naive title-case mangles these.
+const NAME_OVERRIDES = {
+  linkedin: "LinkedIn", whatsapp: "WhatsApp", youtube: "YouTube",
+  x: "X", instagram: "Instagram", facebook: "Facebook",
+  email: "Email", website: "Website", phone: "Phone",
+};
+function titleize(slug) {
+  if (NAME_OVERRIDES[slug]) return NAME_OVERRIDES[slug];
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+async function main() {
+  const env = await loadEnv();
+  const SUPABASE_URL = env.SUPABASE_URL;
+  const KEY = env.SUPABASE_SERVICE_KEY;
+  if (!SUPABASE_URL || !KEY) {
+    console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_KEY in .env.local");
+    process.exit(1);
+  }
+  if (!existsSync(SRC)) {
+    console.error(`Source folder not found: ${SRC}`);
+    process.exit(1);
+  }
+
+  const entries = [];
+  let uploaded = 0;
+  let skipped = 0;
+
+  for (const category of CATEGORIES) {
+    const dir = path.join(SRC, category);
+    if (!existsSync(dir)) continue;
+    const files = (await readdir(dir)).filter((f) => f.toLowerCase().endsWith(".glb"));
+    for (const file of files.sort()) {
+      const abs = path.join(dir, file);
+      const buf = await readFile(abs);
+      const size = (await stat(abs)).size;
+
+      // glTF-Binary magic = "glTF" (0x46546C67 little-endian).
+      if (buf.length < 4 || buf.toString("ascii", 0, 4) !== "glTF") {
+        console.warn(`  skip (not a .glb): ${category}/${file}`);
+        skipped++;
+        continue;
+      }
+      if (size > MAX_BYTES) {
+        console.warn(`  skip (>${(MAX_BYTES / 1048576).toFixed(0)}MB, ${(size / 1048576).toFixed(2)}MB): ${category}/${file}`);
+        skipped++;
+        continue;
+      }
+
+      // base name without .glb, honouring .anim / .static animation overrides.
+      let base = file.replace(/\.glb$/i, "");
+      let animated = category === "avatars";
+      if (/\.anim$/i.test(base)) { animated = true; base = base.replace(/\.anim$/i, ""); }
+      else if (/\.static$/i.test(base)) { animated = false; base = base.replace(/\.static$/i, ""); }
+
+      const slug = slugify(base);
+      const id = `${category}-${slug}`;
+      const objectPath = `${category}/${slug}.glb`;
+
+      // platform for social coins → enables the tap-link prefix in the editor.
+      let platform;
+      if (category === "social") {
+        platform = SOCIAL_KEYS.find((k) => slug === k || slug.startsWith(`${k}-`) || slug.includes(k));
+      }
+
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${objectPath}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${KEY}`,
+          apikey: KEY,
+          "Content-Type": "model/gltf-binary",
+          "x-upsert": "true",
+        },
+        body: buf,
+      });
+      if (!res.ok) {
+        console.error(`  FAIL upload ${objectPath}: ${res.status} ${await res.text()}`);
+        skipped++;
+        continue;
+      }
+
+      entries.push({
+        id,
+        name: titleize(slug),
+        category,
+        glbUrl: `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${objectPath}`,
+        ...(animated ? { animated: true } : {}),
+        ...(platform ? { platform } : {}),
+      });
+      uploaded++;
+      console.log(`  ok ${category}/${slug}.glb  (${(size / 1024).toFixed(0)} KB${animated ? ", animated" : ""}${platform ? ", " + platform : ""})`);
+    }
+  }
+
+  entries.sort((a, b) => (a.category + a.name).localeCompare(b.category + b.name));
+  const outPath = path.join(ROOT, "lib", "ar", "gallery.generated.json");
+  await writeFile(outPath, JSON.stringify(entries, null, 2) + "\n");
+
+  console.log(`\nDone. uploaded=${uploaded} skipped=${skipped}`);
+  console.log(`Catalogue written: ${path.relative(ROOT, outPath)} (${entries.length} models)`);
+  if (uploaded === 0) console.log("No models found — drop .glb files into the category subfolders and re-run.");
+}
+
+main().catch((e) => { console.error(e); process.exit(1); });
