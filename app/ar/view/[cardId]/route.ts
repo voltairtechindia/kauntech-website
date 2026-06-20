@@ -14,12 +14,12 @@ export const dynamic = "force-dynamic";
 const APP_URL = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL ?? "";
 const APP_ANON = process.env.NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_ANON_KEY ?? "";
 
-// Documented, known-good WebAR pair: A-Frame 1.5.0 + MindAR 1.2.5. aframe-extras
-// was the odd one out — it registers a system that A-Frame chokes on here
-// ("systems[e] is not a constructor"), and it's only needed to LOOP animations
-// on 3D models. Dropped it; animated GLBs just won't auto-loop (acceptable),
-// everything else (models, images, social tiles, video, text) is unaffected.
-const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe-master.min.js";
+// WebAR engine. MindAR 1.2.5 + A-Frame: 1.5.0 threw a masked worker error on
+// device; pin A-Frame 1.4.2 (the release whose bundled THREE matches what MindAR
+// 1.2.5 was built against). No aframe-extras — it registered a system A-Frame
+// rejected ("systems[e] is not a constructor"); animation looping is provided by
+// the tiny inline animation-mixer below instead.
+const AFRAME = "https://cdn.jsdelivr.net/npm/aframe@1.4.2/dist/aframe-master.min.js";
 const MINDAR = "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js";
 
 function page(body: string) {
@@ -98,6 +98,25 @@ function viewerHtml(view: unknown): string {
 <div id="hint"></div>
 <div id="scene"></div>
 <script>window.__AR__ = ${json};</script>
+<script>
+// Diagnostics installed BEFORE the AR libraries so we capture errors from
+// MindAR's worker — it grabs the real Worker constructor when its script loads,
+// so the wrapper must exist first or worker errors stay masked as "Script error."
+(function(){
+  function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
+  window.__ARLOG__ = log;
+  window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
+  window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
+  try { var _ce = console.error; console.error = function(){ log('console.error:', Array.prototype.map.call(arguments, String).join(' ')); try { _ce.apply(console, arguments); } catch(_){} }; } catch(e){}
+  try {
+    var _W = window.Worker;
+    if (_W){
+      var WW = function(u, o){ var w = new _W(u, o); try { w.addEventListener('error', function(e){ log('WORKER error:', (e.message||'?') + ' @ ' + (e.filename||'') + ':' + (e.lineno||'')); }); w.addEventListener('messageerror', function(){ log('WORKER messageerror'); }); } catch(_){ } return w; };
+      WW.prototype = _W.prototype; window.Worker = WW;
+    }
+  } catch(e){}
+})();
+</script>
 <script src="${AFRAME}" crossorigin="anonymous"></script>
 <script src="${MINDAR}" crossorigin="anonymous"></script>
 <script>
@@ -107,36 +126,7 @@ function viewerHtml(view: unknown): string {
   var msgEl = document.getElementById('msg');
   var hintEl = document.getElementById('hint');
   var arReadyFired = false;
-  // Pipe diagnostics back to the native app (Metro console) so a stuck viewer
-  // isn't a black box.
-  function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
-  // Forward the page's own console.error — MindAR logs the real failure reason
-  // there even when the worker error reaches us masked as "Script error."
-  try {
-    var _ce = console.error;
-    console.error = function(){ log('console.error:', Array.prototype.map.call(arguments, String).join(' ')); try { _ce.apply(console, arguments); } catch(e){} };
-  } catch(e){}
-  // Unmask worker errors: a window-level "Script error." with no detail is the
-  // signature of MindAR's tracking worker throwing. Wrap Worker so we attach an
-  // error listener and read the REAL message (workers report it to themselves).
-  try {
-    var _Worker = window.Worker;
-    if (_Worker) {
-      var WrappedWorker = function(u, o){
-        var w = new _Worker(u, o);
-        try {
-          w.addEventListener('error', function(e){ log('WORKER error:', (e.message || '?') + ' @ ' + (e.filename || '') + ':' + (e.lineno || '')); });
-          w.addEventListener('messageerror', function(){ log('WORKER messageerror'); });
-        } catch(_){}
-        return w;
-      };
-      WrappedWorker.prototype = _Worker.prototype;
-      window.Worker = WrappedWorker;
-    }
-  } catch(e){}
-  window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
-  // MindAR/getUserMedia failures surface here, not as window errors.
-  window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
+  var log = window.__ARLOG__ || function(){};
 
   // Minimal animation-mixer so user-uploaded animated .glb models loop their
   // built-in animations — replaces aframe-extras (which crashed scene init) with
