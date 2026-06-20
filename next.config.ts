@@ -53,6 +53,10 @@ const csp = [
   "upgrade-insecure-requests",
 ].join("; ");
 
+// Permissions-Policy is applied via scoped rules below — NOT here — so the AR
+// pages can enable the camera. (A page getting two Permissions-Policy headers
+// has them intersected to the most-restrictive, so the policy must be set by
+// exactly one matching rule per path.)
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
   {
@@ -62,12 +66,15 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
-  },
   { key: "X-DNS-Prefetch-Control", value: "on" },
 ];
+
+// camera=() everywhere = no camera. The /ar WebAR pages need the device camera
+// (MindAR image tracking + the QR playground), so they get camera=(self).
+const permissionsPolicy = (camera: "()" | "(self)") => ({
+  key: "Permissions-Policy",
+  value: `camera=${camera}, microphone=(), geolocation=(), browsing-topics=()`,
+});
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -76,7 +83,15 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
   },
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      // Base security headers on everything (CSP, HSTS, etc.) — no camera policy.
+      { source: "/:path*", headers: securityHeaders },
+      // AR pages: allow the same-origin camera.
+      { source: "/ar/:path*", headers: [permissionsPolicy("(self)")] },
+      // Everywhere else (not /ar or /ar/*): deny the camera. Negative lookahead
+      // so AR pages never also receive the restrictive policy.
+      { source: "/((?!ar(?:/|$)).*)", headers: [permissionsPolicy("()")] },
+    ];
   },
   async redirects() {
     return [
