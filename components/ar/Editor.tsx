@@ -4,11 +4,11 @@ import dynamic from "next/dynamic";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
-import { type ArElement, type ArElementType, DEFAULT_TEXT_COLOR, normalizeLink, socialPreset } from "@/lib/ar/scene";
+import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
-  IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconTarget, IconText,
+  IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
   IconTrash, IconVideo, IconX, socialIcon,
 } from "./icons";
 
@@ -202,6 +202,7 @@ function TransformSlider({
 export default function Editor({ card, model, galleryAssets = [] }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; templates?: unknown }) {
   const router = useRouter();
   const [elements, setElements] = useState<ArElement[]>(() => readElements(model));
+  const [lighting, setLighting] = useState<ArLighting>(() => readLighting((model?.scene as { lighting?: unknown } | null)?.lighting));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [assetTab, setAssetTab] = useState<AssetTab>("model");
   const [mode, setMode] = useState<TransformMode>("translate");
@@ -243,8 +244,8 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   // or an added/removed side url counts as a change. OCR text is intentionally
   // excluded — it's captured in the background, not a user edit.
   const savableSnapshot = useMemo(
-    () => JSON.stringify({ elements, name, publish, target, frontUrl, backUrl }),
-    [elements, name, publish, target, frontUrl, backUrl],
+    () => JSON.stringify({ elements, lighting, name, publish, target, frontUrl, backUrl }),
+    [elements, lighting, name, publish, target, frontUrl, backUrl],
   );
   const baselineRef = useRef(savableSnapshot);
   const dirty = savableSnapshot !== baselineRef.current || !!frontFile || !!backFile;
@@ -465,7 +466,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       fd.set("source", "upload");
       fd.set("name", name);
       fd.set("publish", String(publish));
-      fd.set("scene", JSON.stringify({ elements }));
+      fd.set("scene", JSON.stringify({ elements, lighting }));
       fd.set("target_side", target);
       // Each side: send a freshly cropped file, or the existing remote url to keep.
       if (frontFile) fd.set("front_image", frontFile);
@@ -486,7 +487,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       if (savedCard.backUrl) { setBackUrl(savedCard.backUrl); setBackFile(null); setBackPreview((p) => { if (p) URL.revokeObjectURL(p); return null; }); }
       // Re-baseline to exactly what's now persisted so the Save button hides
       // until the next real change.
-      baselineRef.current = JSON.stringify({ elements, name, publish, target, frontUrl: newFront, backUrl: newBack });
+      baselineRef.current = JSON.stringify({ elements, lighting, name, publish, target, frontUrl: newFront, backUrl: newBack });
       setSavedOnce(true);
       router.refresh();
     } catch (err) {
@@ -673,6 +674,18 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
             </div>
           </div>
 
+          {/* Lighting — scene-wide; the AR view looks darker than this editor, so
+              this is the knob to brighten models when scanned. */}
+          <div className="ar-card ar-stack">
+            <span className="ar-label" style={{ margin: 0 }}>Lighting</span>
+            <TransformSlider
+              icon={<IconSun />} label="Brightness" unit="×"
+              value={lighting.intensity} min={0.4} max={3} step={0.1} fixed={1}
+              onChange={(v) => setLighting({ intensity: Math.max(0.4, Math.min(3, v)) })}
+            />
+            <span className="ar-muted">Turn this up if your models look dark when the card is scanned in AR.</span>
+          </div>
+
           {/* Layers — always visible */}
           <div className="ar-card ar-stack">
             <span className="ar-label" style={{ margin: 0 }}>Layers ({elements.length})</span>
@@ -710,6 +723,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
             mode={mode}
             referenceImageUrl={trackableCardPhoto}
             cardColor={viewportCardColor}
+            brightness={lighting.intensity}
             onSelect={setSelectedId}
             onTransform={(id, t) => update(id, { position: t.position, rotationX: t.rotationX, rotationY: t.rotationY, rotationZ: t.rotationZ, scale: t.scale })}
           />

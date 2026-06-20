@@ -82,7 +82,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
 
   if (targets.length === 0) return fallback("This card isn’t set up for AR tracking yet.");
 
-  return page(viewerHtml({ targets, elements }));
+  const li = (m.scene && typeof m.scene === "object" ? (m.scene as any).lighting : null) ?? {};
+  const lighting = { intensity: typeof li.intensity === "number" && li.intensity > 0 ? Math.min(3, li.intensity) : 1.2 };
+
+  return page(viewerHtml({ targets, elements, lighting }));
 }
 
 function viewerHtml(view: unknown): string {
@@ -94,11 +97,20 @@ function viewerHtml(view: unknown): string {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>AR Card</title>
 <style>
-  html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif;color:#fff}
-  #status{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:30;background:#0a0a0a}
+  html,body{margin:0;height:100%;background:#0b0d12;overflow:hidden;font-family:system-ui,sans-serif;color:#fff}
+  /* Single branded loading screen (no black flash, no stacked spinners). Fades
+     out once AR is actually ready. The in-app WebView draws its own matching bar
+     on top, so this is mainly the browser/fallback view. */
+  #status{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:30;
+    background:radial-gradient(120% 80% at 50% 0%, #15110a 0%, #0b0d12 60%);transition:opacity .45s ease}
+  #status.done{opacity:0}
   #status.hide{display:none}
-  .spin{width:34px;height:34px;border:3px solid rgba(255,255,255,.2);border-top-color:#F59E0B;border-radius:50%;animation:r 1s linear infinite;margin:0 auto 14px}
-  @keyframes r{to{transform:rotate(360deg)}}
+  .ld{width:min(280px,80vw)}
+  .ld-logo{font-size:17px;font-weight:600;letter-spacing:.3px;margin-bottom:18px}
+  .ld-logo b{color:#F59E0B;font-weight:700}
+  .ld-track{height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}
+  .ld-bar{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#F59E0B,#fbbf24);transition:width .3s ease}
+  .ld-pct{margin-top:10px;font-size:13px;color:#9aa3b2;font-variant-numeric:tabular-nums}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   /* The scene wrapper MUST be full-viewport — MindAR measures this container to
      size the camera video AND the 3D projection. An unsized wrapper made it
@@ -110,7 +122,11 @@ function viewerHtml(view: unknown): string {
 </style>
 </head>
 <body>
-<div id="status"><div><div class="spin"></div><div id="msg">Preparing AR…</div></div></div>
+<div id="status"><div class="ld">
+  <div class="ld-logo">KaunTech <b>AR</b></div>
+  <div class="ld-track"><div id="bar" class="ld-bar"></div></div>
+  <div id="pct" class="ld-pct">Starting…</div>
+</div></div>
 <div id="hint"></div>
 <div id="scene"></div>
 <script>window.__AR__ = ${json};</script>
@@ -139,8 +155,22 @@ function viewerHtml(view: unknown): string {
 (function(){
   var D = window.__AR__ || {};
   var statusEl = document.getElementById('status');
-  var msgEl = document.getElementById('msg');
+  var barEl = document.getElementById('bar');
+  var pctEl = document.getElementById('pct');
   var hintEl = document.getElementById('hint');
+  var lastProg = 0;
+
+  // Single source of truth for loading progress. Updates the in-page bar AND
+  // posts to the native app, which draws the matching bar over the WebView — so
+  // the user sees ONE progress bar, not a stack of spinners.
+  function rnPost(obj){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(obj)); } catch(e){} }
+  function setProg(v){
+    v = Math.max(lastProg, Math.min(100, Math.round(v))); // monotonic, never jumps back
+    lastProg = v;
+    if (barEl) barEl.style.width = v + '%';
+    if (pctEl) pctEl.textContent = v + '%';
+    rnPost({ type: 'ar-progress', value: v });
+  }
   var arReadyFired = false;
   var log = window.__ARLOG__ || function(){};
 
@@ -166,8 +196,15 @@ function viewerHtml(view: unknown): string {
       tick: function(t, dt){ if (this.mixer && dt) this.mixer.update(dt / 1000); }
     });
   }
-  function fail(t){ log('fail:', t); msgEl.textContent = t; statusEl.classList.remove('hide'); }
-  function ready(){ arReadyFired = true; statusEl.classList.add('hide'); }
+  function fail(t){ log('fail:', t); if (pctEl) pctEl.textContent = t; statusEl.classList.remove('hide', 'done'); rnPost({ type: 'ar-error', message: t }); }
+  function ready(){
+    arReadyFired = true;
+    setProg(100);
+    rnPost({ type: 'ar-ready' });
+    // Fade the branded loader out to reveal the live camera (no hard cut/black).
+    statusEl.classList.add('done');
+    setTimeout(function(){ statusEl.classList.add('hide'); }, 480);
+  }
 
   function loadImage(url){
     return new Promise(function(res, rej){
@@ -238,11 +275,19 @@ function viewerHtml(view: unknown): string {
     var scene = document.createElement('a-scene');
     // maxTrack: 1 — only one side is ever visible at a time; we still register
     // every card photo as a target so AR fires for whichever one is shown.
-    scene.setAttribute('mindar-image', 'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no');
+    // Tracking tuned for a hand-held card (defaults are jittery + drop track too
+    // eagerly): filterMinCF lowers position jitter, missTolerance holds the lock
+    // through brief blur/occlusion, warmupTolerance locks on a touch faster.
+    scene.setAttribute('mindar-image',
+      'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
+      'filterMinCF: 0.0008; filterBeta: 60; missTolerance: 12; warmupTolerance: 3');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.
-    scene.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights: true; alpha: true');
+    // No physicallyCorrectLights: it interprets intensity in physical units and
+    // left models looking dim in the WebView. Conventional lighting + the values
+    // above reads much closer to the editor preview.
+    scene.setAttribute('renderer', 'colorManagement: true; alpha: true');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
     // We drive our own status overlay — kill A-Frame's default (blue, dotted)
@@ -256,13 +301,24 @@ function viewerHtml(view: unknown): string {
     cam.setAttribute('raycaster', 'objects: .clickable');
     scene.appendChild(cam);
 
+    // Scene brightness (owner-controlled in the editor). Default 1.2. Models
+    // looked dark partly because there was too little fill light — add a
+    // hemisphere + a back fill and scale everything by the chosen brightness.
+    var B = (D.lighting && typeof D.lighting.intensity === 'number') ? D.lighting.intensity : 1.2;
     var light = document.createElement('a-entity');
-    light.setAttribute('light', 'type: ambient; intensity: 1');
+    light.setAttribute('light', 'type: ambient; intensity: ' + (1.1 * B).toFixed(3));
     scene.appendChild(light);
+    var hemi = document.createElement('a-entity');
+    hemi.setAttribute('light', 'type: hemisphere; intensity: ' + (0.8 * B).toFixed(3) + '; color: #ffffff; groundColor: #b0b4bd');
+    scene.appendChild(hemi);
     var dir = document.createElement('a-entity');
-    dir.setAttribute('light', 'type: directional; intensity: 0.6');
+    dir.setAttribute('light', 'type: directional; intensity: ' + (1.1 * B).toFixed(3));
     dir.setAttribute('position', '1 2 1');
     scene.appendChild(dir);
+    var fill = document.createElement('a-entity');
+    fill.setAttribute('light', 'type: directional; intensity: ' + (0.5 * B).toFixed(3));
+    fill.setAttribute('position', '-1 1 -1');
+    scene.appendChild(fill);
 
     // One anchor per target index, each carrying its own copy of the scene
     // (DOM nodes can't be shared, so rebuild per anchor).
@@ -281,8 +337,8 @@ function viewerHtml(view: unknown): string {
     // in a WebView the full height isn't ready yet, so it letterboxes (black band)
     // and the overlay lands off-card. Nudge it to recompute as the view settles.
     function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} }
-    scene.addEventListener('loaded', function(){ log('scene loaded'); });
-    scene.addEventListener('renderstart', function(){ log('renderstart'); relayout(); setTimeout(relayout, 500); });
+    scene.addEventListener('loaded', function(){ log('scene loaded'); setProg(82); });
+    scene.addEventListener('renderstart', function(){ log('renderstart'); setProg(92); relayout(); setTimeout(relayout, 500); });
     scene.addEventListener('arReady', function(){
       log('arReady');
       ready();
@@ -303,7 +359,7 @@ function viewerHtml(view: unknown): string {
     // Watchdog: if the camera/tracker never comes up, say so instead of hanging.
     setTimeout(function(){
       if (!arReadyFired) fail('Camera didn\\u2019t start. Close and reopen AR; if it keeps happening, fully close the app so the camera is free.');
-    }, 11000);
+    }, 18000);
   }
 
   async function init(){
@@ -317,6 +373,7 @@ function viewerHtml(view: unknown): string {
       log('ua=' + navigator.userAgent);
       log('init, targets=' + JSON.stringify(D.targets || []));
       if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler){ fail('AR engine failed to load.'); return; }
+      setProg(10); // engine (A-Frame + MindAR) parsed
       var urls = (D.targets || []).filter(Boolean);
       if (!urls.length){ fail('This card isn\\u2019t set up for AR tracking yet.'); return; }
       log('loading ' + urls.length + ' target image(s)');
@@ -326,9 +383,13 @@ function viewerHtml(view: unknown): string {
       var imgs = results.filter(function(r){ return r.status === 'fulfilled'; }).map(function(r){ return r.value; });
       if (!imgs.length){ fail('Could not load the card image. Check your connection and try again.'); return; }
       log('loaded ' + imgs.length + '/' + urls.length + ', compiling');
+      setProg(20); // card image(s) downloaded
       var compiler = new window.MINDAR.IMAGE.Compiler();
-      await compiler.compileImageTargets(imgs, function(){});
+      // Feature extraction is the slow phase — drive the bar with its real
+      // progress callback (0..1) across the 20–70% band so it never looks stuck.
+      await compiler.compileImageTargets(imgs, function(p){ setProg(20 + (Number(p) || 0) * 50); });
       var buffer = await compiler.exportData();
+      setProg(72);
       log('compiled, starting scene');
       start(URL.createObjectURL(new Blob([buffer])), imgs.length);
     } catch(e){ log('init error: ' + (e && e.message)); fail('Could not start AR. Make sure camera access is allowed.'); }

@@ -22,6 +22,8 @@ interface Props {
   mode: TransformMode;
   referenceImageUrl?: string | null;
   cardColor?: string | null;
+  /** Scene brightness multiplier (mirrors the viewer's lighting). */
+  brightness?: number;
   onSelect: (id: string | null) => void;
   onTransform: (
     id: string,
@@ -40,16 +42,20 @@ export default function SceneViewport({
   mode,
   referenceImageUrl,
   cardColor,
+  brightness = 1,
   onSelect,
   onTransform,
 }: Props) {
+  // Normalize against the default lighting (1.2) so 1× here looks like the AR
+  // viewer's default, and the slider brightens/dims both in lockstep.
+  const b = brightness / 1.2;
   return (
     <Canvas camera={{ position: [0, 1.25, 1.8], fov: 42 }} dpr={[1, 2]} shadows>
       <color attach="background" args={["#f1f0ee"]} />
-      <ambientLight intensity={0.95} />
-      <hemisphereLight intensity={0.6} color="#ffffff" groundColor="#bdb8b0" />
-      <directionalLight position={[3, 5, 4]} intensity={1.2} castShadow />
-      <directionalLight position={[-4, 2, -3]} intensity={0.4} />
+      <ambientLight intensity={0.95 * b} />
+      <hemisphereLight intensity={0.6 * b} color="#ffffff" groundColor="#bdb8b0" />
+      <directionalLight position={[3, 5, 4]} intensity={1.2 * b} castShadow />
+      <directionalLight position={[-4, 2, -3]} intensity={0.4 * b} />
 
       {/* Ground: the card lies flat here like a marker on a table, content
           rises above it — matching how MindAR anchors content on the printed
@@ -93,7 +99,10 @@ function CardBase({
   onSelect: (id: string | null) => void;
 }) {
   const W = 1;
-  const H = 0.58;
+  // Exact business-card aspect (3.5×2in → 1/1.75), matching the cropper's frame
+  // and the MindAR target's normalized width=1 — so element X/Y placed here lands
+  // in the same spot when scanned.
+  const H = 1 / 1.75;
   const usable = referenceImageUrl && /^https?:\/\//i.test(referenceImageUrl);
   return (
     <group onClick={(e) => { e.stopPropagation(); onSelect(null); }}>

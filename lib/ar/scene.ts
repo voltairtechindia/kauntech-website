@@ -48,8 +48,21 @@ export interface ArElement {
 
 export const DEFAULT_TEXT_COLOR = "#18181b";
 
+/** Scene-wide lighting. `intensity` is a brightness multiplier on every light
+ *  (1 = default). Models render dark in AR if this is too low. */
+export interface ArLighting {
+  intensity: number;
+}
+export const DEFAULT_LIGHTING: ArLighting = { intensity: 1.2 };
+export function readLighting(raw: unknown): ArLighting {
+  const i = (raw as { intensity?: unknown } | null)?.intensity;
+  const intensity = typeof i === "number" && i > 0 ? Math.min(3, i) : DEFAULT_LIGHTING.intensity;
+  return { intensity };
+}
+
 export interface ArScene {
   elements: ArElement[];
+  lighting?: ArLighting;
 }
 
 export interface SocialPreset {
