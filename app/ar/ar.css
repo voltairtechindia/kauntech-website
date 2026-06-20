@@ -279,6 +279,12 @@
   gap: var(--ar-sp-md);
   padding-right: 4px;
 }
+/* Panels must keep their full height — without this they shrink to min-content
+   as flex children and a collapsible's overflow:hidden clips its open body. The
+   rail scrolls instead. */
+.ar-side > * {
+  flex: none;
+}
 .ar-props {
   width: 320px;
   flex: none;
@@ -399,6 +405,115 @@
   border-radius: 9999px;
   flex: none;
 }
+.ar-chip-ico {
+  display: inline-flex;
+  font-size: 15px;
+  flex: none;
+}
+.ar-chip-ico svg {
+  display: block;
+}
+
+/* Collapsible sidebar sections */
+.ar-collapse-card {
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-r-lg);
+  background: var(--ar-card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+.ar-collapse-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ar-collapse-card > .ar-collapse-head {
+  padding: var(--ar-sp-lg) var(--ar-sp-xl);
+}
+.ar-collapse-card .ar-collapse-body {
+  padding: 0 var(--ar-sp-xl) var(--ar-sp-xl);
+}
+
+/* Smooth expand/collapse: animate grid rows to the content's natural height
+   and clip the inner wrapper while it grows. */
+.ar-collapse-outer {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ar-collapse.is-open > .ar-collapse-outer {
+  grid-template-rows: 1fr;
+}
+.ar-collapse-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+.ar-collapse-body {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.26s ease;
+}
+.ar-collapse.is-open > .ar-collapse-outer .ar-collapse-body {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ar-collapse-outer,
+  .ar-collapse-body,
+  .ar-collapse-chevron {
+    transition: none;
+  }
+}
+
+.ar-collapse-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ar-text-dim);
+}
+.ar-collapse-ico {
+  display: inline-flex;
+  font-size: 15px;
+  color: var(--ar-orange-deep);
+}
+.ar-collapse-ico svg,
+.ar-collapse-chevron svg {
+  display: block;
+}
+.ar-collapse-chevron {
+  display: inline-flex;
+  font-size: 16px;
+  color: var(--ar-text-muted);
+  transition: transform 0.2s ease;
+}
+.ar-collapse.is-open > .ar-collapse-head .ar-collapse-chevron {
+  transform: rotate(180deg);
+}
+/* Flush sub-section (e.g. social links inside "Add to card") */
+.ar-collapse-sub {
+  border-top: 1px solid var(--ar-border);
+}
+.ar-collapse-sub > .ar-collapse-head {
+  padding: var(--ar-sp-sm) 0 0;
+}
+.ar-collapse-sub .ar-collapse-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ar-text-muted);
+}
+.ar-collapse-sub .ar-collapse-body {
+  padding-top: var(--ar-sp-sm);
+}
 
 /* Compact button + slider */
 .ar-btn-sm {
@@ -412,12 +527,18 @@
 
 /* Saved pill */
 .ar-saved-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
   color: var(--ar-success);
   background: rgba(22, 163, 74, 0.12);
   padding: 4px 10px;
   border-radius: 9999px;
+}
+.ar-saved-pill svg {
+  display: block;
 }
 
 /* Layer rows */
@@ -751,8 +872,289 @@
   flex-direction: column;
   gap: var(--ar-sp-lg);
 }
+
+/* Inline SVG icons inherit text colour and size to 1em — keep them block-level
+   and centred wherever they sit (buttons, icon chips, status text). */
+.ar-tab-ico svg,
+.ar-el-ico svg,
+.ar-el-link svg,
+.ar-icon-btn svg,
+.ar-target-ok svg,
+.ar-target-img-empty svg,
+.ar-props-empty-ico svg,
+.ar-slider-ico svg,
+.ar-mode-ico svg,
+.ar-badge svg,
+.ar-empty-ico svg,
+.ar-tile-thumb-empty svg,
+.ar-btn svg {
+  display: block;
+}
+.ar-el-ico svg {
+  width: 14px;
+  height: 14px;
+}
+.ar-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.ar-target-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ar-target-img-empty svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Full transform controls — a labelled drag slider + precise numeric input for
+   every position / rotation / scale axis, so each element is fully adjustable. */
+.ar-transform-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ar-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ar-slider-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ar-slider-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ar-text-dim);
+}
+.ar-slider-ico {
+  display: inline-flex;
+  font-size: 14px;
+  color: var(--ar-orange-deep);
+}
+.ar-slider-val {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ar-slider-num {
+  width: 64px;
+}
+.ar-slider-unit {
+  font-size: 11px;
+  color: var(--ar-text-muted);
+  font-family: var(--font-fira-code), monospace;
+  min-width: 16px;
+}
+.ar-mode-btn {
+  flex: 1;
+  gap: 6px;
+}
+.ar-mode-ico {
+  display: inline-flex;
+  font-size: 14px;
+}
+
+/* ── /ar dashboard: fits one desktop screen — head, top bar, single grid ── */
+.ar-dash-page {
+  padding-top: var(--ar-sp-xl);
+  padding-bottom: var(--ar-sp-xl);
+}
+.ar-dash-head {
+  margin-bottom: var(--ar-sp-xl);
+}
+.ar-dash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-sp-xl);
+}
+.ar-dash-bar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--ar-sp-lg);
+}
+.ar-dash-add {
+  flex: none;
+  white-space: nowrap;
+}
+
+.ar-usage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-r-lg);
+  background: var(--ar-card);
+  padding: 12px 18px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.ar-usage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ar-sp-md);
+  margin-bottom: 8px;
+}
+.ar-usage-count {
+  font-size: 15px;
+  font-weight: 700;
+}
+.ar-usage-of {
+  color: var(--ar-text-muted);
+  font-weight: 600;
+}
+.ar-usage-tier {
+  font-size: 12.5px;
+  color: var(--ar-text-muted);
+  font-weight: 600;
+}
+.ar-meter {
+  height: 8px;
+  border-radius: 9999px;
+  background: #ececea;
+  overflow: hidden;
+}
+.ar-meter-fill {
+  height: 100%;
+  background: var(--ar-orange);
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* AR-card tile */
+.ar-tile {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-r-lg);
+  background: var(--ar-card);
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ar-tile:hover {
+  border-color: #d8d4cc;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+.ar-tile-idle .ar-tile-thumb {
+  background: #f6f5f3;
+}
+.ar-tile-thumb {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: #f1f0ee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--ar-border);
+}
+.ar-tile-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.ar-tile-thumb-empty {
+  font-size: 30px;
+  color: var(--ar-text-muted);
+}
+.ar-tile-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.ar-tile-body {
+  padding: 14px 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ar-tile-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+.ar-tile-actions {
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+}
+.ar-tile-edit {
+  flex: 1;
+}
+.ar-tile-confirm {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.ar-tile-confirm .ar-row {
+  justify-content: flex-end;
+}
+
+/* Bordered icon button (tile actions) */
+.ar-icon-btn-bordered {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ar-border);
+  flex: none;
+}
+.ar-icon-btn-bordered:hover {
+  border-color: var(--ar-orange);
+}
+.ar-icon-btn-bordered.ar-icon-danger:hover {
+  border-color: var(--ar-danger);
+}
+
+/* Danger button */
+.ar-btn-danger {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--ar-danger);
+  border-color: transparent;
+}
+.ar-btn-danger:hover {
+  background: var(--ar-danger);
+  color: #fff;
+}
+
+/* Empty / notice blocks */
+.ar-empty {
+  border: 1px dashed var(--ar-border);
+  border-radius: var(--ar-r-lg);
+  padding: var(--ar-sp-2xl);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ar-empty-ico {
+  font-size: 28px;
+  color: var(--ar-text-muted);
+}
+.ar-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ar-text-dim);
+}
 @media (max-width: 900px) {
   /* Stack on small screens and let the page scroll normally. */
+  .ar-dash-bar {
+    flex-direction: column;
+  }
+  .ar-dash-add {
+    width: 100%;
+  }
   .ar-editor-page {
     height: auto;
     overflow: visible;

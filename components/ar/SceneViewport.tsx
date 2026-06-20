@@ -23,7 +23,10 @@ interface Props {
   referenceImageUrl?: string | null;
   cardColor?: string | null;
   onSelect: (id: string | null) => void;
-  onTransform: (id: string, t: { position: [number, number, number]; rotationY: number; scale: number }) => void;
+  onTransform: (
+    id: string,
+    t: { position: [number, number, number]; rotationX: number; rotationY: number; rotationZ: number; scale: number },
+  ) => void;
 }
 
 /**
@@ -131,7 +134,9 @@ function SelectedElement({
         if (!o) return;
         onTransform(element.id, {
           position: [o.position.x, o.position.y, o.position.z],
+          rotationX: o.rotation.x,
           rotationY: o.rotation.y,
+          rotationZ: o.rotation.z,
           scale: o.scale.x,
         });
       }}
@@ -139,7 +144,7 @@ function SelectedElement({
       <group
         ref={ref}
         position={element.position}
-        rotation={[0, element.rotationY, 0]}
+        rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]}
         scale={element.scale}
       >
         <ElementBody element={element} onSelect={onSelect} selected />
@@ -150,7 +155,7 @@ function SelectedElement({
 
 function ElementNode({ element, onSelect }: { element: ArElement; onSelect: Props["onSelect"] }) {
   return (
-    <group position={element.position} rotation={[0, element.rotationY, 0]} scale={element.scale}>
+    <group position={element.position} rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]} scale={element.scale}>
       <ElementBody element={element} onSelect={onSelect} />
     </group>
   );
@@ -234,7 +239,7 @@ function ElementBody({
         <meshStandardMaterial color="#0D0F14" />
       </mesh>
       <Text position={[0, 0, 0.01]} fontSize={0.05} color="#9ca3af" anchorX="center" anchorY="middle">
-        ▶ video
+        video
       </Text>
       {selected ? <SelectRing /> : null}
     </group>

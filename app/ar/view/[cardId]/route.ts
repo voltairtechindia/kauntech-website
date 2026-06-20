@@ -71,7 +71,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
         text: typeof el.text === "string" ? el.text : null,
         link: el.link ? normalizeLink(String(el.link)) : null,
         position: Array.isArray(el.position) ? el.position : [0, 0.2, 0.15],
+        rotationX: Number(el.rotationX) || 0,
         rotationY: Number(el.rotationY) || 0,
+        rotationZ: Number(el.rotationZ) || 0,
         scale: Number(el.scale) || 1,
         animated: !!el.animated,
         spin: !!el.spin,
@@ -217,7 +219,8 @@ function viewerHtml(view: unknown): string {
     if (!node) return null;
     var p = el.position || [0,0,0.15];
     node.setAttribute('position', p[0] + ' ' + p[1] + ' ' + p[2]);
-    node.setAttribute('rotation', '0 ' + ((el.rotationY || 0) * 180 / Math.PI) + ' 0');
+    var rad2deg = function(r){ return (r || 0) * 180 / Math.PI; };
+    node.setAttribute('rotation', rad2deg(el.rotationX) + ' ' + rad2deg(el.rotationY) + ' ' + rad2deg(el.rotationZ));
     var s = el.scale || 1;
     node.setAttribute('scale', s + ' ' + s + ' ' + s);
     if (el.spin){

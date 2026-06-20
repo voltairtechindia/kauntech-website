@@ -26,7 +26,12 @@ export interface ArElement {
   color?: string;
   /** Position relative to the card centre, in card-width units. */
   position: [number, number, number];
+  /** Rotation around the Y axis (turn), in radians. Always present. */
   rotationY: number;
+  /** Rotation around the X axis (tilt forward/back), in radians. */
+  rotationX?: number;
+  /** Rotation around the Z axis (roll), in radians. */
+  rotationZ?: number;
   scale: number;
   /** Play GLB animations (avatars). */
   animated?: boolean;
