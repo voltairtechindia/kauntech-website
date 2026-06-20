@@ -69,14 +69,34 @@ export async function GET() {
     requestAnimationFrame(tick);
   }
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
-    .then(function(stream){
-      video.srcObject = stream;
-      video.setAttribute('playsinline', 'true');
-      return video.play();
-    })
-    .then(function(){ requestAnimationFrame(tick); })
-    .catch(function(){ fail('Allow camera access, then reopen AR.'); });
+  function boot(){
+    errEl.style.display = 'none';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      fail('Camera needs a secure (https) connection.');
+      return;
+    }
+    // Try the back camera first, then fall back to any camera — some WebViews
+    // and emulators reject the strict facingMode constraint.
+    var attempts = [
+      { video: { facingMode: { ideal: 'environment' } }, audio: false },
+      { video: true, audio: false }
+    ];
+    (function tryNext(i){
+      if (i >= attempts.length){ fail('Allow camera access, then tap to retry.'); return; }
+      navigator.mediaDevices.getUserMedia(attempts[i])
+        .then(function(stream){
+          video.srcObject = stream;
+          video.setAttribute('playsinline', 'true');
+          return video.play();
+        })
+        .then(function(){ requestAnimationFrame(tick); })
+        .catch(function(){ tryNext(i + 1); });
+    })(0);
+  }
+
+  errEl.style.cursor = 'pointer';
+  errEl.addEventListener('click', boot);
+  boot();
 })();
 </script>
 </body>
