@@ -116,18 +116,20 @@ export async function POST(req: Request) {
     return bad(e instanceof Error && !e.message.includes("ar_") ? e.message : m.error, m.status);
   }
 
+  const targetSide = str(form.get("target_side")) === "back" ? "back" : "front";
   const isSentFile = (k: string) => {
     const f = form.get(k);
     return f instanceof File && f.size > 0;
   };
-  const photosChanged = isSentFile("front_image") || isSentFile("back_image");
 
-  // Prebuilt MindAR target (.mind), compiled in the editor at save time, so the
-  // public viewer can skip the slow on-device compile. Optional + non-fatal: if
-  // it's absent or fails to store, the viewer just compiles at view time.
+  // Prebuilt MindAR target (.mind) for the CHOSEN side, compiled in the editor at
+  // save time, so the public viewer skips the slow on-device compile and tracks a
+  // single target. Optional + non-fatal: if it's absent or fails to store, the
+  // viewer just compiles at view time.
   let mindUrl: string | null = null;
   let mindTargets: number | null = null;
   const mindFile = form.get("mind");
+  const existingCard = ((existing?.scene as { card?: Record<string, unknown> } | null)?.card) ?? {};
   if (mindFile instanceof File && mindFile.size > 0) {
     try {
       const path = `${userId}/${cardId}/${modelId}.mind`;
@@ -147,17 +149,17 @@ export async function POST(req: Request) {
       /* non-fatal — fall back to runtime compile in the viewer */
     }
   } else {
-    // No new .mind this save. Keep the existing one ONLY if the target photos
-    // didn't change; otherwise it was built from the old photos and would track
-    // against stale features, so drop it and let the viewer recompile.
-    const existingCard = ((existing?.scene as { card?: Record<string, unknown> } | null)?.card) ?? {};
-    if (!photosChanged && typeof existingCard.mindUrl === "string") {
+    // No new .mind this save. Keep the existing one ONLY if the TARGET side and its
+    // photo are unchanged; if either changed it was built from the old target and
+    // would track stale features, so drop it and let the viewer recompile.
+    const targetPhotoChanged = targetSide === "back" ? isSentFile("back_image") : isSentFile("front_image");
+    const targetSideChanged = typeof existingCard.target === "string" && existingCard.target !== targetSide;
+    if (!targetPhotoChanged && !targetSideChanged && typeof existingCard.mindUrl === "string") {
       mindUrl = existingCard.mindUrl;
       mindTargets = typeof existingCard.mindTargets === "number" ? existingCard.mindTargets : null;
     }
   }
 
-  const targetSide = str(form.get("target_side")) === "back" ? "back" : "front";
   // AR tracking target = the chosen side; fall back to the other side, then the
   // existing target, then the card's QR image so older cards keep working.
   const referenceImagePath =

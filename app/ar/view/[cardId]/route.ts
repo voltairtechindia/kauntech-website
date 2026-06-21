@@ -53,10 +53,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
   // AR image targets: both card photos when present (so AR fires whether the
   // viewer points at the front OR the back), else the single chosen target, else
   // the legacy QR image. De-duped, order preserved.
+  // Track a SINGLE side — the one the owner chose as the AR target. One target is
+  // faster to lock and more stable than registering both sides. Fall back to
+  // whichever side has a photo, then the legacy reference image.
   const sceneCard = (m.scene && typeof m.scene === "object" ? (m.scene as any).card : null) ?? {};
-  let targets: string[] = [sceneCard.frontUrl, sceneCard.backUrl].filter(isHttp);
+  const targetSide = sceneCard.target === "back" ? "back" : "front";
+  const chosenUrl = targetSide === "back" ? sceneCard.backUrl : sceneCard.frontUrl;
+  let targets: string[] = [chosenUrl].filter(isHttp);
+  if (targets.length === 0) targets = [sceneCard.frontUrl, sceneCard.backUrl].filter(isHttp).slice(0, 1);
   if (targets.length === 0 && isHttp(m.reference_image_path)) targets = [m.reference_image_path];
-  targets = Array.from(new Set(targets));
 
   // Prebuilt MindAR target compiled in the editor: the viewer downloads it and
   // skips the slow on-device feature-extraction compile. `targets` stays as the
@@ -158,14 +163,13 @@ function viewerHtml(view: unknown): string {
       WW.prototype = _W.prototype; window.Worker = WW;
     }
   } catch(e){}
-  // Open the rear camera with constraints tuned for TRACKING LATENCY. By default
-  // getUserMedia often gives 640x480 (too low-detail → weak tracking), but going
-  // all the way to 1080p means MindAR's worker chews ~2× the pixels per frame, so
-  // poses update less often and the overlay lags the card. 720p is the sweet spot:
-  // far above the low-detail threshold for our crisp 1440px target, yet light
-  // enough that tracking refreshes fast — and we ask for 60fps so capable phones
-  // feed twice as many frames (= fresher, more "glued" poses). Merged into every
-  // video request the page makes (MindAR included).
+  // Open the rear camera at HIGH RESOLUTION for tracking PRECISION. The pose is
+  // computed from feature positions in the camera frame, so more pixels = more
+  // precise (sub-pixel) feature localisation = a steadier, less jittery pose. For
+  // "stays in place" this matters more than frame count, so 1080p@30 beats the
+  // 720p@60 we tried (which was lighter but noisier → contributed to the shake).
+  // 640x480 (the gUM default) is too low-detail and tracks poorly. continuous AF
+  // keeps the card sharp. Merged into every video request the page makes.
   try {
     var md = navigator.mediaDevices;
     if (md && md.getUserMedia){
@@ -175,10 +179,10 @@ function viewerHtml(view: unknown): string {
           c = c || {};
           if (c.video){
             var v = (typeof c.video === 'object') ? c.video : {};
-            if (v.width == null) v.width = { ideal: 1280 };
-            if (v.height == null) v.height = { ideal: 720 };
+            if (v.width == null) v.width = { ideal: 1920 };
+            if (v.height == null) v.height = { ideal: 1080 };
             if (v.facingMode == null) v.facingMode = { ideal: 'environment' };
-            if (v.frameRate == null) v.frameRate = { ideal: 60 };
+            if (v.frameRate == null) v.frameRate = { ideal: 30 };
             // continuous AF keeps the card sharp as the phone moves — as an
             // ADVANCED (optional) constraint so it never makes gUM throw.
             v.advanced = (v.advanced || []).concat([{ focusMode: 'continuous' }]);
@@ -321,27 +325,28 @@ function viewerHtml(view: unknown): string {
 
   function start(targetSrc, count){
     var scene = document.createElement('a-scene');
-    // maxTrack: 1 — only one side is ever visible at a time; we still register
-    // every card photo as a target so AR fires for whichever one is shown.
+    // maxTrack: 1 — a SINGLE tracking target (the chosen card side). We used to
+    // register both sides; one target locks faster, can't mis-switch between two
+    // similar-looking sides, and leaves more CPU per frame for a steadier pose.
     //
-    // Tracking is tuned to feel GLUED to the card (low lag) rather than only
-    // smooth-at-rest. MindAR runs a One-Euro filter where the smoothing cutoff is
+    // MindAR runs a One-Euro filter on the pose:
     //   cutoff = filterMinCF + filterBeta * |velocity|
-    // so the two knobs are independent:
-    //   • filterMinCF  → smoothing while the card is STILL. Low = less resting
-    //     jitter (slight lag on very slow moves). Kept just under MindAR's 0.001.
-    //   • filterBeta   → how fast the filter "lets go" while the card MOVES.
-    //     High = the overlay keeps up with motion (glued); it only affects moving
-    //     frames, so raising it does NOT add resting jitter. MindAR's default is
-    //     1000; this viewer previously shipped 60 (≈17× too low), which is why the
-    //     model floated/lagged behind the card. 5000 tracks tightly through normal
-    //     hand movement — dial 1000–10000 if motion ever looks noisy vs laggy.
-    // missTolerance/warmupTolerance back near MindAR's defaults so a fast pan
-    // doesn't drag a stale pose for ~12 frames (looked detached), and it re-locks
-    // almost instantly.
+    //   • filterMinCF → smoothing while the card is STILL. LOW = rock-steady at
+    //     rest, which kills the "shaking like bubbles" jitter. 0.0001 is well below
+    //     MindAR's 0.001 default for a locked-down hold.
+    //   • filterBeta  → how much it RELAXES smoothing as the card moves. Too HIGH
+    //     and sensor/tracking noise reads as "velocity" and passes straight through
+    //     = jitter (we shipped 5000 → shook like bubbles). Too LOW and it lags and
+    //     floats behind real motion (the original 60 did this). 300 is the balance:
+    //     steady when still, still follows a hand-held card. THIS is the dial —
+    //     raise toward ~800 if it feels laggy in motion, lower toward ~120 if it
+    //     still shakes.
+    // Lever-arm note: content floating high off the card (large Z / big scale)
+    // magnifies any residual angular jitter — models near the card surface look the
+    // most glued.
     scene.setAttribute('mindar-image',
       'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
-      'filterMinCF: 0.0008; filterBeta: 5000; missTolerance: 6; warmupTolerance: 2');
+      'filterMinCF: 0.0001; filterBeta: 300; missTolerance: 6; warmupTolerance: 2');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.

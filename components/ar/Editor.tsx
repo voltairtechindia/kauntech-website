@@ -243,17 +243,18 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   // routine element edit doesn't pay the compile cost. `prep` shows progress.
   const [mindUrl, setMindUrl] = useState<string | null>(initCard.mindUrl ?? null);
   const [prep, setPrep] = useState<string | null>(null);
-  // Identity of the current target photos (front, back). A file is identified by
-  // size+mtime; an unchanged side by its url. When this differs from what the
-  // current .mind was built from, the next save recompiles.
-  const targetSig = useMemo(
-    () =>
-      JSON.stringify([
-        frontFile ? `f:${frontFile.size}:${frontFile.lastModified}` : frontUrl ?? null,
-        backFile ? `f:${backFile.size}:${backFile.lastModified}` : backUrl ?? null,
-      ]),
-    [frontFile, backFile, frontUrl, backUrl],
-  );
+  // Identity of the CHOSEN target side's photo (a file by size+mtime, an unchanged
+  // side by its url) plus which side is the target. When this differs from what the
+  // current .mind was built from — the target photo changed, or the user switched
+  // which side is the target — the next save recompiles. The non-target side's
+  // photo is irrelevant (we only track one side).
+  const targetSig = useMemo(() => {
+    const src =
+      target === "back"
+        ? backFile ? `f:${backFile.size}:${backFile.lastModified}` : backUrl ?? null
+        : frontFile ? `f:${frontFile.size}:${frontFile.lastModified}` : frontUrl ?? null;
+    return JSON.stringify([target, src]);
+  }, [target, frontFile, backFile, frontUrl, backUrl]);
   const mindBaselineRef = useRef<string | null>(null);
   if (mindBaselineRef.current === null) mindBaselineRef.current = targetSig;
 
@@ -500,16 +501,13 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       if (frontOcr) fd.set("front_ocr", frontOcr);
       if (backOcr) fd.set("back_ocr", backOcr);
 
-      // Precompile the MindAR target from the photo(s) so the published viewer
-      // starts AR fast (no on-device compile). Only when the photos changed or
-      // there's no .mind yet. Best-effort: on failure we save without it and the
-      // viewer falls back to compiling at view time. Order = front then back, to
-      // match the viewer's target anchors.
-      const targetSources: (File | string)[] = [];
-      const frontSrc = frontFile ?? frontUrl;
-      const backSrc = backFile ?? backUrl;
-      if (frontSrc) targetSources.push(frontSrc);
-      if (backSrc) targetSources.push(backSrc);
+      // Precompile the MindAR target from the CHOSEN side's photo so the published
+      // viewer starts AR fast (no on-device compile) and tracks a single target.
+      // Only when the target photo/side changed or there's no .mind yet.
+      // Best-effort: on failure we save without it and the viewer compiles at view
+      // time.
+      const targetSrc = target === "back" ? backFile ?? backUrl : frontFile ?? frontUrl;
+      const targetSources: (File | string)[] = targetSrc ? [targetSrc] : [];
       if (targetSources.length > 0 && (targetSig !== mindBaselineRef.current || !mindUrl)) {
         setPrep("Preparing AR target…");
         const compiled = await compileMindTargets(targetSources);
@@ -533,9 +531,11 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       // until the next real change.
       baselineRef.current = JSON.stringify({ elements, lighting, name, publish, target, frontUrl: newFront, backUrl: newBack });
       // Adopt the saved .mind (or its absence) so the next save only recompiles
-      // when the photos actually change again.
+      // when the target side or its photo changes again. Baseline must match the
+      // (target-aware) targetSig shape.
       setMindUrl(savedCard.mindUrl ?? null);
-      mindBaselineRef.current = JSON.stringify([newFront ?? null, newBack ?? null]);
+      const newTargetUrl = target === "back" ? newBack : newFront;
+      mindBaselineRef.current = JSON.stringify([target, newTargetUrl ?? null]);
       setSavedOnce(true);
       router.refresh();
     } catch (err) {
