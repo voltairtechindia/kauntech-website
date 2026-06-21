@@ -129,11 +129,18 @@ function viewerHtml(view: unknown): string {
   .ld-pct{margin-top:10px;font-size:13px;color:#9aa3b2;font-variant-numeric:tabular-nums}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   /* The scene wrapper MUST be full-viewport — MindAR measures this container to
-     size the camera video AND the 3D projection. An unsized wrapper made it
-     letterbox (video shorter than the canvas) and threw the overlay off-card. */
+     size the camera video AND match the 3D projection to it. An unsized wrapper
+     made it letterbox (video shorter than the canvas) and threw the overlay
+     off-card. */
   #scene{position:fixed;inset:0;width:100%;height:100%}
-  /* Camera feed covers the screen, behind the transparent WebGL canvas. */
-  video{position:fixed !important;inset:0 !important;width:100% !important;height:100% !important;object-fit:cover !important;z-index:0 !important}
+  /* CRITICAL: do NOT override the camera <video> geometry. MindAR's own _resize()
+     sizes + positions the video to "cover" this container AND builds the camera
+     projection matrix to match that exact sizing. If we force
+     object-fit/width/height/position here, the displayed video and the 3D
+     projection DISAGREE — content drifts off the card and SLIDES as the phone
+     moves (the misalignment grows toward the frame edges). So we only set
+     stacking: video behind the transparent WebGL canvas. */
+  video{z-index:0 !important}
   .a-canvas{background-color:transparent !important;z-index:1 !important}
 </style>
 </head>
