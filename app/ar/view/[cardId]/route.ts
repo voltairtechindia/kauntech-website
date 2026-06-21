@@ -58,6 +58,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
   if (targets.length === 0 && isHttp(m.reference_image_path)) targets = [m.reference_image_path];
   targets = Array.from(new Set(targets));
 
+  // Prebuilt MindAR target compiled in the editor: the viewer downloads it and
+  // skips the slow on-device feature-extraction compile. `targets` stays as the
+  // fallback (runtime compile) for older cards or if the .mind fails to load.
+  const mindUrl = isHttp(sceneCard.mindUrl) ? sceneCard.mindUrl : null;
+  const mindTargetCount = Number(sceneCard.mindTargets) > 0 ? Number(sceneCard.mindTargets) : null;
+
   const rawEls = Array.isArray(m.scene?.elements) ? m.scene.elements : [];
   const elements = rawEls
     .filter((el: Record<string, any>) => !el.hidden)
@@ -85,12 +91,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
       };
     });
 
-  if (targets.length === 0) return fallback("This card isn’t set up for AR tracking yet.");
+  if (targets.length === 0 && !mindUrl) return fallback("This card isn’t set up for AR tracking yet.");
 
   const li = (m.scene && typeof m.scene === "object" ? (m.scene as any).lighting : null) ?? {};
   const lighting = { intensity: typeof li.intensity === "number" && li.intensity > 0 ? Math.min(3, li.intensity) : 1.2 };
 
-  return page(viewerHtml({ targets, elements, lighting }));
+  return page(viewerHtml({ targets, elements, lighting, mindUrl, mindTargetCount }));
 }
 
 function viewerHtml(view: unknown): string {
@@ -152,10 +158,14 @@ function viewerHtml(view: unknown): string {
       WW.prototype = _W.prototype; window.Worker = WW;
     }
   } catch(e){}
-  // Force MindAR to open the rear camera at high resolution. By default it takes
-  // whatever getUserMedia gives (often 640x480), and a low-detail feed is the #1
-  // cause of weak image tracking. We merge resolution + a sharp-focus hint into
-  // every video request the page makes (MindAR included).
+  // Open the rear camera with constraints tuned for TRACKING LATENCY. By default
+  // getUserMedia often gives 640x480 (too low-detail → weak tracking), but going
+  // all the way to 1080p means MindAR's worker chews ~2× the pixels per frame, so
+  // poses update less often and the overlay lags the card. 720p is the sweet spot:
+  // far above the low-detail threshold for our crisp 1440px target, yet light
+  // enough that tracking refreshes fast — and we ask for 60fps so capable phones
+  // feed twice as many frames (= fresher, more "glued" poses). Merged into every
+  // video request the page makes (MindAR included).
   try {
     var md = navigator.mediaDevices;
     if (md && md.getUserMedia){
@@ -165,10 +175,10 @@ function viewerHtml(view: unknown): string {
           c = c || {};
           if (c.video){
             var v = (typeof c.video === 'object') ? c.video : {};
-            if (v.width == null) v.width = { ideal: 1920 };
-            if (v.height == null) v.height = { ideal: 1080 };
+            if (v.width == null) v.width = { ideal: 1280 };
+            if (v.height == null) v.height = { ideal: 720 };
             if (v.facingMode == null) v.facingMode = { ideal: 'environment' };
-            if (v.frameRate == null) v.frameRate = { ideal: 30 };
+            if (v.frameRate == null) v.frameRate = { ideal: 60 };
             // continuous AF keeps the card sharp as the phone moves — as an
             // ADVANCED (optional) constraint so it never makes gUM throw.
             v.advanced = (v.advanced || []).concat([{ focusMode: 'continuous' }]);
@@ -313,19 +323,36 @@ function viewerHtml(view: unknown): string {
     var scene = document.createElement('a-scene');
     // maxTrack: 1 — only one side is ever visible at a time; we still register
     // every card photo as a target so AR fires for whichever one is shown.
-    // Tracking tuned for a hand-held card (defaults are jittery + drop track too
-    // eagerly): filterMinCF lowers position jitter, missTolerance holds the lock
-    // through brief blur/occlusion, warmupTolerance locks on a touch faster.
+    //
+    // Tracking is tuned to feel GLUED to the card (low lag) rather than only
+    // smooth-at-rest. MindAR runs a One-Euro filter where the smoothing cutoff is
+    //   cutoff = filterMinCF + filterBeta * |velocity|
+    // so the two knobs are independent:
+    //   • filterMinCF  → smoothing while the card is STILL. Low = less resting
+    //     jitter (slight lag on very slow moves). Kept just under MindAR's 0.001.
+    //   • filterBeta   → how fast the filter "lets go" while the card MOVES.
+    //     High = the overlay keeps up with motion (glued); it only affects moving
+    //     frames, so raising it does NOT add resting jitter. MindAR's default is
+    //     1000; this viewer previously shipped 60 (≈17× too low), which is why the
+    //     model floated/lagged behind the card. 5000 tracks tightly through normal
+    //     hand movement — dial 1000–10000 if motion ever looks noisy vs laggy.
+    // missTolerance/warmupTolerance back near MindAR's defaults so a fast pan
+    // doesn't drag a stale pose for ~12 frames (looked detached), and it re-locks
+    // almost instantly.
     scene.setAttribute('mindar-image',
       'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
-      'filterMinCF: 0.0008; filterBeta: 60; missTolerance: 12; warmupTolerance: 3');
+      'filterMinCF: 0.0008; filterBeta: 5000; missTolerance: 6; warmupTolerance: 2');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.
     // No physicallyCorrectLights: it interprets intensity in physical units and
     // left models looking dim in the WebView. Conventional lighting + the values
     // above reads much closer to the editor preview.
-    scene.setAttribute('renderer', 'colorManagement: true; alpha: true');
+    // powerPreference + a capped pixel ratio (set on renderstart below): a single
+    // glb over a video doesn't need 3× DPR fragment cost, and a steadier main-
+    // thread frame rate means MindAR's pose updates get DRAWN sooner — the overlay
+    // tracks more tightly, not just computed more accurately.
+    scene.setAttribute('renderer', 'colorManagement: true; alpha: true; powerPreference: high-performance');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
     // We drive our own status overlay — kill A-Frame's default (blue, dotted)
@@ -374,8 +401,15 @@ function viewerHtml(view: unknown): string {
     // MindAR sizes the camera video + 3D projection from the container at init —
     // in a WebView the full height isn't ready yet, so it letterboxes (black band)
     // and the overlay lands off-card. Nudge it to recompute as the view settles.
-    function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} }
+    // A-Frame re-applies the FULL devicePixelRatio every time it handles a resize,
+    // so capDpr runs at the tail of every relayout to keep the cap in force.
+    function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} capDpr(); }
     scene.addEventListener('loaded', function(){ log('scene loaded'); setProg(82); });
+    // Cap render resolution to ~2× DPR. Phones report 3–3.5×; rendering the
+    // transparent overlay that high is wasted GPU fill for one model and drags the
+    // frame rate (which makes tracking updates land late = laggy feel). 2× is
+    // still crisp. (Function declaration → hoisted, so relayout above can call it.)
+    function capDpr(){ try { if (scene.renderer) scene.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); } catch(e){} }
     scene.addEventListener('renderstart', function(){ log('renderstart'); setProg(92); relayout(); setTimeout(relayout, 500); });
     scene.addEventListener('arReady', function(){
       log('arReady');
@@ -412,6 +446,26 @@ function viewerHtml(view: unknown): string {
       log('init, targets=' + JSON.stringify(D.targets || []));
       if (!window.MINDAR || !window.MINDAR.IMAGE || !window.MINDAR.IMAGE.Compiler){ fail('AR engine failed to load.'); return; }
       setProg(10); // engine (A-Frame + MindAR) parsed
+
+      // FAST PATH: a prebuilt .mind (compiled once in the editor) — just download
+      // and start, skipping the multi-second on-device feature-extraction compile.
+      // Any failure falls through to the runtime-compile path below.
+      if (D.mindUrl){
+        try {
+          log('prebuilt mind: ' + D.mindUrl);
+          var mResp = await fetch(D.mindUrl, { cache: 'force-cache' });
+          if (!mResp.ok) throw new Error('http ' + mResp.status);
+          setProg(45);
+          var mBuf = await mResp.arrayBuffer();
+          if (!mBuf || !mBuf.byteLength) throw new Error('empty');
+          setProg(72);
+          var mCount = (D.mindTargetCount && D.mindTargetCount > 0) ? D.mindTargetCount : ((D.targets || []).filter(Boolean).length || 1);
+          log('prebuilt mind ' + mBuf.byteLength + 'B, targets=' + mCount + ' — starting scene');
+          start(URL.createObjectURL(new Blob([mBuf])), mCount);
+          return;
+        } catch(me){ log('prebuilt mind failed (' + (me && me.message) + '), runtime-compiling'); setProg(10); }
+      }
+
       var urls = (D.targets || []).filter(Boolean);
       if (!urls.length){ fail('This card isn\\u2019t set up for AR tracking yet.'); return; }
       log('loading ' + urls.length + ' target image(s)');

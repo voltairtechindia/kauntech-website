@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
+import { compileMindTargets } from "@/lib/ar/compileTarget";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
   IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
@@ -27,6 +28,11 @@ interface SceneCard {
   // match a scanned card against what this card actually prints.
   frontOcr?: string;
   backOcr?: string;
+  // Prebuilt MindAR target compiled from the card photo(s) at save time, so the
+  // viewer skips the slow on-device compile. mindTargets = how many photos it was
+  // built from (front[+back]), in that order, matching the viewer's anchors.
+  mindUrl?: string;
+  mindTargets?: number;
 }
 function readCard(model: ArModel | null): SceneCard {
   const c = (model?.scene as { card?: SceneCard })?.card;
@@ -233,6 +239,23 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   const [frontOcr, setFrontOcr] = useState<string>(initCard.frontOcr ?? "");
   const [backOcr, setBackOcr] = useState<string>(initCard.backOcr ?? "");
   const [ocrBusy, setOcrBusy] = useState(false);
+  // Prebuilt MindAR target (.mind). Recompiled only when the photos change, so a
+  // routine element edit doesn't pay the compile cost. `prep` shows progress.
+  const [mindUrl, setMindUrl] = useState<string | null>(initCard.mindUrl ?? null);
+  const [prep, setPrep] = useState<string | null>(null);
+  // Identity of the current target photos (front, back). A file is identified by
+  // size+mtime; an unchanged side by its url. When this differs from what the
+  // current .mind was built from, the next save recompiles.
+  const targetSig = useMemo(
+    () =>
+      JSON.stringify([
+        frontFile ? `f:${frontFile.size}:${frontFile.lastModified}` : frontUrl ?? null,
+        backFile ? `f:${backFile.size}:${backFile.lastModified}` : backUrl ?? null,
+      ]),
+    [frontFile, backFile, frontUrl, backUrl],
+  );
+  const mindBaselineRef = useRef<string | null>(null);
+  if (mindBaselineRef.current === null) mindBaselineRef.current = targetSig;
 
   const modelInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
@@ -476,6 +499,27 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       // Printed text per side, for the app's markerless AR matcher.
       if (frontOcr) fd.set("front_ocr", frontOcr);
       if (backOcr) fd.set("back_ocr", backOcr);
+
+      // Precompile the MindAR target from the photo(s) so the published viewer
+      // starts AR fast (no on-device compile). Only when the photos changed or
+      // there's no .mind yet. Best-effort: on failure we save without it and the
+      // viewer falls back to compiling at view time. Order = front then back, to
+      // match the viewer's target anchors.
+      const targetSources: (File | string)[] = [];
+      const frontSrc = frontFile ?? frontUrl;
+      const backSrc = backFile ?? backUrl;
+      if (frontSrc) targetSources.push(frontSrc);
+      if (backSrc) targetSources.push(backSrc);
+      if (targetSources.length > 0 && (targetSig !== mindBaselineRef.current || !mindUrl)) {
+        setPrep("Preparing AR target…");
+        const compiled = await compileMindTargets(targetSources);
+        setPrep(null);
+        if (compiled) {
+          fd.set("mind", compiled.blob, "targets.mind");
+          fd.set("mind_target_count", String(compiled.count));
+        }
+      }
+
       const res = await fetch("/api/ar/upload", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || "Save failed.");
@@ -488,12 +532,17 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       // Re-baseline to exactly what's now persisted so the Save button hides
       // until the next real change.
       baselineRef.current = JSON.stringify({ elements, lighting, name, publish, target, frontUrl: newFront, backUrl: newBack });
+      // Adopt the saved .mind (or its absence) so the next save only recompiles
+      // when the photos actually change again.
+      setMindUrl(savedCard.mindUrl ?? null);
+      mindBaselineRef.current = JSON.stringify([newFront ?? null, newBack ?? null]);
       setSavedOnce(true);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
     } finally {
       setBusy(false);
+      setPrep(null);
     }
   }
 
@@ -528,7 +577,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
           <span className="ar-muted">Compose what shows on your card in AR. Drag to place, attach links.</span>
         </div>
         <div className="ar-row">
-          {ocrBusy ? <span className="ar-muted">Reading card text…</span> : null}
+          {prep ? <span className="ar-muted">{prep}</span> : ocrBusy ? <span className="ar-muted">Reading card text…</span> : null}
           <a className="ar-btn ar-btn-ghost" href="/ar">← All cards</a>
           {dirty ? (
             <button className="ar-btn ar-btn-primary" onClick={save} disabled={busy}>

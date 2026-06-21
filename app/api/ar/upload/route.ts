@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
   const { data: existing } = await supabase
     .from("ar_models")
-    .select("id, reference_image_path, ocr_text")
+    .select("id, reference_image_path, ocr_text, scene")
     .eq("card_id", cardId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -116,6 +116,47 @@ export async function POST(req: Request) {
     return bad(e instanceof Error && !e.message.includes("ar_") ? e.message : m.error, m.status);
   }
 
+  const isSentFile = (k: string) => {
+    const f = form.get(k);
+    return f instanceof File && f.size > 0;
+  };
+  const photosChanged = isSentFile("front_image") || isSentFile("back_image");
+
+  // Prebuilt MindAR target (.mind), compiled in the editor at save time, so the
+  // public viewer can skip the slow on-device compile. Optional + non-fatal: if
+  // it's absent or fails to store, the viewer just compiles at view time.
+  let mindUrl: string | null = null;
+  let mindTargets: number | null = null;
+  const mindFile = form.get("mind");
+  if (mindFile instanceof File && mindFile.size > 0) {
+    try {
+      const path = `${userId}/${cardId}/${modelId}.mind`;
+      const bytes = Buffer.from(await mindFile.arrayBuffer());
+      const { error: mErr } = await bucket.upload(path, bytes, {
+        contentType: "application/octet-stream",
+        upsert: true,
+      });
+      if (!mErr) {
+        // Cache-bust like the photos: deterministic path, so a recompile must
+        // bust the CDN/WebView cache or a replaced target would serve stale.
+        mindUrl = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+        const c = parseInt(str(form.get("mind_target_count")), 10);
+        mindTargets = Number.isFinite(c) && c > 0 ? c : null;
+      }
+    } catch {
+      /* non-fatal — fall back to runtime compile in the viewer */
+    }
+  } else {
+    // No new .mind this save. Keep the existing one ONLY if the target photos
+    // didn't change; otherwise it was built from the old photos and would track
+    // against stale features, so drop it and let the viewer recompile.
+    const existingCard = ((existing?.scene as { card?: Record<string, unknown> } | null)?.card) ?? {};
+    if (!photosChanged && typeof existingCard.mindUrl === "string") {
+      mindUrl = existingCard.mindUrl;
+      mindTargets = typeof existingCard.mindTargets === "number" ? existingCard.mindTargets : null;
+    }
+  }
+
   const targetSide = str(form.get("target_side")) === "back" ? "back" : "front";
   // AR tracking target = the chosen side; fall back to the other side, then the
   // existing target, then the card's QR image so older cards keep working.
@@ -142,6 +183,8 @@ export async function POST(req: Request) {
     target: targetSide,
     frontOcr: frontOcr ?? undefined,
     backOcr: backOcr ?? undefined,
+    mindUrl: mindUrl ?? undefined,
+    mindTargets: mindTargets ?? undefined,
   };
 
   const row = {
