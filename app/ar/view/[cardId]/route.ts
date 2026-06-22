@@ -251,58 +251,27 @@ function viewerHtml(view: unknown): string {
     });
   }
 
-  // ── Gyro-gated stabilizer (our lightweight "VIO assist") ──────────────────
-  // The residual wobble is lever-arm-amplified TRACKING JITTER, worst when you try
-  // to hold the phone STILL — the card detection still jitters frame to frame and a
-  // tall model magnifies it at the tip. A vision-only filter can't tell real card
-  // motion from that noise, but the phone's GYRO can. We read the phone's angular
-  // speed (devicemotion) and DECOUPLE the rendered content from the raw anchor:
-  // content rides a "stage" that eases toward MindAR's pose every render frame, and
-  // the ROTATION easing rate is gated by how fast the phone is actually turning:
-  //   • phone still  → ease slowly → heavy smoothing → rock-steady, at ~no lag cost
-  //   • phone moving → ease fast   → stays glued to the card
-  // Position is smoothed lightly + always (so sliding the phone doesn't lag, since
-  // the gyro only senses rotation). Safe by construction: content always converges
-  // to MindAR's true pose; the gyro only sets a bounded smoothing rate, so it can
-  // never throw content off. No gyro (e.g. iOS without a tap grant) → fixed light
-  // smoothing.
-  var gyroSpeed = 0, gyroSeenAt = 0;
-  function onDeviceMotion(e){
-    var r = e && e.rotationRate; if (!r) return;
-    var a = r.alpha || 0, b = r.beta || 0, g = r.gamma || 0;
-    gyroSpeed = Math.sqrt(a*a + b*b + g*g) * Math.PI / 180; // deg/s → rad/s
-    gyroSeenAt = (window.performance ? performance.now() : Date.now());
-  }
-  try { window.addEventListener('devicemotion', onDeviceMotion, { passive: true }); } catch(e){}
-  // iOS 13+ gates motion sensors behind a user gesture — request on first touch.
-  try {
-    window.addEventListener('touchend', function reqMotion(){
-      window.removeEventListener('touchend', reqMotion);
-      try {
-        var DM = window.DeviceMotionEvent;
-        if (DM && typeof DM.requestPermission === 'function'){
-          DM.requestPermission().then(function(s){ if (s === 'granted') window.addEventListener('devicemotion', onDeviceMotion, { passive: true }); }).catch(function(){});
-        }
-      } catch(e){}
-    }, { passive: true });
-  } catch(e){}
-
+  // ── Stabilizer (decoupled render-rate smoother + persistence) ─────────────
+  // Content does NOT sit on the raw mindar-image-target (which snaps to every noisy
+  // per-frame pose). It rides a "stage" that EASES toward MindAR's pose each render
+  // frame — a LIGHT low-pass that takes the edge off jitter/choppiness without
+  // adding meaningful lag. MindAR's own One-Euro filter (tuned responsive in
+  // start()) does the real work; this is just a thin layer on top.
+  //
+  // HISTORY (why it's simple now): an earlier version gated the smoothing by the
+  // phone's GYRO ("smooth hard when the phone is still"). That broke moving the
+  // CARD under a still phone — the gyro read zero, smoothing maxed out, and the
+  // model lagged SECONDS behind. Wrong signal. The tracked pose (already filtered
+  // by MindAR) is the right thing to follow, so this layer stays light + fixed.
   if (window.AFRAME && AFRAME.registerComponent && AFRAME.THREE && !AFRAME.components['card-stabilizer']){
     var _T = AFRAME.THREE;
-    var TAU_STILL = 0.22;   // s — strong rotation smoothing when the phone is still
-    var TAU_MOVE  = 0.02;   // s — light rotation smoothing when turning (responsive)
-    var GYRO_FLOOR = 0.05;  // rad/s — below this is hand tremor, not real motion
-    var GYRO_RAMP = 0.5;    // rad/s above the floor to reach full responsiveness
-    var TAU_NOGYRO = 0.06;  // s — fixed rotation smoothing when no gyro data
-    var TAU_POS_STILL = 0.10; // s — position smoothing when still (gentler than
-                              //     rotation so a pure phone-slide barely lags)
-    var TAU_POS_MOVE  = 0.025;// s — position smoothing when moving (responsive)
-    var TAU_SCALE = 0.05;   // s — distance/scale smoothing (kept responsive)
-    var GRACE_MS = 2500;    // ms — keep the model PLANTED through a brief track loss
-                            //     (blur/quick move) instead of dropping it instantly
+    var TAU = 0.05;        // s — smoothing time constant. Small = snappy. THE dial:
+                           //     ↑ (0.08–0.12) for steadier-but-softer, ↓ for snappier.
+    var GRACE_MS = 2500;   // ms — keep the model PLANTED through a brief track loss
+                           //     (blur / quick move) instead of dropping it instantly
     AFRAME.registerComponent('card-stabilizer', {
-      // target = a CSS selector STRING (not the 'selector' type) so we can resolve
-      // it lazily in tick — the anchor isn't in the document when this is set.
+      // target = a CSS selector STRING (resolved lazily in tick — the anchor isn't
+      // in the document when this attribute is set).
       schema: { target: { type: 'string' } },
       init: function(){
         this._p = new _T.Vector3(); this._q = new _T.Quaternion(); this._s = new _T.Vector3();
@@ -315,9 +284,9 @@ function viewerHtml(view: unknown): string {
         if (!so) return;
         var now = (window.performance ? performance.now() : Date.now());
         if (!so.visible){
-          // PERSISTENCE: a brief track loss (motion blur / quick move) should NOT
-          // drop the model. Keep it frozen at its last pose on the card for a grace
-          // window; only hide if the target stays lost a long time.
+          // PERSISTENCE: a brief track loss (blur / quick move) must NOT drop the
+          // model — keep it frozen at its last pose on the card for a grace window;
+          // only hide if the target stays lost a long time.
           if (this.locked && (now - this.lastSeen) < GRACE_MS){ o.visible = true; }
           else { if (o.visible) o.visible = false; this.locked = false; }
           return;
@@ -329,20 +298,10 @@ function viewerHtml(view: unknown): string {
           o.position.copy(this._p); o.quaternion.copy(this._q); o.scale.copy(this._s);
           this.locked = true; return;
         }
-        var fresh = gyroSeenAt && (now - gyroSeenAt) < 500;
-        // Subtract a tremor floor so only INTENTIONAL motion relaxes the smoothing
-        // (otherwise a held-still hand reads as "moving" and the wobble returns).
-        var motion = gyroSpeed - GYRO_FLOOR; if (motion < 0) motion = 0;
-        var f = Math.min(1, motion / GYRO_RAMP);
-        var tauR = fresh ? (TAU_STILL + (TAU_MOVE - TAU_STILL) * f) : TAU_NOGYRO;
-        var tauP = fresh ? (TAU_POS_STILL + (TAU_POS_MOVE - TAU_POS_STILL) * f) : TAU_POS_MOVE;
-        var dts = (dt || 16) / 1000;
-        var kR = 1 - Math.exp(-dts / (tauR > 0.001 ? tauR : 0.001));
-        var kP = 1 - Math.exp(-dts / tauP);
-        var kS = 1 - Math.exp(-dts / TAU_SCALE);
-        o.quaternion.slerp(this._q, kR);
-        o.position.lerp(this._p, kP);
-        o.scale.lerp(this._s, kS);
+        var k = 1 - Math.exp(-((dt || 16) / 1000) / TAU);
+        o.quaternion.slerp(this._q, k);
+        o.position.lerp(this._p, k);
+        o.scale.lerp(this._s, k);
       }
     });
   }
@@ -467,25 +426,21 @@ function viewerHtml(view: unknown): string {
     //
     // MindAR runs a One-Euro filter on the pose:
     //   cutoff = filterMinCF + filterBeta * |velocity|
-    //   • filterMinCF → smoothing while the card is STILL. LOW = rock-steady at
-    //     rest, which kills the "shaking like bubbles" jitter. 0.0001 is well below
-    //     MindAR's 0.001 default for a locked-down hold.
-    //   • filterBeta  → how much it RELAXES smoothing as the card moves. Too HIGH
-    //     and sensor/tracking noise reads as "velocity" and passes straight through
-    //     = jitter (we shipped 5000 → shook like bubbles). Too LOW and it lags and
-    //     floats behind real motion (the original 60 did this). 300 is the balance:
-    //     steady when still, still follows a hand-held card. THIS is the dial —
-    //     raise toward ~800 if it feels laggy in motion, lower toward ~120 if it
-    //     still shakes.
-    // Lever-arm note: content floating high off the card (large Z / big scale)
-    // magnifies any residual angular jitter — models near the card surface look the
-    // most glued.
+    //   • filterMinCF → smoothing floor at LOW speed. This is the lag knob: too low
+    //     and slow/moderate motion is smoothed with a multi-SECOND time constant
+    //     (we shipped 0.0001 → the model crawled 3–4s behind a moving card). Back
+    //     to MindAR's 0.001 default = responsive.
+    //   • filterBeta  → how much it relaxes smoothing as the card moves. 1000
+    //     (MindAR default) tracks hand-held motion well. (We tried 60 = laggy/float,
+    //     5000 = jittery "bubbles"; the default is the balance.)
+    // The render-rate stabilizer above adds a light extra smooth — tune THAT (TAU)
+    // for stability vs snappiness, NOT these, so we never re-introduce second-scale
+    // lag here. missTolerance 20 (was 6) keeps the lock through blur/quick moves.
+    // Lever-arm note: content high off the card (big Z/scale) magnifies any
+    // residual jitter — models near the surface look most glued.
     scene.setAttribute('mindar-image',
       'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
-      // missTolerance raised (was 6): MindAR keeps the lock through ~20 missed
-      // frames (blur/quick move) instead of dropping it — first layer of "stay on
-      // the card." The stabilizer's grace-hold is the second layer.
-      'filterMinCF: 0.0001; filterBeta: 300; missTolerance: 20; warmupTolerance: 2');
+      'filterMinCF: 0.001; filterBeta: 1000; missTolerance: 20; warmupTolerance: 2');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.
