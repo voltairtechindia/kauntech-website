@@ -250,6 +250,88 @@ function viewerHtml(view: unknown): string {
       tick: function(t, dt){ if (this.mixer && dt) this.mixer.update(dt / 1000); }
     });
   }
+
+  // ── Gyro-gated stabilizer (our lightweight "VIO assist") ──────────────────
+  // The residual wobble is lever-arm-amplified TRACKING JITTER, worst when you try
+  // to hold the phone STILL — the card detection still jitters frame to frame and a
+  // tall model magnifies it at the tip. A vision-only filter can't tell real card
+  // motion from that noise, but the phone's GYRO can. We read the phone's angular
+  // speed (devicemotion) and DECOUPLE the rendered content from the raw anchor:
+  // content rides a "stage" that eases toward MindAR's pose every render frame, and
+  // the ROTATION easing rate is gated by how fast the phone is actually turning:
+  //   • phone still  → ease slowly → heavy smoothing → rock-steady, at ~no lag cost
+  //   • phone moving → ease fast   → stays glued to the card
+  // Position is smoothed lightly + always (so sliding the phone doesn't lag, since
+  // the gyro only senses rotation). Safe by construction: content always converges
+  // to MindAR's true pose; the gyro only sets a bounded smoothing rate, so it can
+  // never throw content off. No gyro (e.g. iOS without a tap grant) → fixed light
+  // smoothing.
+  var gyroSpeed = 0, gyroSeenAt = 0;
+  function onDeviceMotion(e){
+    var r = e && e.rotationRate; if (!r) return;
+    var a = r.alpha || 0, b = r.beta || 0, g = r.gamma || 0;
+    gyroSpeed = Math.sqrt(a*a + b*b + g*g) * Math.PI / 180; // deg/s → rad/s
+    gyroSeenAt = (window.performance ? performance.now() : Date.now());
+  }
+  try { window.addEventListener('devicemotion', onDeviceMotion, { passive: true }); } catch(e){}
+  // iOS 13+ gates motion sensors behind a user gesture — request on first touch.
+  try {
+    window.addEventListener('touchend', function reqMotion(){
+      window.removeEventListener('touchend', reqMotion);
+      try {
+        var DM = window.DeviceMotionEvent;
+        if (DM && typeof DM.requestPermission === 'function'){
+          DM.requestPermission().then(function(s){ if (s === 'granted') window.addEventListener('devicemotion', onDeviceMotion, { passive: true }); }).catch(function(){});
+        }
+      } catch(e){}
+    }, { passive: true });
+  } catch(e){}
+
+  if (window.AFRAME && AFRAME.registerComponent && AFRAME.THREE && !AFRAME.components['card-stabilizer']){
+    var _T = AFRAME.THREE;
+    var TAU_STILL = 0.22;   // s — strong rotation smoothing when the phone is still
+    var TAU_MOVE  = 0.02;   // s — light rotation smoothing when turning (responsive)
+    var GYRO_FLOOR = 0.05;  // rad/s — below this is hand tremor, not real motion
+    var GYRO_RAMP = 0.5;    // rad/s above the floor to reach full responsiveness
+    var TAU_NOGYRO = 0.06;  // s — fixed rotation smoothing when no gyro data
+    var TAU_POS = 0.05;     // s — light, always-on position/scale smoothing
+    AFRAME.registerComponent('card-stabilizer', {
+      // target = a CSS selector STRING (not the 'selector' type) so we can resolve
+      // it lazily in tick — the anchor isn't in the document when this is set.
+      schema: { target: { type: 'string' } },
+      init: function(){
+        this._p = new _T.Vector3(); this._q = new _T.Quaternion(); this._s = new _T.Vector3();
+        this.locked = false; this.src = null;
+        this.el.object3D.visible = false; // hidden until the target is found
+      },
+      tick: function(t, dt){
+        if (!this.src){ this.src = document.querySelector(this.data.target); if (!this.src) return; }
+        var so = this.src.object3D, o = this.el.object3D;
+        if (!so) return;
+        if (!so.visible){ if (o.visible) o.visible = false; this.locked = false; return; }
+        so.updateWorldMatrix(true, false);
+        so.matrixWorld.decompose(this._p, this._q, this._s);
+        o.visible = true;
+        if (!this.locked){ // snap on (re)acquire — don't ease from a stale pose
+          o.position.copy(this._p); o.quaternion.copy(this._q); o.scale.copy(this._s);
+          this.locked = true; return;
+        }
+        var now = (window.performance ? performance.now() : Date.now());
+        var fresh = gyroSeenAt && (now - gyroSeenAt) < 500;
+        // Subtract a tremor floor so only INTENTIONAL motion relaxes the smoothing
+        // (otherwise a held-still hand reads as "moving" and the wobble returns).
+        var motion = gyroSpeed - GYRO_FLOOR; if (motion < 0) motion = 0;
+        var f = Math.min(1, motion / GYRO_RAMP);
+        var tauR = fresh ? (TAU_STILL + (TAU_MOVE - TAU_STILL) * f) : TAU_NOGYRO;
+        var dts = (dt || 16) / 1000;
+        var kR = 1 - Math.exp(-dts / (tauR > 0.001 ? tauR : 0.001));
+        var kP = 1 - Math.exp(-dts / TAU_POS);
+        o.quaternion.slerp(this._q, kR);
+        o.position.lerp(this._p, kP);
+        o.scale.lerp(this._s, kP);
+      }
+    });
+  }
   function fail(t){ log('fail:', t); if (pctEl) pctEl.textContent = t; statusEl.classList.remove('hide', 'done'); rnPost({ type: 'ar-error', message: t }); }
   function ready(){
     arReadyFired = true;
@@ -398,14 +480,28 @@ function viewerHtml(view: unknown): string {
     scene.appendChild(fill);
 
     // One anchor per target index, each carrying its own copy of the scene
-    // (DOM nodes can't be shared, so rebuild per anchor).
+    // (DOM nodes can't be shared, so rebuild per anchor). When the stabilizer
+    // registered, content rides a DECOUPLED stage that the stabilizer eases toward
+    // the anchor (so the anchor's raw per-frame jitter never reaches the model);
+    // otherwise content goes straight on the anchor (original behaviour).
+    var hasStab = !!(window.AFRAME && AFRAME.components && AFRAME.components['card-stabilizer']);
+    log('stabilizer ' + (hasStab ? 'on' : 'off'));
     for (var i = 0; i < count; i++){
       var anchor = document.createElement('a-entity');
       anchor.setAttribute('mindar-image-target', 'targetIndex: ' + i);
-      (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
       anchor.addEventListener('targetFound', function(){ log('targetFound'); hintEl.textContent = ''; });
       anchor.addEventListener('targetLost', function(){ log('targetLost'); hintEl.textContent = 'Point at the card'; });
-      scene.appendChild(anchor);
+      if (hasStab){
+        anchor.id = 'mindar-anchor-' + i;
+        scene.appendChild(anchor);
+        var stage = document.createElement('a-entity');
+        (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) stage.appendChild(n); });
+        scene.appendChild(stage);
+        stage.setAttribute('card-stabilizer', 'target: #mindar-anchor-' + i);
+      } else {
+        (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
+        scene.appendChild(anchor);
+      }
     }
 
     document.getElementById('scene').appendChild(scene);

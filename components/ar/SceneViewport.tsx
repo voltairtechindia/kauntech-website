@@ -50,40 +50,45 @@ export default function SceneViewport({
   // viewer's default, and the slider brightens/dims both in lockstep.
   const b = brightness / 1.2;
   return (
-    <Canvas camera={{ position: [0, 1.25, 1.8], fov: 42 }} dpr={[1, 2]} shadows>
+    <Canvas camera={{ position: [0, 0.12, 2.05], fov: 40 }} dpr={[1, 2]} shadows>
       <color attach="background" args={["#f1f0ee"]} />
       <ambientLight intensity={0.95 * b} />
       <hemisphereLight intensity={0.6 * b} color="#ffffff" groundColor="#bdb8b0" />
-      <directionalLight position={[3, 5, 4]} intensity={1.2 * b} castShadow />
-      <directionalLight position={[-4, 2, -3]} intensity={0.4 * b} />
+      <directionalLight position={[2, 3, 5]} intensity={1.2 * b} castShadow />
+      <directionalLight position={[-3, 1, 2]} intensity={0.4 * b} />
 
-      {/* Ground: the card lies flat here like a marker on a table, content
-          rises above it — matching how MindAR anchors content on the printed
-          card in real AR. */}
-      <gridHelper args={[6, 30, "#cfcbc3", "#e3e1dd"]} position={[0, -0.012, 0]} />
+      {/* WYSIWYG: the card FACES the camera — exactly what you see when you point
+          your phone at the printed card — and content pops toward you out of the
+          card face (+z). This replaces the old top-down "diorama" view, which made
+          the editor look nothing like the AR result. The stored element coords are
+          card-relative and unchanged, so the published viewer is unaffected; only
+          this preview's framing changed. A faint grid sits BEHIND the card (its
+          plane) just for depth reference. */}
+      <gridHelper
+        args={[6, 30, "#d8d5cf", "#e7e5e1"]}
+        rotation={[Math.PI / 2, 0, 0]}
+        position={[0, 0, -0.4]}
+      />
 
-      <group rotation={[-Math.PI / 2, 0, 0]}>
-        {/* The card (tracking target) */}
-        <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
+      {/* The card (tracking target) */}
+      <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
 
-        <Suspense fallback={null}>
-          {elements.map((el) =>
-            el.hidden ? null : el.id === selectedId ? (
-              <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
-            ) : (
-              <ElementNode key={el.id} element={el} onSelect={onSelect} />
-            ),
-          )}
-        </Suspense>
-      </group>
+      <Suspense fallback={null}>
+        {elements.map((el) =>
+          el.hidden ? null : el.id === selectedId ? (
+            <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
+          ) : (
+            <ElementNode key={el.id} element={el} onSelect={onSelect} />
+          ),
+        )}
+      </Suspense>
 
       <OrbitControls
         makeDefault
         enablePan={false}
-        target={[0, 0.12, 0]}
+        target={[0, 0.1, 0]}
         minDistance={0.7}
         maxDistance={6}
-        maxPolarAngle={Math.PI / 2.05}
       />
     </Canvas>
   );

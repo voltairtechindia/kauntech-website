@@ -50,7 +50,7 @@ export default function PrivacyPage() {
                 <strong>optional</strong> — on free plans everything stays on your device, and on
                 paid plans you can switch on cloud backup to sync across devices. You choose exactly
                 which categories of data (contacts, notes and tags, AI intelligence, images, and so
-                on) are backed up to your Kauntech account on our servers (hosted on Supabase), and{" "}
+                on) are backed up to your Kauntech account on our secure cloud servers, and{" "}
                 <strong>anything you don&apos;t select never leaves your device</strong>. You can
                 turn cloud backup off, wipe your cloud data, or delete your account at any time. We
                 never sell your data and never use it for advertising.
@@ -66,7 +66,7 @@ export default function PrivacyPage() {
               legitimate operational consent, and enable synchronization triggers:
             </p>
 
-            <h3>A. Account &amp; Operational Metadata (Stored on Supabase)</h3>
+            <h3>A. Account &amp; Operational Metadata</h3>
             <ul>
               <li>
                 <strong>Authentication details:</strong> Name, professional email address, and
@@ -102,8 +102,8 @@ export default function PrivacyPage() {
             <ul>
               <li>
                 <strong>Business Card Scans:</strong> Images captured by your camera are read and
-                parsed locally via on-device ML Kit OCR engines. If you enable cloud backup, the
-                card image is also stored in your Kauntech account (Supabase Storage) so you can
+                parsed locally on your device using an on-device OCR engine. If you enable cloud
+                backup, the card image is also stored in your Kauntech account so you can
                 access it across devices; otherwise it stays on your device. You can delete it or
                 wipe your cloud data at any time.
               </li>
@@ -125,10 +125,12 @@ export default function PrivacyPage() {
               <li>
                 <strong>AI processing:</strong> When you request AI features (OCR clean-up, company
                 intelligence, icebreakers, lead scoring or strategy), the relevant card text and
-                contact fields are sent to our AI sub-processors —{" "}
-                <strong>OpenRouter</strong> and <strong>Google (Gemini)</strong> — to generate the
-                result, which is then saved against the contact in your account. This data is used
-                only to produce your result and is not used to train their general models.
+                contact fields are sent to <strong>Google&apos;s Gemini API</strong> (the
+                Generative Language API), accessed with our own API key, to generate the result,
+                which is then saved against the contact in your account. Under Google&apos;s API
+                terms this data is used only to produce your result and is not used to train
+                Google&apos;s general models. Data obtained through Google integrations (such as
+                Google Sheets or Gmail) is never sent to any AI service.
               </li>
               <li>
                 <strong>Integrations you enable:</strong> when you connect Google Sheets, Gmail,
@@ -137,10 +139,10 @@ export default function PrivacyPage() {
                 stored on our servers so we can deliver your leads to your own chat.
               </li>
               <li>
-                <strong>Other processors:</strong> subscription and purchase events are processed by{" "}
-                <strong>RevenueCat</strong>; crash and error diagnostics (with personal fields
-                scrubbed) by <strong>Sentry</strong>. Some of this processing may occur on servers
-                located outside India.
+                <strong>Other processors:</strong> subscription and purchase events are handled by a
+                third-party payments processor; crash and error diagnostics (with personal fields
+                scrubbed) by a third-party diagnostics provider. Some of this processing may occur on
+                servers located outside India.
               </li>
             </ul>
 
@@ -250,13 +252,13 @@ export default function PrivacyPage() {
                 </li>
                 <li>
                   We do <strong>NOT</strong> use Google OAuth user data to train, enrich, or build
-                  generalized artificial intelligence (AI) or large language models (LLMs). Data
-                  obtained through Google integrations is used only to perform the sync or send
-                  action you request.
+                  generalized artificial intelligence (AI) or large language models (LLMs), and we
+                  never transmit it to any third-party AI provider. Data obtained through Google
+                  integrations is used only to perform the sync or send action you request.
                 </li>
                 <li>
                   Google API tokens (Access and Refresh) are stored 100% locally and securely in
-                  your device&apos;s native keychain using <code>expo-secure-store</code> and are
+                  your device&apos;s native secure keychain and are
                   fully cleared upon log-out.
                 </li>
               </ul>
@@ -277,8 +279,8 @@ export default function PrivacyPage() {
               </li>
               <li>
                 <strong>Transport Layer Security:</strong> All communications between the App,
-                Site, and our Supabase backend are encrypted in transit using industry-standard
-                TLS 1.3 protocols.
+                Site, and our cloud backend are encrypted in transit using industry-standard
+                TLS protocols.
               </li>
               <li>
                 <strong>Isolation Protocols:</strong> Third-party API keys and tokens are securely

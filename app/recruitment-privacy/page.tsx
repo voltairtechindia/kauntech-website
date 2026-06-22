@@ -107,7 +107,7 @@ export default function RecruitmentPrivacyPage() {
               </li>
               <li>
                 Application records are stored in our access-controlled database, hosted with our
-                infrastructure provider (Supabase). Resume parsing is performed by Google&apos;s
+                secure cloud infrastructure provider. Resume parsing is performed by Google&apos;s
                 Gemini API.
               </li>
               <li>Access is restricted to the people involved in hiring.</li>

@@ -56,7 +56,7 @@ export default function TermsPage() {
               <li>Provide accurate, current, and complete registration information.</li>
               <li>
                 Maintain the security and confidentiality of your credentials (including API keys,
-                Supabase credentials, and device authentication states).
+                account credentials, and device authentication states).
               </li>
               <li>Promptly notify us of any unauthorized account access or data security incidents.</li>
               <li>
@@ -78,7 +78,7 @@ export default function TermsPage() {
             <ul>
               <li>
                 Modify, disassemble, decompile, reverse-engineer, decrypt, or hack the App,
-                Supabase Edge Functions, or the OCR engine.
+                its backend services, or the OCR engine.
               </li>
               <li>
                 Use any automated scraping, bots, scripts, or manual database extraction tools to
