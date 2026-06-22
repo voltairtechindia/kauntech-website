@@ -251,24 +251,59 @@ function viewerHtml(view: unknown): string {
     });
   }
 
-  // ── Stabilizer (decoupled render-rate smoother + persistence) ─────────────
-  // Content does NOT sit on the raw mindar-image-target (which snaps to every noisy
-  // per-frame pose). It rides a "stage" that EASES toward MindAR's pose each render
-  // frame — a LIGHT low-pass that takes the edge off jitter/choppiness without
-  // adding meaningful lag. MindAR's own One-Euro filter (tuned responsive in
-  // start()) does the real work; this is just a thin layer on top.
-  //
-  // HISTORY (why it's simple now): an earlier version gated the smoothing by the
-  // phone's GYRO ("smooth hard when the phone is still"). That broke moving the
-  // CARD under a still phone — the gyro read zero, smoothing maxed out, and the
-  // model lagged SECONDS behind. Wrong signal. The tracked pose (already filtered
-  // by MindAR) is the right thing to follow, so this layer stays light + fixed.
+  // ── Device orientation, for COASTING through a track loss ─────────────────
+  // The phone's orientation (already IMU-fused by the OS) as a three.js quaternion,
+  // via the canonical DeviceOrientationControls mapping (incl. screen rotation).
+  // When MindAR drops the card (fast move = motion blur), we rotate the model by
+  // how the phone has turned since the loss, so it STAYS where the card is instead
+  // of freezing to the screen ("stuck to camera") or vanishing. On re-lock, vision
+  // snaps it back to truth, so even an imperfect coast self-corrects within the
+  // brief loss window. Android Chrome fires this with no prompt; iOS needs a tap
+  // (requested on first touch) — without it we just hide on loss (never stuck).
+  var devQ = null, devSeen = 0;
+  if (window.AFRAME && AFRAME.THREE){
+    (function(){
+      var T = AFRAME.THREE;
+      var zee = new T.Vector3(0, 0, 1), euler = new T.Euler(), q0 = new T.Quaternion();
+      var q1 = new T.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)); // -90° about X
+      var out = new T.Quaternion();
+      function onOrient(e){
+        if (e.alpha == null && e.beta == null && e.gamma == null) return;
+        var a = (e.alpha || 0) * Math.PI / 180, b = (e.beta || 0) * Math.PI / 180, g = (e.gamma || 0) * Math.PI / 180;
+        var orient = (((screen.orientation && screen.orientation.angle) || window.orientation || 0)) * Math.PI / 180;
+        euler.set(b, a, -g, 'YXZ');
+        out.setFromEuler(euler);
+        out.multiply(q1);
+        out.multiply(q0.setFromAxisAngle(zee, -orient));
+        devQ = devQ || out.clone(); devQ.copy(out);
+        devSeen = (window.performance ? performance.now() : Date.now());
+      }
+      try { window.addEventListener('deviceorientation', onOrient, { passive: true }); } catch(e){}
+      try {
+        window.addEventListener('touchend', function rq(){
+          window.removeEventListener('touchend', rq);
+          try {
+            var DOE = window.DeviceOrientationEvent;
+            if (DOE && typeof DOE.requestPermission === 'function'){
+              DOE.requestPermission().then(function(s){ if (s === 'granted') window.addEventListener('deviceorientation', onOrient, { passive: true }); }).catch(function(){});
+            }
+          } catch(e){}
+        }, { passive: true });
+      } catch(e){}
+    })();
+  }
+
+  // ── Stabilizer (decoupled render-rate smoother + orientation coast) ───────
+  // Content rides a "stage" that EASES toward MindAR's pose each render frame (a
+  // light low-pass — takes the edge off jitter without adding lag). When tracking
+  // drops, it COASTS with the phone orientation (above) so it stays glued to the
+  // card, then snaps back on re-lock.
   if (window.AFRAME && AFRAME.registerComponent && AFRAME.THREE && !AFRAME.components['card-stabilizer']){
     var _T = AFRAME.THREE;
     var TAU = 0.05;        // s — smoothing time constant. Small = snappy. THE dial:
                            //     ↑ (0.08–0.12) for steadier-but-softer, ↓ for snappier.
-    var GRACE_MS = 2500;   // ms — keep the model PLANTED through a brief track loss
-                           //     (blur / quick move) instead of dropping it instantly
+    var COAST_MS = 1200;   // ms — how long to coast (stay glued) through a loss before
+                           //     giving up and hiding.
     AFRAME.registerComponent('card-stabilizer', {
       // target = a CSS selector STRING (resolved lazily in tick — the anchor isn't
       // in the document when this attribute is set).
@@ -276,6 +311,9 @@ function viewerHtml(view: unknown): string {
       init: function(){
         this._p = new _T.Vector3(); this._q = new _T.Quaternion(); this._s = new _T.Vector3();
         this.locked = false; this.src = null; this.lastSeen = 0;
+        // coast snapshot: last good displayed pose + the device orientation then.
+        this.cP = new _T.Vector3(); this.cQ = new _T.Quaternion(); this.cRef = new _T.Quaternion();
+        this.cRefValid = false; this._cr = new _T.Quaternion();
         this.el.object3D.visible = false; // hidden until the target is found
       },
       tick: function(t, dt){
@@ -284,11 +322,19 @@ function viewerHtml(view: unknown): string {
         if (!so) return;
         var now = (window.performance ? performance.now() : Date.now());
         if (!so.visible){
-          // PERSISTENCE: a brief track loss (blur / quick move) must NOT drop the
-          // model — keep it frozen at its last pose on the card for a grace window;
-          // only hide if the target stays lost a long time.
-          if (this.locked && (now - this.lastSeen) < GRACE_MS){ o.visible = true; }
-          else { if (o.visible) o.visible = false; this.locked = false; }
+          // TRACK LOST. Coast with the phone orientation so it stays on the card.
+          var canCoast = this.locked && this.cRefValid && devQ && (now - devSeen) < 1000 && (now - this.lastSeen) < COAST_MS;
+          if (canCoast){
+            o.visible = true;
+            // coastRot = cRef · devQ⁻¹  (undo the phone's rotation since the loss)
+            this._cr.copy(devQ).invert().premultiply(this.cRef);
+            o.quaternion.copy(this._cr).multiply(this.cQ);
+            o.position.copy(this.cP).applyQuaternion(this._cr);
+          } else {
+            // No orientation (e.g. iOS w/o grant) or coast expired → hide rather
+            // than freeze to the screen. Never "stuck to camera".
+            if (o.visible) o.visible = false; this.locked = false;
+          }
           return;
         }
         so.updateWorldMatrix(true, false);
@@ -296,12 +342,17 @@ function viewerHtml(view: unknown): string {
         o.visible = true; this.lastSeen = now;
         if (!this.locked){ // snap on (re)acquire — don't ease from a stale pose
           o.position.copy(this._p); o.quaternion.copy(this._q); o.scale.copy(this._s);
-          this.locked = true; return;
+          this.locked = true;
+        } else {
+          var k = 1 - Math.exp(-((dt || 16) / 1000) / TAU);
+          o.quaternion.slerp(this._q, k);
+          o.position.lerp(this._p, k);
+          o.scale.lerp(this._s, k);
         }
-        var k = 1 - Math.exp(-((dt || 16) / 1000) / TAU);
-        o.quaternion.slerp(this._q, k);
-        o.position.lerp(this._p, k);
-        o.scale.lerp(this._s, k);
+        // Refresh the coast snapshot every good frame: the displayed pose + the
+        // phone orientation that goes with it.
+        this.cP.copy(o.position); this.cQ.copy(o.quaternion);
+        if (devQ){ this.cRef.copy(devQ); this.cRefValid = true; }
       }
     });
   }
@@ -435,12 +486,14 @@ function viewerHtml(view: unknown): string {
     //     5000 = jittery "bubbles"; the default is the balance.)
     // The render-rate stabilizer above adds a light extra smooth — tune THAT (TAU)
     // for stability vs snappiness, NOT these, so we never re-introduce second-scale
-    // lag here. missTolerance 20 (was 6) keeps the lock through blur/quick moves.
+    // lag here. missTolerance back to 5 (default): MindAR should DECLARE the loss
+    // quickly so our orientation-coast takes over (glued) — a high missTolerance
+    // makes MindAR hold the last pose in SCREEN space ("stuck to camera") first.
     // Lever-arm note: content high off the card (big Z/scale) magnifies any
     // residual jitter — models near the surface look most glued.
     scene.setAttribute('mindar-image',
       'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
-      'filterMinCF: 0.001; filterBeta: 1000; missTolerance: 20; warmupTolerance: 2');
+      'filterMinCF: 0.001; filterBeta: 1000; missTolerance: 5; warmupTolerance: 2');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.
