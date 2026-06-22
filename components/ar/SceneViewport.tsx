@@ -75,11 +75,13 @@ export default function SceneViewport({
           the editor look nothing like the AR result. The stored element coords are
           card-relative and unchanged, so the published viewer is unaffected; only
           this preview's framing changed. The grid is CO-PLANAR with the card (same
-          z plane, just behind its back face) so it reads as the card's own surface
-          — not a floor the card floats above. (It used to sit 0.4 behind, which
-          looked detached the moment you orbit.) */}
+          z plane, just behind its back face) so it reads as the card's own surface.
+          Kept SMALL (~1.5 card-widths) and faint so its EDGES are visible — you see
+          a card-sized pad turn, not a world-filling floor tilting as one giant slab
+          (that "the whole thing moves" vertigo came from the old 6-unit grid that
+          covered the whole viewport). */}
       <gridHelper
-        args={[6, 30, "#d8d5cf", "#e7e5e1"]}
+        args={[1.5, 6, "#cfccc5", "#e4e1dc"]}
         rotation={[Math.PI / 2, 0, 0]}
         position={[0, 0, -0.011]}
       />
@@ -97,12 +99,24 @@ export default function SceneViewport({
         )}
       </Suspense>
 
+      {/* Calm, anchored orbit. enableDamping = smooth inertial motion (kills the
+          jerky "trippy" feel of raw 1:1 dragging). rotate/zoom slowed a touch so a
+          small drag doesn't whip the view around. Polar angle clamped well away from
+          the poles so you can't orbit under/over the card and flip it edge-on
+          (the most disorienting motion). maxDistance pulled in so you can't zoom out
+          until the card is a tiny speck. */}
       <OrbitControls
         makeDefault
         enablePan={false}
+        enableDamping
+        dampingFactor={0.12}
+        rotateSpeed={0.65}
+        zoomSpeed={0.7}
         target={[0, 0.1, 0]}
-        minDistance={0.7}
-        maxDistance={6}
+        minDistance={0.9}
+        maxDistance={4}
+        minPolarAngle={Math.PI * 0.2}
+        maxPolarAngle={Math.PI * 0.8}
       />
     </Canvas>
   );
