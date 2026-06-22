@@ -294,7 +294,10 @@ function viewerHtml(view: unknown): string {
     var GYRO_FLOOR = 0.05;  // rad/s — below this is hand tremor, not real motion
     var GYRO_RAMP = 0.5;    // rad/s above the floor to reach full responsiveness
     var TAU_NOGYRO = 0.06;  // s — fixed rotation smoothing when no gyro data
-    var TAU_POS = 0.05;     // s — light, always-on position/scale smoothing
+    var TAU_POS_STILL = 0.10; // s — position smoothing when still (gentler than
+                              //     rotation so a pure phone-slide barely lags)
+    var TAU_POS_MOVE  = 0.025;// s — position smoothing when moving (responsive)
+    var TAU_SCALE = 0.05;   // s — distance/scale smoothing (kept responsive)
     AFRAME.registerComponent('card-stabilizer', {
       // target = a CSS selector STRING (not the 'selector' type) so we can resolve
       // it lazily in tick — the anchor isn't in the document when this is set.
@@ -323,12 +326,14 @@ function viewerHtml(view: unknown): string {
         var motion = gyroSpeed - GYRO_FLOOR; if (motion < 0) motion = 0;
         var f = Math.min(1, motion / GYRO_RAMP);
         var tauR = fresh ? (TAU_STILL + (TAU_MOVE - TAU_STILL) * f) : TAU_NOGYRO;
+        var tauP = fresh ? (TAU_POS_STILL + (TAU_POS_MOVE - TAU_POS_STILL) * f) : TAU_POS_MOVE;
         var dts = (dt || 16) / 1000;
         var kR = 1 - Math.exp(-dts / (tauR > 0.001 ? tauR : 0.001));
-        var kP = 1 - Math.exp(-dts / TAU_POS);
+        var kP = 1 - Math.exp(-dts / tauP);
+        var kS = 1 - Math.exp(-dts / TAU_SCALE);
         o.quaternion.slerp(this._q, kR);
         o.position.lerp(this._p, kP);
-        o.scale.lerp(this._s, kP);
+        o.scale.lerp(this._s, kS);
       }
     });
   }
