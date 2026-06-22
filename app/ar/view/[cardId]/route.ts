@@ -298,28 +298,37 @@ function viewerHtml(view: unknown): string {
                               //     rotation so a pure phone-slide barely lags)
     var TAU_POS_MOVE  = 0.025;// s — position smoothing when moving (responsive)
     var TAU_SCALE = 0.05;   // s — distance/scale smoothing (kept responsive)
+    var GRACE_MS = 2500;    // ms — keep the model PLANTED through a brief track loss
+                            //     (blur/quick move) instead of dropping it instantly
     AFRAME.registerComponent('card-stabilizer', {
       // target = a CSS selector STRING (not the 'selector' type) so we can resolve
       // it lazily in tick — the anchor isn't in the document when this is set.
       schema: { target: { type: 'string' } },
       init: function(){
         this._p = new _T.Vector3(); this._q = new _T.Quaternion(); this._s = new _T.Vector3();
-        this.locked = false; this.src = null;
+        this.locked = false; this.src = null; this.lastSeen = 0;
         this.el.object3D.visible = false; // hidden until the target is found
       },
       tick: function(t, dt){
         if (!this.src){ this.src = document.querySelector(this.data.target); if (!this.src) return; }
         var so = this.src.object3D, o = this.el.object3D;
         if (!so) return;
-        if (!so.visible){ if (o.visible) o.visible = false; this.locked = false; return; }
+        var now = (window.performance ? performance.now() : Date.now());
+        if (!so.visible){
+          // PERSISTENCE: a brief track loss (motion blur / quick move) should NOT
+          // drop the model. Keep it frozen at its last pose on the card for a grace
+          // window; only hide if the target stays lost a long time.
+          if (this.locked && (now - this.lastSeen) < GRACE_MS){ o.visible = true; }
+          else { if (o.visible) o.visible = false; this.locked = false; }
+          return;
+        }
         so.updateWorldMatrix(true, false);
         so.matrixWorld.decompose(this._p, this._q, this._s);
-        o.visible = true;
+        o.visible = true; this.lastSeen = now;
         if (!this.locked){ // snap on (re)acquire — don't ease from a stale pose
           o.position.copy(this._p); o.quaternion.copy(this._q); o.scale.copy(this._s);
           this.locked = true; return;
         }
-        var now = (window.performance ? performance.now() : Date.now());
         var fresh = gyroSeenAt && (now - gyroSeenAt) < 500;
         // Subtract a tremor floor so only INTENTIONAL motion relaxes the smoothing
         // (otherwise a held-still hand reads as "moving" and the wobble returns).
@@ -352,6 +361,39 @@ function viewerHtml(view: unknown): string {
       var img = new Image(); img.crossOrigin = 'anonymous';
       img.onload = function(){ res(img); }; img.onerror = rej; img.src = url;
     });
+  }
+
+  // One soft round shadow texture (radial dark → transparent), generated once and
+  // shared. A flat copy is laid on the card UNDER each 3D model so the model reads
+  // as PLANTED on the card instead of floating beside it — the single biggest cue
+  // that "it's sitting where I put it" at oblique viewing angles.
+  var SHADOW_TEX = (function(){
+    try {
+      var c = document.createElement('canvas'); c.width = c.height = 128;
+      var g = c.getContext('2d'); if (!g) return null;
+      var rad = g.createRadialGradient(64, 64, 6, 64, 64, 62);
+      rad.addColorStop(0, 'rgba(0,0,0,0.42)');
+      rad.addColorStop(0.55, 'rgba(0,0,0,0.20)');
+      rad.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = rad; g.fillRect(0, 0, 128, 128);
+      return c.toDataURL('image/png');
+    } catch(e){ return null; }
+  })();
+
+  // A flat contact shadow for a model element, on the card plane (z≈0) under the
+  // model's base. Sized to the model's footprint (auto-fit makes rendered size ≈
+  // 0.3·scale card-widths). Not clickable; doesn't write depth (sits on the card).
+  function buildShadow(el){
+    if (el.type !== 'model' || !SHADOW_TEX) return null;
+    var sc = Number(el.scale) > 0 ? Number(el.scale) : 1;
+    var size = 0.36 * sc; if (size < 0.08) size = 0.08;
+    var p = Array.isArray(el.position) ? el.position : [0, 0, 0];
+    var sh = document.createElement('a-image');
+    sh.setAttribute('src', SHADOW_TEX);
+    sh.setAttribute('width', size); sh.setAttribute('height', size);
+    sh.setAttribute('position', p[0] + ' ' + p[1] + ' 0.004');
+    sh.setAttribute('material', 'transparent: true; depthWrite: false; opacity: 0.9');
+    return sh;
   }
 
   function buildElement(el){
@@ -440,7 +482,10 @@ function viewerHtml(view: unknown): string {
     // most glued.
     scene.setAttribute('mindar-image',
       'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
-      'filterMinCF: 0.0001; filterBeta: 300; missTolerance: 6; warmupTolerance: 2');
+      // missTolerance raised (was 6): MindAR keeps the lock through ~20 missed
+      // frames (blur/quick move) instead of dropping it — first layer of "stay on
+      // the card." The stabilizer's grace-hold is the second layer.
+      'filterMinCF: 0.0001; filterBeta: 300; missTolerance: 20; warmupTolerance: 2');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.
@@ -491,20 +536,26 @@ function viewerHtml(view: unknown): string {
     // otherwise content goes straight on the anchor (original behaviour).
     var hasStab = !!(window.AFRAME && AFRAME.components && AFRAME.components['card-stabilizer']);
     log('stabilizer ' + (hasStab ? 'on' : 'off'));
+    // Persistence: only nag "Point at the card" if the target stays lost a while —
+    // a quick blur/move must NOT flash the hint while the model is still shown.
+    var lostTimer = null;
+    function showHint(){ lostTimer = null; hintEl.textContent = 'Point at the card'; }
+    function onFound(){ log('targetFound'); if (lostTimer){ clearTimeout(lostTimer); lostTimer = null; } hintEl.textContent = ''; }
+    function onLost(){ log('targetLost'); if (lostTimer) clearTimeout(lostTimer); lostTimer = setTimeout(showHint, 2600); }
     for (var i = 0; i < count; i++){
       var anchor = document.createElement('a-entity');
       anchor.setAttribute('mindar-image-target', 'targetIndex: ' + i);
-      anchor.addEventListener('targetFound', function(){ log('targetFound'); hintEl.textContent = ''; });
-      anchor.addEventListener('targetLost', function(){ log('targetLost'); hintEl.textContent = 'Point at the card'; });
+      anchor.addEventListener('targetFound', onFound);
+      anchor.addEventListener('targetLost', onLost);
       if (hasStab){
         anchor.id = 'mindar-anchor-' + i;
         scene.appendChild(anchor);
         var stage = document.createElement('a-entity');
-        (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) stage.appendChild(n); });
+        (D.elements || []).forEach(function(el){ var sh = buildShadow(el); if (sh) stage.appendChild(sh); var n = buildElement(el); if (n) stage.appendChild(n); });
         scene.appendChild(stage);
         stage.setAttribute('card-stabilizer', 'target: #mindar-anchor-' + i);
       } else {
-        (D.elements || []).forEach(function(el){ var n = buildElement(el); if (n) anchor.appendChild(n); });
+        (D.elements || []).forEach(function(el){ var sh = buildShadow(el); if (sh) anchor.appendChild(sh); var n = buildElement(el); if (n) anchor.appendChild(n); });
         scene.appendChild(anchor);
       }
     }
