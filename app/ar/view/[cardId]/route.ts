@@ -165,6 +165,22 @@ function viewerHtml(view: unknown): string {
 (function(){
   function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
   window.__ARLOG__ = log;
+  // Device tier — a coarse capability guess that picks the camera resolution and a
+  // render-resolution cap. MindAR's computer vision is CPU-bound, so weak phones
+  // (few cores / little RAM) get a LIGHTER pipeline (lower-res capture + lower DPR)
+  // to claw back frame rate, while capable phones (recent iPhone / flagship
+  // Android) keep the full high-res PREMIUM path untouched. deviceMemory is
+  // Chrome-only, rounded + capped at 8; iOS doesn't expose it, so iOS falls to
+  // 'high' (those devices are generally capable). hardwareConcurrency <= 4 also
+  // flags weak SoCs. Everything downstream (gUM, DPR cap, debug HUD) reads this.
+  window.__TIER__ = (function(){
+    try {
+      var cores = navigator.hardwareConcurrency || 8;
+      var mem = (typeof navigator.deviceMemory === 'number') ? navigator.deviceMemory : null;
+      return (cores <= 4 || (mem != null && mem <= 4)) ? 'low' : 'high';
+    } catch(e){ return 'high'; }
+  })();
+  log('device tier: ' + window.__TIER__ + ' (cores=' + (navigator.hardwareConcurrency || '?') + ' mem=' + (navigator.deviceMemory || '?') + ')');
   window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
   window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
   try { var _ce = console.error; console.error = function(){ log('console.error:', Array.prototype.map.call(arguments, String).join(' ')); try { _ce.apply(console, arguments); } catch(_){} }; } catch(e){}
@@ -190,15 +206,22 @@ function viewerHtml(view: unknown): string {
           c = c || {};
           if (c.video){
             var v = (typeof c.video === 'object') ? c.video : {};
-            if (v.width == null) v.width = { ideal: 1280 };
-            if (v.height == null) v.height = { ideal: 720 };
+            // Tier-appropriate capture. Low tier → 480p (~1/4 the pixels of 1080p),
+            // so MindAR's per-frame CV cost drops and the tracking frame rate climbs
+            // back into a usable range. High tier → 1080p: more pixels = sub-pixel
+            // feature precision = a STEADIER pose (worth it on capable phones that
+            // have the CPU headroom — this is the premium tracking lever). gUM snaps
+            // to the closest the camera actually supports.
+            var _low = window.__TIER__ === 'low';
+            if (v.width == null) v.width = { ideal: _low ? 640 : 1920 };
+            if (v.height == null) v.height = { ideal: _low ? 480 : 1080 };
             if (v.facingMode == null) v.facingMode = { ideal: 'environment' };
             if (v.frameRate == null) v.frameRate = { ideal: 30 };
             // continuous AF keeps the card sharp as the phone moves — as an
             // ADVANCED (optional) constraint so it never makes gUM throw.
             v.advanced = (v.advanced || []).concat([{ focusMode: 'continuous' }]);
             c.video = v;
-            log('gUM hires video constraints applied');
+            log('gUM video constraints applied, tier=' + window.__TIER__);
           }
         } catch(e){}
         return _gum(c);
@@ -247,7 +270,8 @@ function viewerHtml(view: unknown): string {
         var t = (window.performance ? performance.now() : Date.now());
         if (t - t0 >= 500){ fps = Math.round(frames * 1000 / (t - t0)); frames = 0; t0 = t; }
         el.textContent =
-          'build: coast-v1\\n' +
+          'build: adaptive-v1\\n' +
+          'tier: ' + (window.__TIER__ || '?') + '   dpr: ' + (window.__DPR__ || '?') + '\\n' +
           'render fps: ' + fps + '\\n' +
           'state: ' + (window.__ARSTATE__ || 'starting') + '\\n' +
           'orient: ' + ((typeof devQ !== 'undefined' && devQ) ? 'yes' : 'no');
@@ -501,6 +525,12 @@ function viewerHtml(view: unknown): string {
 
   function start(targetSrc, count){
     var scene = document.createElement('a-scene');
+    // Render-resolution cap. Phones report DPR 3–3.5×; rendering the transparent
+    // overlay that high is wasted fill that drags the frame rate (pose updates land
+    // late = laggy feel). Low tier starts tighter (1.5×) and the auto-quality
+    // watchdog below can drop it further if the device still can't keep up; high
+    // tier caps at 2× (crisp, premium). capDpr() reads this each relayout.
+    var DPR_CAP = (window.__TIER__ === 'low') ? 1.5 : 2;
     // maxTrack: 1 — a SINGLE tracking target (the chosen card side). We used to
     // register both sides; one target locks faster, can't mis-switch between two
     // similar-looking sides, and leaves more CPU per frame for a steadier pose.
@@ -607,16 +637,64 @@ function viewerHtml(view: unknown): string {
     // so capDpr runs at the tail of every relayout to keep the cap in force.
     function relayout(){ try { window.dispatchEvent(new Event('resize')); } catch(e){} capDpr(); }
     scene.addEventListener('loaded', function(){ log('scene loaded'); setProg(82); });
-    // Cap render resolution to ~2× DPR. Phones report 3–3.5×; rendering the
-    // transparent overlay that high is wasted GPU fill for one model and drags the
-    // frame rate (which makes tracking updates land late = laggy feel). 2× is
-    // still crisp. (Function declaration → hoisted, so relayout above can call it.)
-    function capDpr(){ try { if (scene.renderer) scene.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); } catch(e){} }
-    scene.addEventListener('renderstart', function(){ log('renderstart'); setProg(92); relayout(); setTimeout(relayout, 500); });
+    // Apply the current DPR_CAP (above). Function declaration → hoisted, so
+    // relayout above can call it. Records the applied ratio on window.__DPR__ for
+    // the debug HUD and lets the auto-quality watchdog lower DPR_CAP then re-apply.
+    function capDpr(){ try { if (scene.renderer){ var r = Math.min(window.devicePixelRatio || 1, DPR_CAP); scene.renderer.setPixelRatio(r); window.__DPR__ = r; } } catch(e){} }
+    // Premium image-based lighting (HIGH tier only): build a tiny in-memory studio
+    // environment (canvas gradient → PMREM prefilter) and set it as the scene
+    // environment, so glossy / metallic models (a car body, chrome, glass) pick up
+    // realistic soft reflections instead of looking flat-shaded. No network fetch,
+    // built once. Skipped on low tier to keep weak devices light. Mirrors the
+    // editor's drei Environment so the AR look matches the composer.
+    function applyEnv(){
+      try {
+        if (window.__TIER__ === 'low' || scene.__envDone) return;
+        var T = AFRAME.THREE;
+        if (!scene.renderer || !T || !T.PMREMGenerator) return;
+        var cv = document.createElement('canvas'); cv.width = 16; cv.height = 64;
+        var g = cv.getContext('2d'); if (!g) return;
+        var grd = g.createLinearGradient(0, 0, 0, 64);
+        grd.addColorStop(0.0, '#ffffff');   // top key (sky)
+        grd.addColorStop(0.45, '#dfe6f0');  // soft horizon
+        grd.addColorStop(1.0, '#3a3f47');   // darker ground
+        g.fillStyle = grd; g.fillRect(0, 0, 16, 64);
+        var tex = new T.CanvasTexture(cv);
+        tex.mapping = T.EquirectangularReflectionMapping;
+        if (T.SRGBColorSpace) tex.colorSpace = T.SRGBColorSpace;
+        var pmrem = new T.PMREMGenerator(scene.renderer);
+        scene.object3D.environment = pmrem.fromEquirectangular(tex).texture;
+        tex.dispose(); pmrem.dispose();
+        scene.__envDone = true;
+        log('IBL environment applied (high tier)');
+      } catch(e){ log('env err: ' + (e && e.message)); }
+    }
+    // Auto-quality: sample render FPS for a few short windows after start; if the
+    // device can't sustain a usable rate, drop the render-resolution cap so MindAR's
+    // pose updates get DRAWN sooner (tighter-feeling tracking) and the CV loop gets
+    // more main-thread budget. Steps DOWN only, then stops — capable devices never
+    // trip it, so the premium path is never degraded.
+    function autoQuality(){
+      var frames = 0, t0 = 0, windows = 0;
+      function sample(){
+        var now = (window.performance ? performance.now() : Date.now());
+        if (!t0){ t0 = now; frames = 0; requestAnimationFrame(sample); return; }
+        frames++;
+        if (now - t0 >= 1500){
+          var fps = frames * 1000 / (now - t0);
+          if (fps < 20 && DPR_CAP > 1){ DPR_CAP = 1; capDpr(); log('auto-quality: ' + Math.round(fps) + ' fps -> DPR cap 1'); }
+          windows++; t0 = 0;
+        }
+        if (windows < 3) requestAnimationFrame(sample);
+      }
+      requestAnimationFrame(sample);
+    }
+    scene.addEventListener('renderstart', function(){ log('renderstart'); setProg(92); applyEnv(); relayout(); setTimeout(relayout, 500); });
     scene.addEventListener('arReady', function(){
       log('arReady');
       ready();
       hintEl.textContent = 'Point at the card';
+      autoQuality();
       [100, 400, 900, 1800].forEach(function(ms){ setTimeout(relayout, ms); });
       // Probe the camera video + canvas so a black screen is diagnosable.
       setTimeout(function(){

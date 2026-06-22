@@ -4,7 +4,9 @@ import { Suspense, useRef } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import {
+  Environment,
   Image as DreiImage,
+  Lightformer,
   OrbitControls,
   RoundedBox,
   Text,
@@ -57,17 +59,29 @@ export default function SceneViewport({
       <directionalLight position={[2, 3, 5]} intensity={1.2 * b} castShadow />
       <directionalLight position={[-3, 1, 2]} intensity={0.4 * b} />
 
+      {/* Premium image-based lighting — mirrors the AR viewer's in-memory studio
+          environment so glossy / metallic models (car bodies, chrome, glass) show
+          the same soft reflections here as on the card. Built once from a few light
+          panels (frames={1}, no network fetch / no HDR download). */}
+      <Environment resolution={64} frames={1}>
+        <Lightformer intensity={1.3} position={[0, 2.5, 1.5]} scale={[4, 4, 1]} color="#ffffff" />
+        <Lightformer intensity={0.55} position={[-2.5, 0, 1]} scale={[3, 3, 1]} color="#dfe6f0" />
+        <Lightformer intensity={0.3} position={[2.5, -1, 1]} scale={[3, 3, 1]} color="#9aa3b2" />
+      </Environment>
+
       {/* WYSIWYG: the card FACES the camera — exactly what you see when you point
           your phone at the printed card — and content pops toward you out of the
           card face (+z). This replaces the old top-down "diorama" view, which made
           the editor look nothing like the AR result. The stored element coords are
           card-relative and unchanged, so the published viewer is unaffected; only
-          this preview's framing changed. A faint grid sits BEHIND the card (its
-          plane) just for depth reference. */}
+          this preview's framing changed. The grid is CO-PLANAR with the card (same
+          z plane, just behind its back face) so it reads as the card's own surface
+          — not a floor the card floats above. (It used to sit 0.4 behind, which
+          looked detached the moment you orbit.) */}
       <gridHelper
         args={[6, 30, "#d8d5cf", "#e7e5e1"]}
         rotation={[Math.PI / 2, 0, 0]}
-        position={[0, 0, -0.4]}
+        position={[0, 0, -0.011]}
       />
 
       {/* The card (tracking target) */}
