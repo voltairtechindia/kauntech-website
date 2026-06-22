@@ -128,6 +128,10 @@ function viewerHtml(view: unknown): string {
   .ld-bar{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#F59E0B,#fbbf24);transition:width .3s ease}
   .ld-pct{margin-top:10px;font-size:13px;color:#9aa3b2;font-variant-numeric:tabular-nums}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+  /* Diagnostic HUD — only shown with ?debug=1. Tells us FPS + tracking state so we
+     can tell a slow device apart from a logic bug. */
+  #dbg{position:fixed;top:8px;left:8px;z-index:40;display:none;font:600 12px/1.45 ui-monospace,Menlo,monospace;
+    color:#7CFFB2;background:rgba(0,0,0,.62);padding:7px 9px;border-radius:8px;white-space:pre;pointer-events:none}
   /* The scene wrapper MUST be full-viewport — MindAR measures this container to
      size the camera video AND match the 3D projection to it. An unsized wrapper
      made it letterbox (video shorter than the canvas) and threw the overlay
@@ -151,6 +155,7 @@ function viewerHtml(view: unknown): string {
   <div id="pct" class="ld-pct">Starting…</div>
 </div></div>
 <div id="hint"></div>
+<div id="dbg"></div>
 <div id="scene"></div>
 <script>window.__AR__ = ${json};</script>
 <script>
@@ -170,13 +175,12 @@ function viewerHtml(view: unknown): string {
       WW.prototype = _W.prototype; window.Worker = WW;
     }
   } catch(e){}
-  // Open the rear camera at HIGH RESOLUTION for tracking PRECISION. The pose is
-  // computed from feature positions in the camera frame, so more pixels = more
-  // precise (sub-pixel) feature localisation = a steadier, less jittery pose. For
-  // "stays in place" this matters more than frame count, so 1080p@30 beats the
-  // 720p@60 we tried (which was lighter but noisier → contributed to the shake).
-  // 640x480 (the gUM default) is too low-detail and tracks poorly. continuous AF
-  // keeps the card sharp. Merged into every video request the page makes.
+  // Camera resolution = a PERFORMANCE vs precision trade. MindAR runs CV in WASM on
+  // the CPU every frame; 1080p doubles the per-frame work vs 720p, which tanks the
+  // tracking framerate on LOW-END phones (→ laggy, jittery, frequent loss). 720p is
+  // the safer default: well above the low-detail threshold for our crisp 1440px
+  // target, far lighter for weak hardware. continuous AF keeps the card sharp.
+  // Merged into every video request the page makes.
   try {
     var md = navigator.mediaDevices;
     if (md && md.getUserMedia){
@@ -186,8 +190,8 @@ function viewerHtml(view: unknown): string {
           c = c || {};
           if (c.video){
             var v = (typeof c.video === 'object') ? c.video : {};
-            if (v.width == null) v.width = { ideal: 1920 };
-            if (v.height == null) v.height = { ideal: 1080 };
+            if (v.width == null) v.width = { ideal: 1280 };
+            if (v.height == null) v.height = { ideal: 720 };
             if (v.facingMode == null) v.facingMode = { ideal: 'environment' };
             if (v.frameRate == null) v.frameRate = { ideal: 30 };
             // continuous AF keeps the card sharp as the phone moves — as an
@@ -227,6 +231,30 @@ function viewerHtml(view: unknown): string {
   }
   var arReadyFired = false;
   var log = window.__ARLOG__ || function(){};
+
+  // Diagnostic HUD (add ?debug=1 to the URL): shows RENDER fps + tracking state +
+  // whether device-orientation is available. Lets us tell a slow device (low fps)
+  // apart from a logic bug (good fps but bad behaviour). 'build' confirms the
+  // deployed version. Off for normal users.
+  (function(){
+    try {
+      if (!/[?&]debug/i.test(location.search)) return;
+      var el = document.getElementById('dbg'); if (!el) return;
+      el.style.display = 'block';
+      var frames = 0, t0 = (window.performance ? performance.now() : Date.now()), fps = 0;
+      (function loop(){
+        frames++;
+        var t = (window.performance ? performance.now() : Date.now());
+        if (t - t0 >= 500){ fps = Math.round(frames * 1000 / (t - t0)); frames = 0; t0 = t; }
+        el.textContent =
+          'build: coast-v1\n' +
+          'render fps: ' + fps + '\n' +
+          'state: ' + (window.__ARSTATE__ || 'starting') + '\n' +
+          'orient: ' + ((typeof devQ !== 'undefined' && devQ) ? 'yes' : 'no');
+        requestAnimationFrame(loop);
+      })();
+    } catch(e){}
+  })();
 
   // Minimal animation-mixer so user-uploaded animated .glb models loop their
   // built-in animations — replaces aframe-extras (which crashed scene init) with
@@ -326,6 +354,7 @@ function viewerHtml(view: unknown): string {
           var canCoast = this.locked && this.cRefValid && devQ && (now - devSeen) < 1000 && (now - this.lastSeen) < COAST_MS;
           if (canCoast){
             o.visible = true;
+            window.__ARSTATE__ = 'COASTING';
             // coastRot = cRef · devQ⁻¹  (undo the phone's rotation since the loss)
             this._cr.copy(devQ).invert().premultiply(this.cRef);
             o.quaternion.copy(this._cr).multiply(this.cQ);
@@ -334,12 +363,13 @@ function viewerHtml(view: unknown): string {
             // No orientation (e.g. iOS w/o grant) or coast expired → hide rather
             // than freeze to the screen. Never "stuck to camera".
             if (o.visible) o.visible = false; this.locked = false;
+            window.__ARSTATE__ = 'LOST';
           }
           return;
         }
         so.updateWorldMatrix(true, false);
         so.matrixWorld.decompose(this._p, this._q, this._s);
-        o.visible = true; this.lastSeen = now;
+        o.visible = true; this.lastSeen = now; window.__ARSTATE__ = 'TRACKING';
         if (!this.locked){ // snap on (re)acquire — don't ease from a stale pose
           o.position.copy(this._p); o.quaternion.copy(this._q); o.scale.copy(this._s);
           this.locked = true;
