@@ -247,9 +247,9 @@ function viewerHtml(view: unknown): string {
         var t = (window.performance ? performance.now() : Date.now());
         if (t - t0 >= 500){ fps = Math.round(frames * 1000 / (t - t0)); frames = 0; t0 = t; }
         el.textContent =
-          'build: coast-v1\n' +
-          'render fps: ' + fps + '\n' +
-          'state: ' + (window.__ARSTATE__ || 'starting') + '\n' +
+          'build: coast-v1\\n' +
+          'render fps: ' + fps + '\\n' +
+          'state: ' + (window.__ARSTATE__ || 'starting') + '\\n' +
           'orient: ' + ((typeof devQ !== 'undefined' && devQ) ? 'yes' : 'no');
         requestAnimationFrame(loop);
       })();
