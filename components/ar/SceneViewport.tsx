@@ -34,9 +34,13 @@ interface Props {
 }
 
 /**
- * The composer canvas. The card sits in the XY plane (z=0) and elements float
- * out toward the viewer (+z) — the SAME convention the WebAR viewer uses on the
- * image-target anchor, so what you arrange here is what shows on the card.
+ * The composer canvas — a Kivicube-style "land": the card lies FLAT on a floor
+ * and you arrange 3D content standing on it, viewed from a 3/4 angle you can orbit
+ * and pan around. The stored scene is still card-relative (card in its own XY
+ * plane, content floating out along +Z — the SAME convention the WebAR viewer uses
+ * on the image-target anchor); a single stage group rotated -90° about X lays that
+ * plane down as ground, so card +Z (float-out) reads as world +Y (up). Stored
+ * coordinates are untouched, so the published viewer is unaffected.
  */
 export default function SceneViewport({
   elements,
@@ -48,7 +52,7 @@ export default function SceneViewport({
   onTransform,
 }: Props) {
   return (
-    <Canvas camera={{ position: [0, 0.12, 2.05], fov: 40 }} dpr={[1, 2]} shadows>
+    <Canvas camera={{ position: [0, 1.25, 1.85], fov: 40 }} dpr={[1, 2]} shadows>
       <color attach="background" args={["#f1f0ee"]} />
       <ambientLight intensity={0.95} />
       <hemisphereLight intensity={0.6} color="#ffffff" groundColor="#bdb8b0" />
@@ -65,54 +69,55 @@ export default function SceneViewport({
         <Lightformer intensity={0.3} position={[2.5, -1, 1]} scale={[3, 3, 1]} color="#9aa3b2" />
       </Environment>
 
-      {/* WYSIWYG: the card FACES the camera — exactly what you see when you point
-          your phone at the printed card — and content pops toward you out of the
-          card face (+z). This replaces the old top-down "diorama" view, which made
-          the editor look nothing like the AR result. The stored element coords are
-          card-relative and unchanged, so the published viewer is unaffected; only
-          this preview's framing changed. The grid is CO-PLANAR with the card (same
-          z plane, just behind its back face) so it reads as the card's own surface.
-          Kept SMALL (~1.5 card-widths) and faint so its EDGES are visible — you see
-          a card-sized pad turn, not a world-filling floor tilting as one giant slab
-          (that "the whole thing moves" vertigo came from the old 6-unit grid that
-          covered the whole viewport). */}
-      <gridHelper
-        args={[1.5, 6, "#cfccc5", "#e4e1dc"]}
-        rotation={[Math.PI / 2, 0, 0]}
-        position={[0, 0, -0.011]}
-      />
+      {/* The "land": a horizontal floor the card sits on. A faint ground plane
+          (receives shadows) under a grid, so the card reads as resting on a real
+          surface you look ACROSS — not a poster you orbit. World XZ plane, y≈0. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.014, 0]} receiveShadow>
+        <planeGeometry args={[8, 8]} />
+        <meshStandardMaterial color="#eceae6" roughness={1} metalness={0} />
+      </mesh>
+      <gridHelper args={[3, 24, "#cfccc5", "#e4e1dc"]} position={[0, -0.012, 0]} />
 
-      {/* The card (tracking target) */}
-      <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
+      {/* Ground stage. The stored scene is card-relative — the card lives in its own
+          XY plane with content floating out along +Z. Rotating the whole stage -90°
+          about X LAYS THE CARD DOWN FLAT like ground: card +Z (float-out) becomes
+          world +Y (up), so a model tilted to stand on the card now stands UPRIGHT on
+          the land, exactly like the real scan of a card lying on a table. card +X
+          stays world +X (left/right) and card +Y becomes world -Z (forward/back on
+          the ground). Stored coordinates are untouched — only how we view them. */}
+      <group rotation={[-Math.PI / 2, 0, 0]}>
+        {/* The card (tracking target) */}
+        <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
 
-      <Suspense fallback={null}>
-        {elements.map((el) =>
-          el.hidden ? null : el.id === selectedId ? (
-            <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
-          ) : (
-            <ElementNode key={el.id} element={el} onSelect={onSelect} />
-          ),
-        )}
-      </Suspense>
+        <Suspense fallback={null}>
+          {elements.map((el) =>
+            el.hidden ? null : el.id === selectedId ? (
+              <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
+            ) : (
+              <ElementNode key={el.id} element={el} onSelect={onSelect} />
+            ),
+          )}
+        </Suspense>
+      </group>
 
-      {/* Calm, anchored orbit. enableDamping = smooth inertial motion (kills the
-          jerky "trippy" feel of raw 1:1 dragging). rotate/zoom slowed a touch so a
-          small drag doesn't whip the view around. Polar angle clamped well away from
-          the poles so you can't orbit under/over the card and flip it edge-on
-          (the most disorienting motion). maxDistance pulled in so you can't zoom out
-          until the card is a tiny speck. */}
+      {/* Orbit/pan/zoom around the land, Kivicube-style. Left-drag circles the card
+          on its floor (full 360° around), right-drag (or two-finger) pans across the
+          ground, wheel zooms. enableDamping keeps it smooth. Polar range runs from
+          near top-down to just under the card so you can inspect every face (incl.
+          the underside) without flipping fully beneath the floor. */}
       <OrbitControls
         makeDefault
-        enablePan={false}
+        enablePan
         enableDamping
         dampingFactor={0.12}
-        rotateSpeed={0.65}
-        zoomSpeed={0.7}
-        target={[0, 0.1, 0]}
-        minDistance={0.9}
-        maxDistance={4}
-        minPolarAngle={Math.PI * 0.2}
-        maxPolarAngle={Math.PI * 0.8}
+        rotateSpeed={0.85}
+        zoomSpeed={0.8}
+        panSpeed={0.7}
+        target={[0, 0.15, 0]}
+        minDistance={0.4}
+        maxDistance={8}
+        minPolarAngle={0.05}
+        maxPolarAngle={Math.PI * 0.88}
       />
     </Canvas>
   );
@@ -167,6 +172,12 @@ function SelectedElement({
   return (
     <TransformControls
       mode={mode}
+      // World space so the gizmo handles stay aligned to the LAND regardless of the
+      // card's flat-laid stage and the model's standing tilt: drag the red handle to
+      // move left/right, the green to lift off the ground, the blue forward/back.
+      // The object is a child of the stage group, so the values written back stay
+      // card-relative — the stored scene and the published viewer are unaffected.
+      space="world"
       onObjectChange={() => {
         const o = ref.current;
         if (!o) return;

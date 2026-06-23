@@ -137,47 +137,11 @@ export async function POST(req: Request) {
     return f instanceof File && f.size > 0;
   };
 
-  // Prebuilt MindAR target (.mind) for the CHOSEN side, compiled in the editor at
-  // save time, so the public viewer skips the slow on-device compile and tracks a
-  // single target. Optional + non-fatal: if it's absent or fails to store, the
-  // viewer just compiles at view time.
-  let mindUrl: string | null = null;
-  let mindTargets: number | null = null;
-  const mindFile = form.get("mind");
   const existingCard = ((existing?.scene as { card?: Record<string, unknown> } | null)?.card) ?? {};
-  if (mindFile instanceof File && mindFile.size > 0) {
-    try {
-      const path = `${userId}/${cardId}/${modelId}.mind`;
-      const bytes = Buffer.from(await mindFile.arrayBuffer());
-      const { error: mErr } = await bucket.upload(path, bytes, {
-        contentType: "application/octet-stream",
-        upsert: true,
-      });
-      if (!mErr) {
-        // Cache-bust like the photos: deterministic path, so a recompile must
-        // bust the CDN/WebView cache or a replaced target would serve stale.
-        mindUrl = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
-        const c = parseInt(str(form.get("mind_target_count")), 10);
-        mindTargets = Number.isFinite(c) && c > 0 ? c : null;
-      }
-    } catch {
-      /* non-fatal — fall back to runtime compile in the viewer */
-    }
-  } else {
-    // No new .mind this save. Keep the existing one ONLY if the TARGET side and its
-    // photo are unchanged; if either changed it was built from the old target and
-    // would track stale features, so drop it and let the viewer recompile.
-    const targetPhotoChanged = targetSide === "back" ? isSentFile("back_image") : isSentFile("front_image");
-    const targetSideChanged = typeof existingCard.target === "string" && existingCard.target !== targetSide;
-    if (!targetPhotoChanged && !targetSideChanged && typeof existingCard.mindUrl === "string") {
-      mindUrl = existingCard.mindUrl;
-      mindTargets = typeof existingCard.mindTargets === "number" ? existingCard.mindTargets : null;
-    }
-  }
 
   // 8th Wall PLANAR target (premium engine) for the chosen side: a grayscale
-  // luminance image generated in the editor. Same lifecycle as the .mind — store
-  // when sent, else keep the existing one unless the target side/photo changed.
+  // luminance image generated in the editor — store when sent, else keep the
+  // existing one unless the target side/photo changed.
   let eightwall: { lumUrl: string; w: number; h: number } | null = null;
   const ewFile = form.get("eightwall");
   if (ewFile instanceof File && ewFile.size > 0) {
@@ -192,7 +156,7 @@ export async function POST(req: Request) {
         if (Number.isFinite(w) && w > 0 && Number.isFinite(h) && h > 0) eightwall = { lumUrl, w, h };
       }
     } catch {
-      /* non-fatal — the card falls back to the MindAR viewer */
+      /* non-fatal — the viewer tracks on the raw card photo instead */
     }
   } else {
     const targetPhotoChanged = targetSide === "back" ? isSentFile("back_image") : isSentFile("front_image");
@@ -228,8 +192,6 @@ export async function POST(req: Request) {
     target: targetSide,
     frontOcr: frontOcr ?? undefined,
     backOcr: backOcr ?? undefined,
-    mindUrl: mindUrl ?? undefined,
-    mindTargets: mindTargets ?? undefined,
     eightwall: eightwall ?? undefined,
   };
 
@@ -260,14 +222,14 @@ export async function POST(req: Request) {
   }
 
   // Keep storage lean: a card should hold only its CURRENT front/back photo and
-  // the current .mind target. Delete every other top-level file left behind by a
-  // previous save (an old model id, a side that was removed, a stale .mind) so
-  // only the currently-added card photos stay. Element assets live in the
-  // `assets/` subfolder (a folder entry, which carries no `id`), so they're never
-  // touched here. Best-effort: never fail the save over cleanup.
+  // the current 8th Wall luminance target. Delete every other top-level file left
+  // behind by a previous save (an old model id, a removed side, a stale .mind or
+  // .lum) so only the current files stay. Element assets live in the `assets/`
+  // subfolder (a folder entry, which carries no `id`), so they're never touched
+  // here. Best-effort: never fail the save over cleanup.
   try {
     const keep = new Set(
-      [keyFromPublicUrl(frontUrl), keyFromPublicUrl(backUrl), keyFromPublicUrl(mindUrl), keyFromPublicUrl(eightwall?.lumUrl ?? null)]
+      [keyFromPublicUrl(frontUrl), keyFromPublicUrl(backUrl), keyFromPublicUrl(eightwall?.lumUrl ?? null)]
         .filter((k): k is string => !!k)
         .map((k) => k.split("/").pop() as string),
     );

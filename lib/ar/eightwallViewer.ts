@@ -1,53 +1,46 @@
 /**
- * 8th Wall WebAR viewer (the premium engine). Renders the owner's composed scene
- * anchored on the printed card via 8th Wall's image targets + World Tracking
- * (SLAM) — the same engine family as the old paid 8th Wall / Kivicube, now free
- * and open-source (Niantic, Feb 2026). Unlike MindAR (pure per-frame vision, no
- * fusion) 8th Wall fuses the camera with the device IMU and a SLAM world map, so
- * content stays GLUED at oblique angles and doesn't shimmer.
+ * 8th Wall WebAR viewer — the ONLY engine (the MindAR fallback was removed).
+ * Renders the owner's composed scene anchored on the printed card via 8th Wall's
+ * image targets + World Tracking (SLAM) with IMU fusion, so content stays glued
+ * at oblique angles and doesn't shimmer (the old paid 8th Wall / Kivicube tech,
+ * free + open-source since Niantic, Feb 2026).
  *
- * This is a standalone HTML document (served by app/ar/view/[cardId]) loaded by
- * the app's WebView, exactly like the MindAR viewer. The DOM/scene model is the
- * SAME A-Frame element set the editor produces, so element building is shared in
- * spirit with the MindAR path — only the tracking SYSTEM differs:
- *   MindAR:   <a-scene mindar-image>  +  <a-entity mindar-image-target>
- *   8th Wall: <a-scene xrweb>         +  <xrextras-named-image-target>
+ * Standalone HTML loaded by the app's WebView. Scene model = the SAME A-Frame
+ * element set the editor produces; only the tracking SYSTEM differs from before:
+ *   <a-scene xrweb>  +  <xrextras-named-image-target>.
  *
- * Engine pieces (all already allowed by the /ar CSP):
- *  - 8frame 1.5.0  — 8th Wall's A-Frame build (self-hosted; no CDN exists). It
- *    bundles the xrweb/xrextras A-Frame integration vanilla A-Frame lacks.
- *  - @8thwall/engine-binary — the distributed engine (camera + SLAM). The
- *    `data-preload-chunks="slam"` attr pulls the SLAM chunk (xr-slam.js).
- *  - @8thwall/landing-page + @8thwall/xrextras — the official loading / camera +
- *    motion permission / unsupported-device flow (handles the iOS DeviceMotion
- *    grant that World Tracking needs).
+ * Engine pieces (all allowed by the /ar CSP):
+ *  - 8frame 1.5.0 — 8th Wall's A-Frame build (vendored to /ar8; bundles the xrweb
+ *    integration vanilla A-Frame lacks).
+ *  - @8thwall/engine-binary — camera + SLAM ("data-preload-chunks=slam").
+ *  - @8thwall/xrextras — provides xrextras-named-image-target. We do NOT use its
+ *    off-theme loading / landing-page / runtime-error UI: this page draws its own
+ *    KaunTech-themed loader + permission gate instead.
  *
- * Image target: a PLANAR target built from the card photo's grayscale luminance
- * image (generated in the editor, lib/ar/compileTarget.ts). XR8.XrController is
- * configured with that target's JSON; the `name` must match the
- * xrextras-named-image-target's `name`.
+ * CROSS-DEVICE START: World Tracking needs the device IMU. Android Chrome grants
+ * DeviceMotion silently, but iOS (incl. in WKWebView) requires a USER GESTURE to
+ * call DeviceMotionEvent.requestPermission(). So on iOS we show a themed "Tap to
+ * start" button and post {type:'ar-awaiting-tap'} so the app reveals the WebView
+ * (its opaque loader would otherwise swallow the tap). On tap we request motion +
+ * orientation, then start the AR pipeline. Android/desktop start automatically.
  *
- * SAFETY: if 8th Wall can't start (unsupported, engine load failure, or it never
- * reaches realityready within the watchdog), the page redirects to the SAME url
- * with ?engine=mindar, which serves the proven MindAR viewer. So the worst case
- * is "falls back to today's working viewer", never a broken screen.
+ * Image target: built in the browser. The viewer loads the target image, reads
+ * its real dimensions, and configures a PLANAR target with imagePath = that image
+ * (a grayscale luminance when the editor precompiled one, else the card photo).
  */
 
 const ENGINE = "https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js";
-const LANDING = "https://cdn.jsdelivr.net/npm/@8thwall/landing-page@1/dist/landing-page.js";
 const XREXTRAS = "https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js";
-// 8th Wall's A-Frame 1.5.0 build. No CDN/npm exists for it (it's Git-LFS in the
-// example repo), so it's vendored into /public/ar8 and served same-origin.
+// 8th Wall's A-Frame 1.5.0 build — no CDN/npm exists, vendored, served same-origin.
 const EIGHTFRAME = "/ar8/8frame-1.5.0.min.js";
 
 export interface EightwallView {
   elements: unknown[];
   lighting: { intensity: number };
-  target: { lumUrl: string; name: string; w: number; h: number };
-  /** World Tracking (SLAM) on = content stays glued at all angles + after the
-   *  card leaves frame. Needs DeviceMotion (auto on Android Chrome; iOS prompts
-   *  via xrextras). Off = pure image tracking (still far steadier than MindAR,
-   *  no motion permission needed). */
+  /** The card's image target. The viewer reads its real pixel dimensions. */
+  target: { imageUrl: string; name: string };
+  /** World Tracking (SLAM) on = glued at all angles + survives the card leaving
+   *  frame; needs the IMU. Off = pure image tracking (no motion permission). */
   worldTracking: boolean;
 }
 
@@ -61,96 +54,213 @@ export function eightwallViewerHtml(view: EightwallView): string {
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>AR Card</title>
 <style>
-  html,body{margin:0;height:100%;background:#0b0d12;overflow:hidden;font-family:system-ui,sans-serif;color:#fff}
+  html,body{margin:0;height:100%;background:#0B0D12;overflow:hidden;font-family:-apple-system,system-ui,"Segoe UI",sans-serif;color:#fff}
+  /* KaunTech-themed loader / start gate — matches the in-app loader (dark base,
+     orange accent). Fades out once AR is live. */
+  #status{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;z-index:30;
+    background:radial-gradient(120% 80% at 50% 0%, #15110a 0%, #0B0D12 60%);transition:opacity .45s ease}
+  #status.done{opacity:0}
+  #status.hide{display:none}
+  .ld{width:min(300px,82vw);display:flex;flex-direction:column;align-items:center}
+  .ld-logo{font-size:18px;font-weight:600;letter-spacing:.3px;margin-bottom:22px}
+  .ld-logo b{color:#F59E0B;font-weight:700}
+  .ld-track{width:100%;height:6px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}
+  .ld-bar{height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,#F59E0B,#fbbf24);transition:width .3s ease}
+  .ld-pct{margin-top:12px;font-size:13px;color:#9AA3B2;font-variant-numeric:tabular-nums}
+  /* Start gate (iOS motion permission needs a tap) */
+  #startbox{display:none;flex-direction:column;align-items:center}
+  #startbox.show{display:flex}
+  #loadbox.hide{display:none}
+  .st-sub{font-size:14px;color:#9AA3B2;line-height:1.5;margin-bottom:22px;max-width:260px}
+  .st-btn{appearance:none;border:none;cursor:pointer;background:#F59E0B;color:#1A1206;font-size:16px;font-weight:700;
+    padding:14px 30px;border-radius:14px;box-shadow:0 6px 20px rgba(245,158,11,.35);transition:transform .12s ease}
+  .st-btn:active{transform:scale(.96)}
+  .st-cam{width:46px;height:46px;border-radius:50%;background:rgba(245,158,11,.14);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  /* Error state */
+  #err{display:none;flex-direction:column;align-items:center}
+  #err.show{display:flex}
+  .er-msg{font-size:15px;color:#E6EDF3;line-height:1.5;margin-bottom:20px;max-width:280px}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   #dbg{position:fixed;top:8px;left:8px;z-index:40;display:none;font:600 12px/1.45 ui-monospace,Menlo,monospace;
     color:#7CFFB2;background:rgba(0,0,0,.62);padding:7px 9px;border-radius:8px;white-space:pre;pointer-events:none}
 </style>
 <script crossorigin="anonymous" src="${EIGHTFRAME}"></script>
 <script src="${ENGINE}" async crossorigin="anonymous" data-preload-chunks="slam"></script>
-<script src="${LANDING}" crossorigin="anonymous"></script>
 <script src="${XREXTRAS}" crossorigin="anonymous"></script>
 </head>
 <body>
+<div id="status"><div class="ld">
+  <div class="ld-logo">KaunTech <b>AR</b></div>
+  <div id="loadbox" style="width:100%;display:flex;flex-direction:column;align-items:center">
+    <div class="ld-track"><div id="bar" class="ld-bar"></div></div>
+    <div id="pct" class="ld-pct">Starting…</div>
+  </div>
+  <div id="startbox">
+    <div class="st-cam" aria-hidden>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </div>
+    <div class="st-sub">Allow camera &amp; motion, then point at the card.</div>
+    <button id="startbtn" class="st-btn">Tap to start AR</button>
+  </div>
+  <div id="err">
+    <div id="ermsg" class="er-msg">AR couldn’t start.</div>
+    <button id="retrybtn" class="st-btn">Try again</button>
+  </div>
+</div></div>
 <div id="hint"></div>
 <div id="dbg"></div>
 <script>window.__AR__ = ${json};</script>
 <script>
 (function(){
   var D = window.__AR__ || {};
+  var statusEl = document.getElementById('status');
+  var loadBox = document.getElementById('loadbox');
+  var startBox = document.getElementById('startbox');
+  var errBox = document.getElementById('err');
+  var barEl = document.getElementById('bar');
+  var pctEl = document.getElementById('pct');
   var hintEl = document.getElementById('hint');
-  var lastProg = 0, arReadyFired = false, fellBack = false;
+  var startBtn = document.getElementById('startbtn');
+  var retryBtn = document.getElementById('retrybtn');
+  var ermsgEl = document.getElementById('ermsg');
+  var lastProg = 0, arReadyFired = false, started = false, awaiting = false;
+  // Effective world-tracking for THIS run. Starts from the server's choice but can
+  // drop to false (image-only) if motion is denied or SLAM doesn't come up, so AR
+  // still works on every device.
+  var wt = !!D.worldTracking;
 
   function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView8] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
-  window.__ARLOG__ = log;
   function rnPost(obj){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(obj)); } catch(e){} }
-  function setProg(v){ v = Math.max(lastProg, Math.min(100, Math.round(v))); lastProg = v; rnPost({ type: 'ar-progress', value: v }); }
-  function ready(){ if (arReadyFired) return; arReadyFired = true; setProg(100); rnPost({ type: 'ar-ready' }); }
-
-  // SAFETY FALLBACK — if 8th Wall can't start, hand off to the MindAR viewer at
-  // the same url. ?engine=mindar is terminal (it never falls back), so no loop.
-  function fallbackToMindar(why){
-    if (fellBack || arReadyFired) return; fellBack = true;
-    log('fallback to MindAR: ' + why);
-    try { var u = new URL(location.href); u.searchParams.set('engine', 'mindar'); location.replace(u.toString()); }
-    catch(e){ location.replace(location.pathname + '?engine=mindar'); }
+  function setProg(v){ v = Math.max(lastProg, Math.min(100, Math.round(v))); lastProg = v; if (barEl) barEl.style.width = v + '%'; if (pctEl) pctEl.textContent = v < 100 ? v + '%' : 'Ready'; rnPost({ type: 'ar-progress', value: v }); }
+  function ready(){
+    if (arReadyFired) return; arReadyFired = true; setProg(100);
+    rnPost({ type: 'ar-ready' });
+    statusEl.classList.add('done'); setTimeout(function(){ statusEl.classList.add('hide'); }, 480);
   }
-  window.addEventListener('error', function(e){ log('window error:', e.message, (e.filename||'') + ':' + (e.lineno||'')); });
-  window.addEventListener('unhandledrejection', function(e){ log('promise rejection:', (e.reason && (e.reason.message || e.reason.name || e.reason)) || 'unknown'); });
-  // If the engine global never appears, the CDN/engine failed → fall back.
-  setTimeout(function(){ if (!window.XR8 && !arReadyFired) fallbackToMindar('XR8 never loaded'); }, 12000);
-  // If we never reach realityready (e.g. permission denied, unsupported), fall back.
-  setTimeout(function(){ if (!arReadyFired) fallbackToMindar('realityready timeout'); }, 22000);
+  function showError(msg){
+    if (ermsgEl) ermsgEl.textContent = msg || 'AR couldn’t start.';
+    loadBox.classList.add('hide'); startBox.classList.remove('show'); errBox.classList.add('show');
+    statusEl.classList.remove('done', 'hide');
+    rnPost({ type: 'ar-error', message: msg });
+  }
+  if (retryBtn) retryBtn.addEventListener('click', function(){ location.reload(); });
 
-  setProg(8);
-  log('tier capture: 8th Wall; worldTracking=' + (D.worldTracking ? 'on' : 'off'));
+  setProg(6);
+  log('engine: 8th Wall; worldTracking=' + (D.worldTracking ? 'on' : 'off'));
 
-  // Diagnostic HUD (?debug=1): build tag + tracking state + fps.
+  // Diagnostic HUD (?debug=1).
   (function(){
     try {
       if (!/[?&]debug/i.test(location.search)) return;
-      var el = document.getElementById('dbg'); if (!el) return;
-      el.style.display = 'block';
+      var el = document.getElementById('dbg'); if (!el) return; el.style.display = 'block';
       var frames = 0, t0 = (window.performance ? performance.now() : Date.now()), fps = 0;
       (function loop(){
         frames++; var t = (window.performance ? performance.now() : Date.now());
         if (t - t0 >= 500){ fps = Math.round(frames * 1000 / (t - t0)); frames = 0; t0 = t; }
-        el.textContent = 'build: 8thwall-v1\\n' + 'engine: 8th Wall (SLAM ' + (D.worldTracking ? 'on' : 'off') + ')\\n' +
-          'render fps: ' + fps + '\\n' + 'state: ' + (window.__ARSTATE__ || 'starting');
+        el.textContent = 'build: 8thwall-v2\\n' + 'SLAM: ' + (D.worldTracking ? 'on' : 'off') + '\\n' +
+          'fps: ' + fps + '\\n' + 'state: ' + (window.__ARSTATE__ || 'starting');
         requestAnimationFrame(loop);
       })();
     } catch(e){}
   })();
 
-  // ── Configure the image target on the engine (XR8) ─────────────────────────
-  // The PLANAR target is built from the card photo's luminance image. Its "name"
-  // MUST match the xrextras-named-image-target below. The engine loads imagePath,
-  // extracts features, and matches them against the camera feed.
-  function configureTargets(){
+  // ── readiness primitives ───────────────────────────────────────────────────
+  function whenXR8(cb){ if (window.XR8) cb(); else window.addEventListener('xrloaded', cb); }
+  function whenAframe(cb){
+    if (window.AFRAME) return cb();
+    var iv = setInterval(function(){ if (window.AFRAME){ clearInterval(iv); cb(); } }, 50);
+  }
+  // Load the target image to read its real pixel size (the PLANAR target's
+  // originalWidth/Height). Falls back to a business-card default if it can't load,
+  // so startup never blocks on a slow/bad image.
+  function loadDims(url){
+    return new Promise(function(res){
+      var im = new Image(); im.crossOrigin = 'anonymous';
+      im.onload = function(){ res({ w: im.naturalWidth || 1440, h: im.naturalHeight || 823 }); };
+      im.onerror = function(){ log('target image failed to load: ' + url); res({ w: 1440, h: 823 }); };
+      im.src = url;
+    });
+  }
+  function configureTargets(dims){
     try {
       var t = D.target || {};
       window.XR8.XrController.configure({
         imageTargetData: [{
           type: 'PLANAR',
-          properties: { top: 0, left: 0, width: t.w, height: t.h, isRotated: false, originalWidth: t.w, originalHeight: t.h },
-          imagePath: t.lumUrl,
+          properties: { top: 0, left: 0, width: dims.w, height: dims.h, isRotated: false, originalWidth: dims.w, originalHeight: dims.h },
+          imagePath: t.imageUrl,
           metadata: null,
           name: t.name,
           resources: { originalImage: '', croppedImage: '', thumbnailImage: '', luminanceImage: '' },
           created: Date.now(), updated: Date.now()
         }]
       });
-      log('image target configured: ' + t.name);
+      log('image target configured: ' + t.name + ' (' + dims.w + 'x' + dims.h + ')');
     } catch(e){ log('configure err: ' + (e && e.message)); }
   }
-  window.XR8 ? configureTargets() : window.addEventListener('xrloaded', function(){ setProg(35); configureTargets(); });
 
-  // ── Shared scene helpers (same look as the MindAR viewer) ──────────────────
-  function whenAframe(cb){ if (window.AFRAME) return cb(); window.addEventListener('load', function(){ if (window.AFRAME) cb(); }); }
+  // Engine load watchdog → themed error (no silent hang).
+  setTimeout(function(){ if (!window.XR8 && !arReadyFired) showError('Couldn’t load the AR engine. Check your connection and try again.'); }, 14000);
 
-  whenAframe(function(){
-    // animation-mixer: A-Frame core has none (aframe-extras crashed init before),
-    // so the same tiny inline component as the MindAR viewer loops GLB clips.
+  // Reload in IMAGE-ONLY mode (no IMU/SLAM). The route reads ?worldtracking and
+  // serves D.worldTracking=false, so this is terminal — image-only never reloads
+  // again, it just errors if even that fails.
+  function reloadImageOnly(){
+    try { var u = new URL(location.href); u.searchParams.set('worldtracking', '0'); location.replace(u.toString()); }
+    catch(e){ showError('Couldn’t start AR. Please try again.'); }
+  }
+
+  var dimsP = loadDims((D.target || {}).imageUrl || '').then(function(d){ setProg(28); return d; });
+  var xr8P = new Promise(function(res){ whenXR8(function(){ setProg(46); res(); }); });
+
+  Promise.all([dimsP, xr8P]).then(function(r){
+    configureTargets(r[0]); setProg(60); gateStart();
+  });
+
+  // ── start gate (motion permission on iOS) ──────────────────────────────────
+  function gateStart(){
+    var DOE = window.DeviceMotionEvent;
+    var needsTap = wt && DOE && typeof DOE.requestPermission === 'function';
+    if (needsTap){
+      awaiting = true;
+      loadBox.classList.add('hide'); startBox.classList.add('show');
+      rnPost({ type: 'ar-awaiting-tap' }); // app reveals the WebView so the tap lands
+      log('awaiting start tap (iOS motion permission)');
+      startBtn.addEventListener('click', onStartTap, { once: true });
+    } else {
+      startScene();
+    }
+  }
+  function onStartTap(){
+    awaiting = false;
+    startBox.classList.remove('show'); loadBox.classList.remove('hide');
+    setProg(66);
+    var reqs = [];
+    try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) reqs.push(DeviceMotionEvent.requestPermission().catch(function(){ return 'denied'; })); } catch(e){}
+    try { if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) reqs.push(DeviceOrientationEvent.requestPermission().catch(function(){ return 'denied'; })); } catch(e){}
+    (reqs.length ? Promise.all(reqs) : Promise.resolve([])).then(function(res){
+      // Motion denied → run image-only so AR still works (just no SLAM glue).
+      if (res && res.length && res.indexOf('granted') === -1){ wt = false; log('motion not granted -> image-only'); }
+      startScene();
+    }, function(){ wt = false; startScene(); });
+  }
+
+  function startScene(){
+    if (started) return; started = true; setProg(72);
+    // Per-mode watchdog. If SLAM never comes up, auto-retry IMAGE-ONLY (works
+    // without the IMU) so AR succeeds on any device; if image-only also fails,
+    // show the themed error.
+    if (wt){
+      setTimeout(function(){ if (!arReadyFired){ log('SLAM did not start -> reloading image-only'); reloadImageOnly(); } }, 16000);
+    } else {
+      setTimeout(function(){ if (!arReadyFired) showError('Couldn’t start the camera. Close and reopen AR, and make sure no other app is using it.'); }, 16000);
+    }
+    whenAframe(buildScene);
+  }
+
+  // ── A-Frame scene (same look as before; xrweb tracking) ─────────────────────
+  function buildScene(){
+    // animation-mixer: A-Frame core has none, so this tiny component loops GLB clips.
     if (AFRAME.registerComponent && !AFRAME.components['animation-mixer']){
       AFRAME.registerComponent('animation-mixer', {
         schema: { clip: { default: '*' }, loop: { default: 'repeat' } },
@@ -169,52 +279,6 @@ export function eightwallViewerHtml(view: EightwallView): string {
       });
     }
 
-    // gltf-brightness: model-specific brightness adjustments
-    if (AFRAME.registerComponent && !AFRAME.components['gltf-brightness']){
-      AFRAME.registerComponent('gltf-brightness', {
-        schema: { type: 'number', default: 1.2 },
-        init: function(){
-          var self = this;
-          this.el.addEventListener('model-loaded', function(e){
-            var model = e.detail && e.detail.model;
-            if (!model) return;
-            model.traverse(function(node){
-              if (node.isMesh && node.material){
-                var mats = Array.isArray(node.material) ? node.material : [node.material];
-                mats.forEach(function(mat){
-                  if (!mat.__origColor) {
-                    mat.__origColor = mat.color ? mat.color.clone() : new AFRAME.THREE.Color('#ffffff');
-                  }
-                  if (mat.color) {
-                    var factor = self.data / 1.2;
-                    mat.color.copy(mat.__origColor).multiplyScalar(factor);
-                  }
-                });
-              }
-            });
-          });
-        },
-        update: function(){
-          var self = this;
-          var model = this.el.getObject3D('mesh');
-          if (!model) return;
-          model.traverse(function(node){
-            if (node.isMesh && node.material){
-              var mats = Array.isArray(node.material) ? node.material : [node.material];
-              mats.forEach(function(mat){
-                if (mat.__origColor && mat.color){
-                  var factor = self.data / 1.2;
-                  mat.color.copy(mat.__origColor).multiplyScalar(factor);
-                }
-              });
-            }
-          });
-        }
-      });
-    }
-
-    // Soft round contact shadow (radial dark → transparent), shared, so models
-    // read as PLANTED on the card.
     var SHADOW_TEX = (function(){
       try {
         var c = document.createElement('canvas'); c.width = c.height = 128;
@@ -230,8 +294,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
       var size = 0.36 * sc; if (size < 0.08) size = 0.08;
       var p = Array.isArray(el.position) ? el.position : [0, 0, 0];
       var sh = document.createElement('a-image');
-      sh.setAttribute('src', SHADOW_TEX);
-      sh.setAttribute('width', size); sh.setAttribute('height', size);
+      sh.setAttribute('src', SHADOW_TEX); sh.setAttribute('width', size); sh.setAttribute('height', size);
       sh.setAttribute('position', p[0] + ' ' + p[1] + ' 0.004');
       sh.setAttribute('material', 'transparent: true; depthWrite: false; opacity: 0.9');
       return sh;
@@ -240,33 +303,22 @@ export function eightwallViewerHtml(view: EightwallView): string {
     function buildElement(el){
       var node;
       if (el.type === 'model' && el.url){
-        node = document.createElement('a-gltf-model');
-        node.setAttribute('src', el.url);
+        node = document.createElement('a-gltf-model'); node.setAttribute('src', el.url);
         if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat');
-        if (typeof el.brightness === 'number') node.setAttribute('gltf-brightness', el.brightness);
       } else if (el.type === 'image' && el.url){
-        node = document.createElement('a-image');
-        node.setAttribute('src', el.url); node.setAttribute('width', 0.3); node.setAttribute('height', 0.3);
+        node = document.createElement('a-image'); node.setAttribute('src', el.url); node.setAttribute('width', 0.3); node.setAttribute('height', 0.3);
       } else if (el.type === 'social'){
         node = document.createElement('a-entity');
-        var bg = document.createElement('a-plane');
-        bg.setAttribute('width', 0.26); bg.setAttribute('height', 0.26);
-        bg.setAttribute('color', el.color || '#0A66C2'); bg.setAttribute('material', 'shader: flat');
-        node.appendChild(bg);
-        var tx = document.createElement('a-text');
-        tx.setAttribute('value', el.label || 'Link'); tx.setAttribute('align', 'center');
-        tx.setAttribute('color', '#ffffff'); tx.setAttribute('width', 0.6); tx.setAttribute('position', '0 0 0.01');
-        node.appendChild(tx);
+        var bg = document.createElement('a-plane'); bg.setAttribute('width', 0.26); bg.setAttribute('height', 0.26);
+        bg.setAttribute('color', el.color || '#0A66C2'); bg.setAttribute('material', 'shader: flat'); node.appendChild(bg);
+        var tx = document.createElement('a-text'); tx.setAttribute('value', el.label || 'Link'); tx.setAttribute('align', 'center');
+        tx.setAttribute('color', '#ffffff'); tx.setAttribute('width', 0.6); tx.setAttribute('position', '0 0 0.01'); node.appendChild(tx);
       } else if (el.type === 'video' && el.url){
-        node = document.createElement('a-video');
-        node.setAttribute('src', el.url); node.setAttribute('width', 0.5); node.setAttribute('height', 0.3);
-        node.setAttribute('autoplay', 'true'); node.setAttribute('loop', 'true');
-        node.setAttribute('playsinline', 'true'); node.setAttribute('muted', 'true');
+        node = document.createElement('a-video'); node.setAttribute('src', el.url); node.setAttribute('width', 0.5); node.setAttribute('height', 0.3);
+        node.setAttribute('autoplay', 'true'); node.setAttribute('loop', 'true'); node.setAttribute('playsinline', 'true'); node.setAttribute('muted', 'true');
       } else if (el.type === 'text' && el.text){
-        node = document.createElement('a-text');
-        node.setAttribute('value', el.text); node.setAttribute('align', 'center');
-        node.setAttribute('color', el.color || '#18181b');
-        node.setAttribute('width', 1.4); node.setAttribute('wrap-count', 16);
+        node = document.createElement('a-text'); node.setAttribute('value', el.text); node.setAttribute('align', 'center');
+        node.setAttribute('color', el.color || '#18181b'); node.setAttribute('width', 1.4); node.setAttribute('wrap-count', 16);
         node.setAttribute('baseline', 'center'); node.setAttribute('anchor', 'center');
       }
       if (!node) return null;
@@ -276,43 +328,15 @@ export function eightwallViewerHtml(view: EightwallView): string {
       var s = (el.baseScale || 1) * (el.scale || 1);
       node.setAttribute('scale', s + ' ' + s + ' ' + s);
       if (el.spin) node.setAttribute('animation__spin', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
-      if (el.link){
-        node.classList.add('clickable');
-        node.addEventListener('click', function(){
-          try {
-            if (window.ReactNativeWebView) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'open_url', url: el.link }));
-            }
-          } catch (e) {}
-          try {
-            var w = window.open(el.link, '_blank');
-            if (!w) {
-              window.location.href = el.link;
-            }
-          } catch (e) {
-            window.location.href = el.link;
-          }
-        });
-      }
+      if (el.link){ node.classList.add('clickable'); node.addEventListener('click', function(){ window.open(el.link, '_blank'); }); }
       return node;
     }
 
-    buildScene(buildElement, buildShadow);
-  });
-
-  function buildScene(buildElement, buildShadow){
     var scene = document.createElement('a-scene');
-    // Official 8th Wall A-Frame combo: gesture detector (taps), landing page
-    // (unsupported-device fallback), loading + runtime-error UI (also drives the
-    // camera + iOS DeviceMotion permission prompt that World Tracking needs).
-    scene.setAttribute('xrextras-gesture-detector', '');
-    scene.setAttribute('landing-page', '');
-    scene.setAttribute('xrextras-loading', '');
-    scene.setAttribute('xrextras-runtime-error', '');
-    scene.setAttribute('renderer', 'colorManagement: true');
-    // xrweb = the 8th Wall camera + tracking system. World Tracking (SLAM) on by
-    // default; flip off (image-target only, no IMU needed) via ?worldtracking=0.
-    scene.setAttribute('xrweb', D.worldTracking ? '' : 'disableWorldTracking: true');
+    scene.setAttribute('renderer', 'colorManagement: true; alpha: true');
+    // xrweb = 8th Wall camera + tracking. World Tracking (SLAM) per the effective
+    // mode (dropped to image-only if motion was denied / SLAM didn't start).
+    scene.setAttribute('xrweb', wt ? '' : 'disableWorldTracking: true');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
 
     var cam = document.createElement('a-camera');
@@ -321,19 +345,16 @@ export function eightwallViewerHtml(view: EightwallView): string {
     cam.setAttribute('cursor', 'fuse: false; rayOrigin: mouse');
     scene.appendChild(cam);
 
-    // Lighting — standard scene lighting defaults (equivalent to B = 1.2)
-    var B = 1.2;
+    var B = (D.lighting && typeof D.lighting.intensity === 'number') ? D.lighting.intensity : 1.2;
     function light(attr){ var e = document.createElement('a-entity'); e.setAttribute('light', attr); return e; }
     scene.appendChild(light('type: ambient; intensity: ' + (1.1 * B).toFixed(3)));
     scene.appendChild(light('type: hemisphere; intensity: ' + (0.8 * B).toFixed(3) + '; color: #ffffff; groundColor: #b0b4bd'));
     var dir = light('type: directional; intensity: ' + (1.1 * B).toFixed(3)); dir.setAttribute('position', '1 2 1'); scene.appendChild(dir);
     var fill = light('type: directional; intensity: ' + (0.5 * B).toFixed(3)); fill.setAttribute('position', '-1 1 -1'); scene.appendChild(fill);
 
-    // The image-target anchor. Content rides a calibration wrapper so a single
-    // scalar can correct any unit mismatch vs the editor's convention. For a
-    // LANDSCAPE card both MindAR (width=1) and 8th Wall (longer-side=1) normalise
-    // by the same (long) edge, so 1.0 should already line up; tune if device
-    // testing shows the model too big/small.
+    // Image-target anchor. Calibration wrapper (UNIT) corrects any unit mismatch
+    // vs the editor; for a LANDSCAPE card MindAR (width=1) and 8th Wall
+    // (longer-side=1) agree, so 1.0 should line up.
     var UNIT = 1.0;
     var anchor = document.createElement('xrextras-named-image-target');
     anchor.setAttribute('name', (D.target && D.target.name) || 'card');
@@ -348,9 +369,8 @@ export function eightwallViewerHtml(view: EightwallView): string {
     anchor.appendChild(wrap);
     scene.appendChild(anchor);
 
-    scene.addEventListener('xrextrasloaded', function(){ log('xrextras loaded'); setProg(55); });
     scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); hintEl.textContent = 'Point at the card'; });
-    scene.addEventListener('camerastatuschange', function(e){ log('camera status: ' + (e && e.detail && e.detail.status)); });
+    scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });
 
     document.body.appendChild(scene);
     log('8th Wall scene appended');

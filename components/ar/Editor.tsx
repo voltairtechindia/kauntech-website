@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard, EffectiveTier } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
-import { compileEightwallTarget, compileMindTargets, scoreTargetTrackability } from "@/lib/ar/compileTarget";
+import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
   IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
@@ -28,13 +28,8 @@ interface SceneCard {
   // match a scanned card against what this card actually prints.
   frontOcr?: string;
   backOcr?: string;
-  // Prebuilt MindAR target compiled from the card photo(s) at save time, so the
-  // viewer skips the slow on-device compile. mindTargets = how many photos it was
-  // built from (front[+back]), in that order, matching the viewer's anchors.
-  mindUrl?: string;
-  mindTargets?: number;
-  // 8th Wall PLANAR target (the premium engine): grayscale luminance image of the
-  // chosen side + its source dimensions, generated on save (compileEightwallTarget).
+  // 8th Wall PLANAR target: grayscale luminance image of the chosen side + its
+  // source dimensions, generated on save (compileEightwallTarget).
   eightwall?: { lumUrl?: string; w?: number; h?: number };
 }
 function readCard(model: ArModel | null): SceneCard {
@@ -55,6 +50,14 @@ function trackTier(score: number | null): { label: string; color: string } | nul
 
 let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
+
+// 3D models are authored Y-up to stand on flat ground. The printed card, laid
+// down to be scanned, IS that ground — so a model dropped in with no tilt has its
+// up-axis lying in the card plane and ends up on its side ("sleeping"). Standing
+// it up means turning the model's +Y to point out of the card face (+Z): a +90°
+// pitch about X. Baked into every model on add so they arrive standing; the Tilt
+// slider can still override it per-model.
+const MODEL_STAND_TILT_X = Math.PI / 2;
 
 // Measure a glb and return the scale that makes its largest dimension ≈ TARGET
 // card-width units, so an icon and a giant car both land at a usable size. This
@@ -265,9 +268,8 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
   const [frontOcr, setFrontOcr] = useState<string>(initCard.frontOcr ?? "");
   const [backOcr, setBackOcr] = useState<string>(initCard.backOcr ?? "");
   const [ocrBusy, setOcrBusy] = useState(false);
-  // Prebuilt MindAR target (.mind). Recompiled only when the photos change, so a
-  // routine element edit doesn't pay the compile cost. `prep` shows progress.
-  const [mindUrl, setMindUrl] = useState<string | null>(initCard.mindUrl ?? null);
+  // 8th Wall AR target (the luminance image). Rebuilt only when the target photo
+  // changes, so a routine element edit doesn't pay the cost. `prep` shows progress.
   const [eightwallUrl, setEightwallUrl] = useState<string | null>(initCard.eightwall?.lumUrl ?? null);
   const [prep, setPrep] = useState<string | null>(null);
   // Trackability of each side's photo (0..100), shown so the owner knows whether
@@ -476,7 +478,7 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
     const url = await uploadAsset(file, "model");
     if (!url) return;
     const baseScale = await fitScaleFor(url);
-    add({ type: "model", url, animated: true, baseScale, scale: 1, rotationY: 0, position: [0, 0.22, 0.12] });
+    add({ type: "model", url, animated: true, baseScale, scale: 1, rotationX: MODEL_STAND_TILT_X, rotationY: 0, position: [0, 0.22, 0.12] });
   }
   async function onPickImage(file?: File) {
     if (!file) return;
@@ -502,6 +504,7 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       animated: a.animated ?? false,
       baseScale,
       scale: 1,
+      rotationX: MODEL_STAND_TILT_X,
       rotationY: 0,
       position: [0, 0.22, 0.12],
       // Social "coin" models carry their platform so the link field offers the
@@ -547,26 +550,11 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       if (frontOcr) fd.set("front_ocr", frontOcr);
       if (backOcr) fd.set("back_ocr", backOcr);
 
-      // Precompile the MindAR target from the CHOSEN side's photo so the published
-      // viewer starts AR fast (no on-device compile) and tracks a single target.
-      // Only when the target photo/side changed or there's no .mind yet.
-      // Best-effort: on failure we save without it and the viewer compiles at view
-      // time.
+      // 8th Wall PLANAR target for the CHOSEN side: a grayscale luminance image
+      // built from the card photo (the engine feature-extracts it at runtime).
+      // Rebuilt only when the target photo/side changed or there's no target yet.
+      // Best-effort: on failure the viewer tracks on the raw card photo instead.
       const targetSrc = target === "back" ? backFile ?? backUrl : frontFile ?? frontUrl;
-      const targetSources: (File | string)[] = targetSrc ? [targetSrc] : [];
-      if (targetSources.length > 0 && (targetSig !== mindBaselineRef.current || !mindUrl)) {
-        setPrep("Preparing AR target…");
-        const compiled = await compileMindTargets(targetSources);
-        setPrep(null);
-        if (compiled) {
-          fd.set("mind", compiled.blob, "targets.mind");
-          fd.set("mind_target_count", String(compiled.count));
-        }
-      }
-
-      // 8th Wall PLANAR target (premium engine) for the SAME chosen side. Built
-      // when the target photo/side changed or there's no 8th Wall target yet.
-      // Best-effort: on failure the card just stays on MindAR.
       if (targetSrc && (targetSig !== mindBaselineRef.current || !eightwallUrl)) {
         setPrep("Preparing AR target…");
         const ew = await compileEightwallTarget(targetSrc);
@@ -590,10 +578,9 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       // Re-baseline to exactly what's now persisted so the Save button hides
       // until the next real change.
       baselineRef.current = JSON.stringify({ elements, lighting, name, publish, target, frontUrl: newFront, backUrl: newBack });
-      // Adopt the saved .mind (or its absence) so the next save only recompiles
-      // when the target side or its photo changes again. Baseline must match the
-      // (target-aware) targetSig shape.
-      setMindUrl(savedCard.mindUrl ?? null);
+      // Adopt the saved target (or its absence) so the next save only rebuilds the
+      // target when the target side or its photo changes again. Baseline must match
+      // the (target-aware) targetSig shape.
       setEightwallUrl(savedCard.eightwall?.lumUrl ?? null);
       const newTargetUrl = target === "back" ? newBack : newFront;
       mindBaselineRef.current = JSON.stringify([target, newTargetUrl ?? null]);
@@ -1102,6 +1089,9 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                   {/* Position — left/right, up/down, depth. Drag or type exact values. */}
                   <div className="ar-transform-group">
                     <span className="ar-label">Position Alignment</span>
+                    {/* Land orientation: X = across the card, Z (card-depth) = height
+                        ABOVE the ground, Y (up the card face) = forward/back across
+                        the ground. Labels match what you see in the flat preview. */}
                     <TransformSlider
                       icon={<IconAxisX />} label="Left / Right" unit="X"
                       value={selected.position[0]} min={-1.5} max={1.5} step={0.01} fixed={2}
@@ -1109,16 +1099,16 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                     />
                     <TransformSlider
                       icon={<IconAxisY />} label="Up / Down" unit="Y"
+                      value={selected.position[2]} min={-1} max={1.5} step={0.01} fixed={2}
+                      onChange={(v) => setPos(selected.id, 2, v)}
+                    />
+                    <TransformSlider
+                      icon={<IconAxisZ />} label="Forward / Back" unit="Z"
                       value={selected.position[1]} min={-1} max={2} step={0.01} fixed={2}
                       onChange={(v) => setPos(selected.id, 1, v)}
                     />
-                    <TransformSlider
-                      icon={<IconAxisZ />} label="Depth" unit="Z"
-                      value={selected.position[2]} min={-1} max={1} step={0.01} fixed={2}
-                      onChange={(v) => setPos(selected.id, 2, v)}
-                    />
                     <span className="ar-muted" style={{ fontSize: "11px", marginTop: "2px", display: "block" }}>
-                      X sets horizontal alignment, Y controls height floating above the card surface, and Z controls vertical depth placement.
+                      Left / Right slides across the card, Up / Down sets how high it floats above the surface, and Forward / Back moves it toward or away across the card.
                     </span>
                   </div>
 
