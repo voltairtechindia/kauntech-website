@@ -1,12 +1,23 @@
 /**
  * Public WebAR viewer. Renders the owner's composed scene (3D models with
  * animation, tappable social icons / images, video) anchored on the printed
- * card via MindAR image tracking. Standalone HTML, loaded by the app's WebView.
- * Same family of tech as PlugXR / Kivicube / MyWebAR; swap the engine here for
- * an 8th Wall project URL later for premium tracking.
+ * card. Standalone HTML, loaded by the app's WebView.
+ *
+ * TWO engines live here:
+ *  - 8th Wall (lib/ar/eightwallViewer) — the PREMIUM default: SLAM world tracking
+ *    + IMU fusion, so content stays glued at all angles and doesn't shimmer. Used
+ *    when the card has an 8th Wall luminance target (scene.card.eightwall), which
+ *    the editor generates on save.
+ *  - MindAR (viewerHtml below) — the original, pure-vision engine. The automatic
+ *    FALLBACK: served for older cards with no 8th Wall target, when 8th Wall fails
+ *    to start (it redirects here with ?engine=mindar), or on explicit override.
+ *
+ * Engine selection is by query param: ?engine=mindar | ?engine=8w (default = 8th
+ * Wall when its target exists). ?worldtracking=0 forces 8th Wall image-only.
  */
 import { createClient } from "@supabase/supabase-js";
 import { normalizeLink, socialPreset } from "@/lib/ar/scene";
+import { eightwallViewerHtml } from "@/lib/ar/eightwallViewer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +50,7 @@ function fallback(message: string) {
 </head><body><div><p>${message}</p></div></body></html>`);
 }
 
-export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ cardId: string }> }) {
   const { cardId } = await ctx.params;
   if (!APP_URL || !APP_ANON) return fallback("AR isn’t configured.");
 
@@ -96,11 +107,33 @@ export async function GET(_req: Request, ctx: { params: Promise<{ cardId: string
       };
     });
 
-  if (targets.length === 0 && !mindUrl) return fallback("This card isn’t set up for AR tracking yet.");
+  // 8th Wall PLANAR target = the chosen side's grayscale luminance image +
+  // its source dimensions, generated in the editor (lib/ar/compileTarget). Its
+  // presence is what makes a card eligible for the premium engine.
+  const ew = (sceneCard && typeof sceneCard.eightwall === "object" ? sceneCard.eightwall : null) ?? {};
+  const eightwall =
+    isHttp(ew.lumUrl) && Number(ew.w) > 0 && Number(ew.h) > 0
+      ? { lumUrl: ew.lumUrl as string, w: Number(ew.w), h: Number(ew.h), name: cardId }
+      : null;
+
+  if (targets.length === 0 && !mindUrl && !eightwall) return fallback("This card isn’t set up for AR tracking yet.");
 
   const li = (m.scene && typeof m.scene === "object" ? (m.scene as any).lighting : null) ?? {};
   const lighting = { intensity: typeof li.intensity === "number" && li.intensity > 0 ? Math.min(3, li.intensity) : 1.2 };
 
+  // Engine selection. Default = 8th Wall when the card has an 8th Wall target;
+  // ?engine=mindar is the terminal fallback (it never redirects onward, so the
+  // 8th Wall page's safety fallback can't loop). ?worldtracking=0 = image-only.
+  const url = new URL(req.url);
+  const engineParam = url.searchParams.get("engine");
+  const useEightwall = eightwall && engineParam !== "mindar" && (engineParam === "8w" || engineParam === null);
+  if (useEightwall) {
+    const worldTracking = url.searchParams.get("worldtracking") !== "0";
+    return page(eightwallViewerHtml({ elements, lighting, target: eightwall, worldTracking }));
+  }
+
+  // MindAR (fallback / older cards). Still needs a vision target.
+  if (targets.length === 0 && !mindUrl) return fallback("This card isn’t set up for AR tracking yet.");
   return page(viewerHtml({ targets, elements, lighting, mindUrl, mindTargetCount }));
 }
 

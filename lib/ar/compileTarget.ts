@@ -50,6 +50,62 @@ export interface CompiledTargets {
   count: number;
 }
 
+export interface EightwallTarget {
+  /** Grayscale luminance JPEG of the card photo (the 8th Wall PLANAR target). */
+  blob: Blob;
+  /** Source image dimensions (the target's originalWidth/Height). */
+  w: number;
+  h: number;
+}
+
+/**
+ * Build an 8th Wall PLANAR image target from the chosen card photo: a grayscale
+ * "luminance" JPEG at height 640 (matching 8th Wall's image-target-cli output),
+ * which the engine downloads and feature-extracts at runtime. Returns the blob +
+ * the SOURCE dimensions (used as originalWidth/Height in the target JSON the
+ * viewer builds). Generated client-side at save time, same idea as the .mind
+ * precompile. Best-effort: null on any failure (the card just stays on MindAR).
+ */
+export async function compileEightwallTarget(src: File | string): Promise<EightwallTarget | null> {
+  if (typeof window === "undefined") return null;
+  let loaded: { img: HTMLImageElement; revoke?: () => void } | null = null;
+  try {
+    loaded = await srcToImage(src);
+    const img = loaded.img;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    if (!w || !h) return null;
+
+    const outH = 640; // 8th Wall luminanceHeight
+    const outW = Math.max(1, Math.round((w / h) * outH));
+    const canvas = document.createElement("canvas");
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, outW, outH);
+
+    // Convert to true grayscale luminance (the engine wants a luminance image).
+    // Remote photos are CORS-clean (Supabase serves access-control-allow-origin:
+    // *), so getImageData won't taint.
+    const id = ctx.getImageData(0, 0, outW, outH);
+    const d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const g = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) | 0;
+      d[i] = d[i + 1] = d[i + 2] = g;
+    }
+    ctx.putImageData(id, 0, 0);
+
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", 0.9));
+    if (!blob) return null;
+    return { blob, w, h };
+  } catch {
+    return null;
+  } finally {
+    loaded?.revoke?.();
+  }
+}
+
 /**
  * Cheap, engine-agnostic trackability score (0..100) for a candidate AR target
  * photo. MindAR tracks on local image features, so a card with dense, well-SPREAD

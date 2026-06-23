@@ -175,6 +175,34 @@ export async function POST(req: Request) {
     }
   }
 
+  // 8th Wall PLANAR target (premium engine) for the chosen side: a grayscale
+  // luminance image generated in the editor. Same lifecycle as the .mind — store
+  // when sent, else keep the existing one unless the target side/photo changed.
+  let eightwall: { lumUrl: string; w: number; h: number } | null = null;
+  const ewFile = form.get("eightwall");
+  if (ewFile instanceof File && ewFile.size > 0) {
+    try {
+      const path = `${userId}/${cardId}/${modelId}.lum.jpg`;
+      const bytes = Buffer.from(await ewFile.arrayBuffer());
+      const { error: eErr } = await bucket.upload(path, bytes, { contentType: "image/jpeg", upsert: true });
+      if (!eErr) {
+        const lumUrl = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
+        const w = parseInt(str(form.get("eightwall_w")), 10);
+        const h = parseInt(str(form.get("eightwall_h")), 10);
+        if (Number.isFinite(w) && w > 0 && Number.isFinite(h) && h > 0) eightwall = { lumUrl, w, h };
+      }
+    } catch {
+      /* non-fatal — the card falls back to the MindAR viewer */
+    }
+  } else {
+    const targetPhotoChanged = targetSide === "back" ? isSentFile("back_image") : isSentFile("front_image");
+    const targetSideChanged = typeof existingCard.target === "string" && existingCard.target !== targetSide;
+    const prevEw = existingCard.eightwall as { lumUrl?: string; w?: number; h?: number } | undefined;
+    if (!targetPhotoChanged && !targetSideChanged && prevEw && typeof prevEw.lumUrl === "string" && Number(prevEw.w) > 0 && Number(prevEw.h) > 0) {
+      eightwall = { lumUrl: prevEw.lumUrl, w: Number(prevEw.w), h: Number(prevEw.h) };
+    }
+  }
+
   // AR tracking target = the chosen side; fall back to the other side, then the
   // existing target, then the card's QR image so older cards keep working.
   const referenceImagePath =
@@ -202,6 +230,7 @@ export async function POST(req: Request) {
     backOcr: backOcr ?? undefined,
     mindUrl: mindUrl ?? undefined,
     mindTargets: mindTargets ?? undefined,
+    eightwall: eightwall ?? undefined,
   };
 
   const row = {
@@ -238,7 +267,7 @@ export async function POST(req: Request) {
   // touched here. Best-effort: never fail the save over cleanup.
   try {
     const keep = new Set(
-      [keyFromPublicUrl(frontUrl), keyFromPublicUrl(backUrl), keyFromPublicUrl(mindUrl)]
+      [keyFromPublicUrl(frontUrl), keyFromPublicUrl(backUrl), keyFromPublicUrl(mindUrl), keyFromPublicUrl(eightwall?.lumUrl ?? null)]
         .filter((k): k is string => !!k)
         .map((k) => k.split("/").pop() as string),
     );

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
-import { compileMindTargets, scoreTargetTrackability } from "@/lib/ar/compileTarget";
+import { compileEightwallTarget, compileMindTargets, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
   IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
@@ -33,6 +33,9 @@ interface SceneCard {
   // built from (front[+back]), in that order, matching the viewer's anchors.
   mindUrl?: string;
   mindTargets?: number;
+  // 8th Wall PLANAR target (the premium engine): grayscale luminance image of the
+  // chosen side + its source dimensions, generated on save (compileEightwallTarget).
+  eightwall?: { lumUrl?: string; w?: number; h?: number };
 }
 function readCard(model: ArModel | null): SceneCard {
   const c = (model?.scene as { card?: SceneCard })?.card;
@@ -263,6 +266,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   // Prebuilt MindAR target (.mind). Recompiled only when the photos change, so a
   // routine element edit doesn't pay the compile cost. `prep` shows progress.
   const [mindUrl, setMindUrl] = useState<string | null>(initCard.mindUrl ?? null);
+  const [eightwallUrl, setEightwallUrl] = useState<string | null>(initCard.eightwall?.lumUrl ?? null);
   const [prep, setPrep] = useState<string | null>(null);
   // Trackability of each side's photo (0..100), shown so the owner knows whether
   // their card has enough detail to track steadily before they rely on it.
@@ -558,6 +562,20 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
         }
       }
 
+      // 8th Wall PLANAR target (premium engine) for the SAME chosen side. Built
+      // when the target photo/side changed or there's no 8th Wall target yet.
+      // Best-effort: on failure the card just stays on MindAR.
+      if (targetSrc && (targetSig !== mindBaselineRef.current || !eightwallUrl)) {
+        setPrep("Preparing AR target…");
+        const ew = await compileEightwallTarget(targetSrc);
+        setPrep(null);
+        if (ew) {
+          fd.set("eightwall", ew.blob, "target.lum.jpg");
+          fd.set("eightwall_w", String(ew.w));
+          fd.set("eightwall_h", String(ew.h));
+        }
+      }
+
       const res = await fetch("/api/ar/upload", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || "Save failed.");
@@ -574,6 +592,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       // when the target side or its photo changes again. Baseline must match the
       // (target-aware) targetSig shape.
       setMindUrl(savedCard.mindUrl ?? null);
+      setEightwallUrl(savedCard.eightwall?.lumUrl ?? null);
       const newTargetUrl = target === "back" ? newBack : newFront;
       mindBaselineRef.current = JSON.stringify([target, newTargetUrl ?? null]);
       setSavedOnce(true);

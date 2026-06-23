@@ -54,7 +54,10 @@ const buildCsp = (allowEval: boolean) =>
     // it must be in connect-src for both the editor previews and the WebAR viewer.
     `connect-src 'self' blob: data: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
     "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
-    "worker-src 'self' blob:",
+    // jsDelivr added for the 8th Wall engine binary: it spins up camera/CV/SLAM
+    // workers loaded from the same CDN as its xr.js, so they must be allowed here
+    // (MindAR's workers are blob:, already covered).
+    `worker-src 'self' blob: ${MODEL_VIEWER_CDN}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
