@@ -211,7 +211,14 @@ function ElementBody({
 }) {
   const click = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
-    onSelect(element.id);
+    if (selected && element.link) {
+      const confirmOpen = window.confirm(`Open link in a new tab to test?\n\n${element.link}`);
+      if (confirmOpen) {
+        window.open(element.link, "_blank");
+      }
+    } else {
+      onSelect(element.id);
+    }
   };
 
   if (element.type === "model" && element.url) {

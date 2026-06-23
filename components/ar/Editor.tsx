@@ -8,7 +8,7 @@ import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, compileMindTargets, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import {
-  IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
+  IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
   IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
   IconTrash, IconVideo, IconX, socialIcon,
 } from "./icons";
@@ -1009,7 +1009,28 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                     </div>
                   ) : (
                     <div>
-                      <label className="ar-label">Tap Action (redirect link)</label>
+                      <div className="ar-row ar-between" style={{ marginBottom: 4 }}>
+                        <label className="ar-label" style={{ margin: 0 }}>Tap Action (redirect link)</label>
+                        {selected.link && (
+                          <a
+                            href={selected.link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ar-link-test"
+                            style={{
+                              fontSize: "12px",
+                              color: "var(--ar-orange-deep)",
+                              fontWeight: 700,
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
+                          >
+                            Test link <IconExternal />
+                          </a>
+                        )}
+                      </div>
                       <input
                         className="ar-field"
                         value={selected.link ?? ""}

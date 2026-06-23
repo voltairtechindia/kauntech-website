@@ -663,7 +663,21 @@ function viewerHtml(view: unknown): string {
     }
     if (el.link){
       node.classList.add('clickable');
-      node.addEventListener('click', function(){ window.open(el.link, '_blank'); });
+      node.addEventListener('click', function(){
+        try {
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'open_url', url: el.link }));
+          }
+        } catch (e) {}
+        try {
+          var w = window.open(el.link, '_blank');
+          if (!w) {
+            window.location.href = el.link;
+          }
+        } catch (e) {
+          window.location.href = el.link;
+        }
+      });
     }
     return node;
   }

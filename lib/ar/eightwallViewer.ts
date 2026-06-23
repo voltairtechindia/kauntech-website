@@ -276,7 +276,24 @@ export function eightwallViewerHtml(view: EightwallView): string {
       var s = (el.baseScale || 1) * (el.scale || 1);
       node.setAttribute('scale', s + ' ' + s + ' ' + s);
       if (el.spin) node.setAttribute('animation__spin', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
-      if (el.link){ node.classList.add('clickable'); node.addEventListener('click', function(){ window.open(el.link, '_blank'); }); }
+      if (el.link){
+        node.classList.add('clickable');
+        node.addEventListener('click', function(){
+          try {
+            if (window.ReactNativeWebView) {
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'open_url', url: el.link }));
+            }
+          } catch (e) {}
+          try {
+            var w = window.open(el.link, '_blank');
+            if (!w) {
+              window.location.href = el.link;
+            }
+          } catch (e) {
+            window.location.href = el.link;
+          }
+        });
+      }
       return node;
     }
 
