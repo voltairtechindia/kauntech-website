@@ -94,13 +94,6 @@ export default async function ArDashboard() {
               Get the app to upgrade
             </a>
           </div>
-        ) : cards.length === 0 ? (
-          <div className="ar-card">
-            <h2 className="ar-h2" style={{ margin: 0 }}>Create a card first</h2>
-            <p className="ar-sub" style={{ margin: "8px 0 var(--ar-sp-lg)" }}>
-              You don’t have any cards yet. Create your first card inside the KaunTech mobile app, then reload this page to configure its AR content.
-            </p>
-          </div>
         ) : (
           <CardsDashboard tier={tier} arCap={arCap} items={items} />
         )}

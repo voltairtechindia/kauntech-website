@@ -117,7 +117,16 @@ export default function CardsDashboard({
         <div className="ar-empty">
           <span className="ar-empty-ico" aria-hidden><IconBox /></span>
           <p className="ar-empty-title">No cards yet</p>
-          <p className="ar-muted" style={{ margin: 0 }}>Add your first AR card to get started.</p>
+          <p className="ar-muted" style={{ margin: "0 0 12px" }}>Add your first AR card to get started.</p>
+          <button
+            className="ar-btn ar-btn-primary"
+            onClick={createCard}
+            disabled={atCap || creating}
+            title={atCap ? "Plan limit reached — delete one or upgrade" : "Create a new AR card"}
+          >
+            {atCap ? <IconLock /> : <IconPlus />}
+            {creating ? "Creating…" : atCap ? "Limit reached" : "Create first card"}
+          </button>
         </div>
       ) : (
         <div className="ar-grid">
