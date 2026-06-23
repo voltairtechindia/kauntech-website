@@ -213,7 +213,9 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   const [assetTab, setAssetTab] = useState<AssetTab>("model");
   const [mode, setMode] = useState<TransformMode>("translate");
   const [name, setName] = useState(model?.name ?? card.name ?? "");
-  const [publish, setPublish] = useState(model?.is_published ?? false);
+  // New cards default to publish ON, so setting one up makes it live without a
+  // second step; an existing card keeps whatever it was last saved as.
+  const [publish, setPublish] = useState(model?.is_published ?? true);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -469,8 +471,8 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
 
   async function save() {
     setError(null);
-    if (elements.length === 0) {
-      setError("Add at least one element (a model, image, text, social icon or video) first.");
+    if (elements.length === 0 && !hasTarget) {
+      setError("Add your card photo, or at least one element, first.");
       return;
     }
     if (publish && !hasTarget) {
