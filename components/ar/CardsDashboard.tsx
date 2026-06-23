@@ -143,7 +143,7 @@ export default function CardsDashboard({
 
                 {confirming ? (
                   <div className="ar-tile-actions ar-tile-confirm">
-                    <span className="ar-muted">Delete this AR card?</span>
+                    <span className="ar-muted">{active ? "Remove the AR from this card?" : "Delete this card?"}</span>
                     <div className="ar-row">
                       <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setConfirmId(null)} disabled={busy}>
                         Cancel
@@ -178,6 +178,9 @@ export default function CardsDashboard({
                         <IconPlus /> Set up AR
                       </Link>
                     )}
+                    <button className="ar-icon-btn ar-icon-btn-bordered ar-icon-danger" title="Delete card" onClick={() => setConfirmId(item.id)}>
+                      <IconTrash />
+                    </button>
                   </div>
                 )}
               </div>

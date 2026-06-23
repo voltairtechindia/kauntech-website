@@ -1,8 +1,12 @@
 /**
- * Remove the AR experience attached to one of the owner's cards. Deletes the
- * ar_models row (freeing a slot against the plan's AR model cap) and best-effort
- * removes the card's uploaded files from storage so deleting frees both the
- * count and the byte budget. Authed — RLS scopes the delete to the owner.
+ * Delete from the owner's AR dashboard. Two cases, both authed (RLS scopes the
+ * delete to the owner):
+ *   - Card HAS an AR model: drop the ar_models row, which frees a slot against
+ *     the plan's AR model cap and leaves the underlying card in place.
+ *   - Card has NO AR model (setup never finished): drop the card row itself, so
+ *     a half-set-up or abandoned card can actually be cleared from the studio.
+ * Either way we best-effort remove the card's uploaded files from storage so a
+ * delete frees both the count and the byte budget.
  *
  * POST /api/ar/delete  (application/json)
  *   { card_id }  ->  200 { ok:true } | 4xx { ok:false, error }
@@ -35,25 +39,44 @@ export async function POST(req: Request) {
   }
   if (!cardId) return bad("Missing card_id.");
 
-  // Confirm ownership and that there's actually a model to remove.
+  // Confirm the card belongs to the owner before touching anything.
+  const { data: card } = await supabase
+    .from("cards")
+    .select("id")
+    .eq("id", cardId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!card) return bad("Card not found.", 404);
+
+  // If there's an AR model, removing it frees the plan slot but keeps the card.
+  // If there isn't (setup never finished), there's nothing to "un-AR" — the
+  // user wants the card gone, so delete the card row itself.
   const { data: model } = await supabase
     .from("ar_models")
     .select("id")
     .eq("card_id", cardId)
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!model) return bad("No AR experience on this card.", 404);
 
-  const { error: delErr } = await supabase
-    .from("ar_models")
-    .delete()
-    .eq("id", model.id)
-    .eq("user_id", user.id);
-  if (delErr) return bad("Could not delete. Please try again.", 500);
+  if (model) {
+    const { error: delErr } = await supabase
+      .from("ar_models")
+      .delete()
+      .eq("id", model.id)
+      .eq("user_id", user.id);
+    if (delErr) return bad("Could not delete. Please try again.", 500);
+  } else {
+    const { error: delErr } = await supabase
+      .from("cards")
+      .delete()
+      .eq("id", cardId)
+      .eq("user_id", user.id);
+    if (delErr) return bad("Could not delete. Please try again.", 500);
+  }
 
   // Best-effort storage cleanup: the card's photos sit at `${uid}/${cardId}/…`
   // and editor assets at `${uid}/${cardId}/assets/…`. A failure here must not
-  // fail the delete — the row (and the plan slot) is already gone.
+  // fail the delete — the row is already gone.
   try {
     const bucket = supabase.storage.from(AR_BUCKET);
     const prefixes = [`${user.id}/${cardId}`, `${user.id}/${cardId}/assets`];
