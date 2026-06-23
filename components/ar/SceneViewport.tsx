@@ -2,7 +2,7 @@
 
 import { Suspense, useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Environment,
   Image as DreiImage,
@@ -12,7 +12,9 @@ import {
   Text,
   TransformControls,
   useGLTF,
+  useAnimations,
 } from "@react-three/drei";
+import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { ArElement } from "@/lib/ar/scene";
 import { socialPreset } from "@/lib/ar/scene";
 
@@ -216,7 +218,12 @@ function ElementBody({
     return (
       <group onClick={click}>
         <Suspense fallback={null}>
-          <GlbModel url={element.url} brightness={element.brightness ?? 1.2} />
+          <GlbModel
+            url={element.url}
+            brightness={element.brightness ?? 1.2}
+            animated={element.animated ?? false}
+            spin={element.spin ?? false}
+          />
         </Suspense>
         {selected ? <SelectRing /> : null}
       </group>
@@ -292,24 +299,39 @@ function SelectRing() {
   );
 }
 
-function GlbModel({ url, brightness = 1.2 }: { url: string; brightness?: number }) {
-  const { scene } = useGLTF(url);
+function GlbModel({
+  url,
+  brightness = 1.2,
+  animated = false,
+  spin = false,
+}: {
+  url: string;
+  brightness?: number;
+  animated?: boolean;
+  spin?: boolean;
+}) {
+  const { scene, animations } = useGLTF(url);
+  const groupRef = useRef<THREE.Group>(null);
 
-  // Clone the scene and cache original material colors
-  const clonedScene = useMemo(() => {
-    const clone = scene.clone();
-    const originalColors = new Map<THREE.Material, THREE.Color>();
+  // Use SkeletonUtils.clone() — it preserves bone/skeleton bindings that skinned
+  // meshes (animated avatars, characters, creatures) depend on. The naive
+  // scene.clone() severs these references, causing animated models to render as
+  // distorted blobs or disappear entirely. Also cache original material colors
+  // for the brightness multiplier.
+  const { clone, originalColors } = useMemo(() => {
+    const cloned = cloneSkeleton(scene) as THREE.Group;
+    const origColors = new Map<THREE.Material, THREE.Color>();
 
-    clone.traverse((node) => {
+    cloned.traverse((node) => {
       if ((node as THREE.Mesh).isMesh) {
         const mesh = node as THREE.Mesh;
         if (mesh.material) {
           const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-          
+
           const clonedMaterials = materials.map((mat) => {
             const mClone = mat.clone();
             if ("color" in mClone && (mClone as any).color instanceof THREE.Color) {
-              originalColors.set(mClone, (mClone as any).color.clone());
+              origColors.set(mClone, (mClone as any).color.clone());
             }
             return mClone;
           });
@@ -319,18 +341,50 @@ function GlbModel({ url, brightness = 1.2 }: { url: string; brightness?: number 
       }
     });
 
-    return { clone, originalColors };
+    return { clone: cloned, originalColors: origColors };
   }, [scene]);
+
+  // drei's useAnimations wires up an AnimationMixer on the clone and returns
+  // named actions for every clip in the .glb. The ref ties the mixer's root to
+  // our cloned scene so bones resolve correctly.
+  const { actions } = useAnimations(animations, groupRef);
+
+  // Play/stop all animation clips when the `animated` toggle changes.
+  useEffect(() => {
+    if (!actions) return;
+    const clipActions = Object.values(actions).filter(Boolean) as THREE.AnimationAction[];
+    if (animated) {
+      clipActions.forEach((action) => {
+        action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
+      });
+    } else {
+      clipActions.forEach((action) => action.stop());
+    }
+    return () => {
+      clipActions.forEach((action) => action.stop());
+    };
+  }, [actions, animated]);
 
   // Apply model-specific brightness factor (scaled relative to A-Frame default 1.2)
   useEffect(() => {
-    clonedScene.originalColors.forEach((origColor, mat) => {
+    originalColors.forEach((origColor, mat) => {
       const factor = brightness / 1.2;
       if ("color" in mat && (mat as any).color instanceof THREE.Color) {
         (mat as any).color.copy(origColor).multiplyScalar(factor);
       }
     });
-  }, [clonedScene, brightness]);
+  }, [originalColors, brightness]);
 
-  return <primitive object={clonedScene.clone} />;
+  // Continuous Y-axis spin when the `spin` toggle is on.
+  useFrame((_, delta) => {
+    if (spin && groupRef.current) {
+      groupRef.current.rotation.y += delta * 1.5;
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      <primitive object={clone} />
+    </group>
+  );
 }
