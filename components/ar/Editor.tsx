@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ArModel, OwnerCard } from "@/lib/ar/db";
+import type { ArModel, OwnerCard, EffectiveTier } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, compileMindTargets, scoreTargetTrackability } from "@/lib/ar/compileTarget";
@@ -218,7 +218,7 @@ function TransformSlider({
   );
 }
 
-export default function Editor({ card, model, galleryAssets = [] }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; templates?: unknown }) {
+export default function Editor({ card, model, galleryAssets = [], tier }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; templates?: unknown }) {
   const router = useRouter();
   const [elements, setElements] = useState<ArElement[]>(() => readElements(model));
   const [lighting, setLighting] = useState<ArLighting>(() => readLighting((model?.scene as { lighting?: unknown } | null)?.lighting));
@@ -652,7 +652,14 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
 
       <div className="ar-editor-topbar">
         <div className="ar-topbar-title">
-          <h1 className="ar-h1" style={{ marginBottom: 2 }}>{card.name || "Your card"}</h1>
+          <h1 className="ar-h1" style={{ marginBottom: 2, display: "flex", alignItems: "center", gap: "8px" }}>
+            {card.name || "Your card"}
+            {tier && (
+              <span className={`ar-badge ar-badge-${tier}`} style={{ fontSize: "11px", padding: "2px 8px", textTransform: "uppercase" }}>
+                {tier}
+              </span>
+            )}
+          </h1>
           <span className="ar-muted">Compose what shows on your card in AR. Drag to place, attach links.</span>
         </div>
         <div className="ar-row">

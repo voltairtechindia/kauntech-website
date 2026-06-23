@@ -34,7 +34,14 @@ export default async function ArDashboard() {
       <ArHeader email={email} />
       <div className="ar-container ar-dash-page">
         <div className="ar-dash-head">
-          <h1 className="ar-h1" style={{ margin: 0 }}>Your AR cards</h1>
+          <h1 className="ar-h1" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+            Your AR cards
+            {tier && (
+              <span className={`ar-badge ar-badge-${tier}`} style={{ fontSize: "11px", padding: "2px 8px", textTransform: "uppercase" }}>
+                {tier}
+              </span>
+            )}
+          </h1>
           <p className="ar-sub" style={{ margin: "6px 0 0" }}>
             Create immersive business cards that display 3D models, custom text, buttons, and videos in augmented reality.
           </p>
