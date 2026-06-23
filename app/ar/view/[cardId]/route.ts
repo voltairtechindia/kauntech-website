@@ -352,9 +352,21 @@ function viewerHtml(view: unknown): string {
   // card, then snaps back on re-lock.
   if (window.AFRAME && AFRAME.registerComponent && AFRAME.THREE && !AFRAME.components['card-stabilizer']){
     var _T = AFRAME.THREE;
-    var TAU = 0.05;        // s — smoothing time constant. Small = snappy. THE dial:
-                           //     ↑ (0.08–0.12) for steadier-but-softer, ↓ for snappier.
-    var COAST_MS = 1200;   // ms — how long to coast (stay glued) through a loss before
+    var TAU = 0.05;        // s — smoothing time constant when the card is MOVING
+                           //     (snappy, low lag). Steady-state uses TAU_SLOW.
+    var TAU_SLOW = 0.16;   // s — smoothing when the card is nearly still: heavier, so
+                           //     residual pose noise can't shimmer. Adaptive blend below.
+    var TAU_SCALE = 0.32;  // s — scale (camera distance) is the noisiest decomposed DOF;
+                           //     smooth it hard so models don't "breathe" in and out.
+    var DEAD_ANG = 0.0035; // rad (~0.2°) — rotation below this is held FROZEN. Removes the
+    var DEAD_POS_REL = 0.004; //            held-still shimmer. Position deltas are scaled by
+                           //     anchor DISTANCE (units unknown/variable), so the dead-band
+                           //     and outlier gate stay correct near or far from the card.
+    var OUTLIER_ANG = 0.20;// rad (~11°) — a lone single-frame rotation jump past this (or a
+    var OUTLIER_POS_REL = 0.5; //          >50%-of-distance position jump) is treated as a bad
+                           //     pose (foreshortened features at an angle) and dropped, unless
+                           //     it persists 2+ frames (= real fast motion).
+    var COAST_MS = 1200;   // ms — how long to coast (stay glued) through a FULL loss before
                            //     giving up and hiding.
     AFRAME.registerComponent('card-stabilizer', {
       // target = a CSS selector STRING (resolved lazily in tick — the anchor isn't
@@ -362,7 +374,11 @@ function viewerHtml(view: unknown): string {
       schema: { target: { type: 'string' } },
       init: function(){
         this._p = new _T.Vector3(); this._q = new _T.Quaternion(); this._s = new _T.Vector3();
-        this.locked = false; this.src = null; this.lastSeen = 0;
+        this.locked = false; this.src = null; this.lastSeen = 0; this._badStreak = 0;
+        // Last vision pose we acted on — lets us tell a FRESH CV update apart from a
+        // stale render frame the MindAR worker hasn't refreshed yet (it runs slower
+        // than the render loop), so we can gyro-fill the gap instead of stalling.
+        this._lastV = new _T.Quaternion(); this._lastVp = new _T.Vector3(); this._lastVvalid = false;
         // coast snapshot: last good displayed pose + the device orientation then.
         this.cP = new _T.Vector3(); this.cQ = new _T.Quaternion(); this.cRef = new _T.Quaternion();
         this.cRefValid = false; this._cr = new _T.Quaternion();
@@ -373,8 +389,10 @@ function viewerHtml(view: unknown): string {
         var so = this.src.object3D, o = this.el.object3D;
         if (!so) return;
         var now = (window.performance ? performance.now() : Date.now());
+        var dts = (dt || 16) / 1000;
+
         if (!so.visible){
-          // TRACK LOST. Coast with the phone orientation so it stays on the card.
+          // FULL TRACK LOSS. Coast with the phone orientation so it stays on the card.
           var canCoast = this.locked && this.cRefValid && devQ && (now - devSeen) < 1000 && (now - this.lastSeen) < COAST_MS;
           if (canCoast){
             o.visible = true;
@@ -391,20 +409,68 @@ function viewerHtml(view: unknown): string {
           }
           return;
         }
+
         so.updateWorldMatrix(true, false);
         so.matrixWorld.decompose(this._p, this._q, this._s);
-        o.visible = true; this.lastSeen = now; window.__ARSTATE__ = 'TRACKING';
+        o.visible = true; this.lastSeen = now;
+
         if (!this.locked){ // snap on (re)acquire — don't ease from a stale pose
           o.position.copy(this._p); o.quaternion.copy(this._q); o.scale.copy(this._s);
-          this.locked = true;
+          this.locked = true; this._badStreak = 0;
+          this._lastV.copy(this._q); this._lastVp.copy(this._p); this._lastVvalid = true;
+          window.__ARSTATE__ = 'TRACKING';
         } else {
-          var k = 1 - Math.exp(-((dt || 16) / 1000) / TAU);
-          o.quaternion.slerp(this._q, k);
-          o.position.lerp(this._p, k);
-          o.scale.lerp(this._s, k);
+          // FRESH vision pose, or a stale frame the CV worker hasn't updated? The
+          // anchor matrix is byte-identical between worker updates, so any change
+          // means a new pose landed.
+          var fresh = !this._lastVvalid || this._lastV.angleTo(this._q) > 1e-6 || this._lastVp.distanceTo(this._p) > 1e-7;
+          if (fresh){
+            window.__ARSTATE__ = 'TRACKING';
+            var dAng = o.quaternion.angleTo(this._q);
+            var dPos = o.position.distanceTo(this._p);
+            var dist = this._p.length() || 1e-3;       // anchor distance (unit-agnostic scale)
+            var outPos = dist * OUTLIER_POS_REL, deadPos = dist * DEAD_POS_REL;
+            // OUTLIER GATE — a lone wild jump is almost always a bad pose from
+            // foreshortened features at an angle. Drop it; if it persists 2+ frames
+            // it's real fast motion and we let it through.
+            if ((dAng > OUTLIER_ANG || dPos > outPos) && this._badStreak < 2){
+              this._badStreak++;
+            } else {
+              this._badStreak = 0;
+              // DEAD-BAND — hold perfectly still below the perceptual threshold.
+              // This is what kills the "shimmer" when the card isn't moving.
+              if (dAng > DEAD_ANG || dPos > deadPos){
+                // VELOCITY-ADAPTIVE smoothing: heavy (steady) when slow, light
+                // (snappy, low-lag) when fast — so stability costs no lag in motion.
+                var speed = Math.min(1, Math.max(dAng / OUTLIER_ANG, dPos / outPos));
+                var tau = TAU_SLOW + (TAU - TAU_SLOW) * speed;
+                var k = 1 - Math.exp(-dts / tau);
+                o.quaternion.slerp(this._q, k);
+                o.position.lerp(this._p, k);
+              }
+              // Scale smoothed hard regardless, so distance noise never makes the
+              // model pulse.
+              o.scale.lerp(this._s, 1 - Math.exp(-dts / TAU_SCALE));
+            }
+            this._lastV.copy(this._q); this._lastVp.copy(this._p); this._lastVvalid = true;
+          } else if (devQ && (now - devSeen) < 1000 && this.cRefValid){
+            // STALE worker frame → micro-coast with the gyro so motion stays smooth
+            // between CV updates (same proven coast math). Vision still owns the
+            // truth and re-anchors the instant a fresh pose lands, so any gyro error
+            // is corrected within a frame or two. Don't refresh the snapshot from a
+            // predicted pose.
+            window.__ARSTATE__ = 'FUSED';
+            this._cr.copy(devQ).invert().premultiply(this.cRef);
+            o.quaternion.copy(this._cr).multiply(this.cQ);
+            o.position.copy(this.cP).applyQuaternion(this._cr);
+            return;
+          } else {
+            window.__ARSTATE__ = 'TRACKING';
+          }
         }
-        // Refresh the coast snapshot every good frame: the displayed pose + the
-        // phone orientation that goes with it.
+
+        // Refresh the coast snapshot every vision-driven frame: the displayed pose
+        // + the phone orientation that goes with it.
         this.cP.copy(o.position); this.cQ.copy(o.quaternion);
         if (devQ){ this.cRef.copy(devQ); this.cRefValid = true; }
       }
@@ -553,7 +619,7 @@ function viewerHtml(view: unknown): string {
     // residual jitter — models near the surface look most glued.
     scene.setAttribute('mindar-image',
       'imageTargetSrc: ' + targetSrc + '; maxTrack: 1; uiScanning: no; uiLoading: no; uiError: no; ' +
-      'filterMinCF: 0.001; filterBeta: 1000; missTolerance: 5; warmupTolerance: 2');
+      'filterMinCF: 0.001; filterBeta: 1000; missTolerance: 5; warmupTolerance: 3');
     scene.setAttribute('color-space', 'sRGB');
     // Proper multi-prop syntax (semicolons); alpha keeps the canvas transparent
     // so the MindAR camera feed shows behind the 3D content.

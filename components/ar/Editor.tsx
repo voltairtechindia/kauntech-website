@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
-import { compileMindTargets } from "@/lib/ar/compileTarget";
+import { compileMindTargets, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconEye, IconEyeOff,
   IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
@@ -39,6 +39,16 @@ function readCard(model: ArModel | null): SceneCard {
   return c && typeof c === "object" ? c : {};
 }
 const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u);
+
+// Bucket a 0..100 trackability score into a user-facing tier. A low-detail card
+// can't track steadily no matter how the viewer is tuned, so this warns the owner
+// before they publish.
+function trackTier(score: number | null): { label: string; color: string } | null {
+  if (score == null) return null;
+  if (score >= 60) return { label: "Good", color: "#16a34a" };
+  if (score >= 35) return { label: "Fair", color: "#d97706" };
+  return { label: "Low", color: "#dc2626" };
+}
 
 let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
@@ -213,14 +223,23 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   const [assetTab, setAssetTab] = useState<AssetTab>("model");
   const [mode, setMode] = useState<TransformMode>("translate");
   const [name, setName] = useState(model?.name ?? card.name ?? "");
-  // New cards default to publish ON, so setting one up makes it live without a
-  // second step; an existing card keeps whatever it was last saved as.
-  const [publish, setPublish] = useState(model?.is_published ?? true);
+  // Cards always publish on save — there's no draft state anymore. Adding or
+  // changing the card photo auto-saves (below), so a card goes live the moment it
+  // has a photo, with no manual publish step.
+  const publish = true;
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedOnce, setSavedOnce] = useState(!!model);
+
+  // Auto-save when a card photo is added or changed: the cropper queues a save
+  // (wantAutoSaveRef), and the photo's OCR effect bumps autoSaveTick once the
+  // printed text has been read, so the save persists the photo + its OCR text and
+  // publishes — no manual click. saveRef (set further down) holds the latest
+  // save() so the queued run sees the freshly-read OCR text, not a stale closure.
+  const wantAutoSaveRef = useRef(false);
+  const [autoSaveTick, setAutoSaveTick] = useState(0);
 
   // ── Card photos: front + back. Either side can be the AR tracking target. ──
   const initCard = useMemo(() => readCard(model), [model]);
@@ -245,6 +264,10 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   // routine element edit doesn't pay the compile cost. `prep` shows progress.
   const [mindUrl, setMindUrl] = useState<string | null>(initCard.mindUrl ?? null);
   const [prep, setPrep] = useState<string | null>(null);
+  // Trackability of each side's photo (0..100), shown so the owner knows whether
+  // their card has enough detail to track steadily before they rely on it.
+  const [frontScore, setFrontScore] = useState<number | null>(null);
+  const [backScore, setBackScore] = useState<number | null>(null);
   // Identity of the CHOSEN target side's photo (a file by size+mtime, an unchanged
   // side by its url) plus which side is the target. When this differs from what the
   // current .mind was built from — the target photo changed, or the user switched
@@ -317,7 +340,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
     setOcrBusy(true);
     ocrImageSrc(frontFile)
       .then((t) => { if (alive && t) setFrontOcr(t); })
-      .finally(() => { if (alive) setOcrBusy(false); });
+      .finally(() => { if (!alive) return; setOcrBusy(false); if (wantAutoSaveRef.current) { wantAutoSaveRef.current = false; setAutoSaveTick((n) => n + 1); } });
     return () => { alive = false; };
   }, [frontFile]);
 
@@ -327,7 +350,7 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
     setOcrBusy(true);
     ocrImageSrc(backFile)
       .then((t) => { if (alive && t) setBackOcr(t); })
-      .finally(() => { if (alive) setOcrBusy(false); });
+      .finally(() => { if (!alive) return; setOcrBusy(false); if (wantAutoSaveRef.current) { wantAutoSaveRef.current = false; setAutoSaveTick((n) => n + 1); } });
     return () => { alive = false; };
   }, [backFile]);
 
@@ -355,6 +378,25 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [backUrl, backFile]);
+
+  // Score each side for AR trackability whenever its photo changes (a freshly
+  // cropped file, else the saved url). Best-effort and off the critical path.
+  useEffect(() => {
+    const src = frontFile ?? frontUrl;
+    if (!src) { setFrontScore(null); return; }
+    let alive = true;
+    scoreTargetTrackability(src).then((s) => { if (alive) setFrontScore(s); });
+    return () => { alive = false; };
+  }, [frontFile, frontUrl]);
+
+  useEffect(() => {
+    const src = backFile ?? backUrl;
+    if (!src) { setBackScore(null); return; }
+    let alive = true;
+    scoreTargetTrackability(src).then((s) => { if (alive) setBackScore(s); });
+    return () => { alive = false; };
+  }, [backFile, backUrl]);
+
   function pickPhoto(side: Side) {
     pendingSide.current = side;
     photoInput.current?.click();
@@ -471,12 +513,8 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
 
   async function save() {
     setError(null);
-    if (elements.length === 0 && !hasTarget) {
-      setError("Add your card photo, or at least one element, first.");
-      return;
-    }
-    if (publish && !hasTarget) {
-      setError("Add your card photo (the AR target) before publishing. Without it, scanning shows nothing.");
+    if (!hasTarget) {
+      setError("Add your card photo first. It's the image people point their camera at when they scan.");
       return;
     }
     const emptyVideo = elements.find((e) => e.type === "video" && !e.url?.trim());
@@ -548,6 +586,16 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
     }
   }
 
+  // Run the queued auto-save (after a photo was added/changed) once its OCR has
+  // completed and bumped autoSaveTick. Goes through saveRef so it calls the latest
+  // save() — capturing the just-read OCR text and the new photo, not stale state.
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    if (autoSaveTick === 0) return;
+    void saveRef.current();
+  }, [autoSaveTick]);
+
   const viewportCardColor = useMemo(() => card.card_color, [card.card_color]);
   const degY = selected ? Math.round((selected.rotationY * 180) / Math.PI) : 0;
 
@@ -565,7 +613,15 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
           file={cropFor.file}
           title={`Crop ${cropFor.side} of card`}
           onCancel={() => setCropFor(null)}
-          onConfirm={(cropped) => { setSideImage(cropFor.side, cropped); setActiveSide(cropFor.side); setCropFor(null); }}
+          onConfirm={(cropped) => {
+            const side = cropFor.side;
+            setSideImage(side, cropped);
+            setActiveSide(side);
+            // The first photo you add becomes the AR target, so the card can publish.
+            if (!sideUrl(target)) setTarget(side);
+            wantAutoSaveRef.current = true; // auto-save once this photo's OCR finishes
+            setCropFor(null);
+          }}
         />
       ) : null}
 
@@ -583,10 +639,10 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
           <a className="ar-btn ar-btn-ghost" href="/ar">← All cards</a>
           {dirty ? (
             <button className="ar-btn ar-btn-primary" onClick={save} disabled={busy}>
-              {busy ? "Saving…" : publish ? "Save & publish" : "Save draft"}
+              {busy ? "Publishing…" : "Save & publish"}
             </button>
           ) : savedOnce ? (
-            <span className="ar-saved-pill"><IconCheck /> Saved</span>
+            <span className="ar-saved-pill"><IconCheck /> Published</span>
           ) : null}
         </div>
       </div>
@@ -632,6 +688,14 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
                             isTarget ? <><IconCheck /> AR target</> : "Saved"
                           ) : isTarget ? "Required to publish" : "Not set"}
                         </span>
+                        {(() => {
+                          const tier = url ? trackTier(activeSide === "front" ? frontScore : backScore) : null;
+                          return tier ? (
+                            <span style={{ fontSize: 12, color: tier.color, marginTop: 2, display: "block" }}>
+                              Tracking quality: {tier.label}
+                            </span>
+                          ) : null;
+                        })()}
                         <div className="ar-row" style={{ gap: 6, flexWrap: "wrap" }}>
                           <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => pickPhoto(activeSide)}>
                             {url ? "Replace" : "Upload"}
@@ -650,19 +714,21 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
                 <span className="ar-muted" style={{ marginTop: 6, display: "block" }}>
                   The AR target is the side people point their camera at. Front and back are both saved.
                 </span>
+                {(() => {
+                  const tier = trackTier(target === "front" ? frontScore : backScore);
+                  return hasTarget && tier && tier.label === "Low" ? (
+                    <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
+                      This side is low on detail, so AR may shake or drift at an angle. Use the busier side, or pick a card with more contrast and detail.
+                    </span>
+                  ) : null;
+                })()}
               </div>
 
-              <label className="ar-row" style={{ gap: 8, cursor: "pointer", alignItems: "flex-start" }}>
-                <input type="checkbox" checked={publish} onChange={(e) => setPublish(e.target.checked)} style={{ accentColor: "var(--ar-orange)", marginTop: 3 }} />
-                <span>
-                  <strong>Publish</strong> — show in AR when people scan this card
-                  {publish && !hasTarget ? (
-                    <span className="ar-target-warn" style={{ display: "block", marginTop: 4 }}>
-                      Upload a card photo above, or this card won&apos;t show anything when scanned.
-                    </span>
-                  ) : null}
-                </span>
-              </label>
+              <p className="ar-muted" style={{ margin: 0 }}>
+                {hasTarget
+                  ? "Your card publishes automatically and shows in AR when people scan it."
+                  : "Add a card photo above and your card goes live automatically."}
+              </p>
             </div>
           </Collapsible>
 

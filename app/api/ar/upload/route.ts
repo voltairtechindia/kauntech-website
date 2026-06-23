@@ -23,6 +23,21 @@ function str(v: FormDataEntryValue | null): string {
 function bad(error: string, status = 400) {
   return NextResponse.json({ ok: false, error }, { status });
 }
+// Storage object key (path inside the bucket) from one of our public URLs, e.g.
+// ".../object/public/ar-models/<uid>/<card>/<model>-front.jpg?v=123" -> the path
+// "<uid>/<card>/<model>-front.jpg". Used to know which files to KEEP on cleanup.
+function keyFromPublicUrl(u: string | null): string | null {
+  if (!u) return null;
+  const marker = `/${AR_BUCKET}/`;
+  const i = u.indexOf(marker);
+  if (i === -1) return null;
+  const key = u.slice(i + marker.length).split("?")[0];
+  try {
+    return decodeURIComponent(key);
+  } catch {
+    return key;
+  }
+}
 function mapDbError(message: string): { error: string; status: number } {
   if (message.includes("ar_not_available_for_tier"))
     return { error: "AR cards are a Pro / Ultra feature. Upgrade in the app to set one up.", status: 403 };
@@ -214,5 +229,28 @@ export async function POST(req: Request) {
     const m = mapDbError(saveErr.message);
     return bad(m.error, m.status);
   }
+
+  // Keep storage lean: a card should hold only its CURRENT front/back photo and
+  // the current .mind target. Delete every other top-level file left behind by a
+  // previous save (an old model id, a side that was removed, a stale .mind) so
+  // only the currently-added card photos stay. Element assets live in the
+  // `assets/` subfolder (a folder entry, which carries no `id`), so they're never
+  // touched here. Best-effort: never fail the save over cleanup.
+  try {
+    const keep = new Set(
+      [keyFromPublicUrl(frontUrl), keyFromPublicUrl(backUrl), keyFromPublicUrl(mindUrl)]
+        .filter((k): k is string => !!k)
+        .map((k) => k.split("/").pop() as string),
+    );
+    const prefix = `${userId}/${cardId}`;
+    const { data: files } = await bucket.list(prefix, { limit: 100 });
+    const stale = (files ?? [])
+      .filter((f) => f.id && !keep.has(f.name)) // f.id present => a file (folders have none)
+      .map((f) => `${prefix}/${f.name}`);
+    if (stale.length) await bucket.remove(stale);
+  } catch {
+    /* best-effort cleanup */
+  }
+
   return NextResponse.json({ ok: true, model: saved });
 }
