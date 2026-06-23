@@ -100,15 +100,17 @@ export default function CardsDashboard({
           </span>
         </div>
 
-        <button
-          className="ar-btn ar-btn-primary ar-dash-add"
-          onClick={createCard}
-          disabled={atCap || creating}
-          title={atCap ? "Plan limit reached — delete one or upgrade" : "Create a new AR card"}
-        >
-          {atCap ? <IconLock /> : <IconPlus />}
-          {creating ? "Creating…" : atCap ? "Limit reached" : "Add card"}
-        </button>
+        {visible.length > 0 && (
+          <button
+            className="ar-btn ar-btn-primary ar-dash-add"
+            onClick={createCard}
+            disabled={atCap || creating}
+            title={atCap ? "Plan limit reached — delete one or upgrade" : "Create a new AR card"}
+          >
+            {atCap ? <IconLock /> : <IconPlus />}
+            {creating ? "Creating…" : atCap ? "Limit reached" : "Add card"}
+          </button>
+        )}
       </div>
 
       {error ? <p className="ar-error">{error}</p> : null}
