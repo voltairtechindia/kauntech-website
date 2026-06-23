@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef } from "react";
+import { Suspense, useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import {
@@ -24,8 +24,6 @@ interface Props {
   mode: TransformMode;
   referenceImageUrl?: string | null;
   cardColor?: string | null;
-  /** Scene brightness multiplier (mirrors the viewer's lighting). */
-  brightness?: number;
   onSelect: (id: string | null) => void;
   onTransform: (
     id: string,
@@ -44,20 +42,16 @@ export default function SceneViewport({
   mode,
   referenceImageUrl,
   cardColor,
-  brightness = 1,
   onSelect,
   onTransform,
 }: Props) {
-  // Normalize against the default lighting (1.2) so 1× here looks like the AR
-  // viewer's default, and the slider brightens/dims both in lockstep.
-  const b = brightness / 1.2;
   return (
     <Canvas camera={{ position: [0, 0.12, 2.05], fov: 40 }} dpr={[1, 2]} shadows>
       <color attach="background" args={["#f1f0ee"]} />
-      <ambientLight intensity={0.95 * b} />
-      <hemisphereLight intensity={0.6 * b} color="#ffffff" groundColor="#bdb8b0" />
-      <directionalLight position={[2, 3, 5]} intensity={1.2 * b} castShadow />
-      <directionalLight position={[-3, 1, 2]} intensity={0.4 * b} />
+      <ambientLight intensity={0.95} />
+      <hemisphereLight intensity={0.6} color="#ffffff" groundColor="#bdb8b0" />
+      <directionalLight position={[2, 3, 5]} intensity={1.2} castShadow />
+      <directionalLight position={[-3, 1, 2]} intensity={0.4} />
 
       {/* Premium image-based lighting — mirrors the AR viewer's in-memory studio
           environment so glossy / metallic models (car bodies, chrome, glass) show
@@ -222,7 +216,7 @@ function ElementBody({
     return (
       <group onClick={click}>
         <Suspense fallback={null}>
-          <GlbModel url={element.url} />
+          <GlbModel url={element.url} brightness={element.brightness ?? 1.2} />
         </Suspense>
         {selected ? <SelectRing /> : null}
       </group>
@@ -298,8 +292,45 @@ function SelectRing() {
   );
 }
 
-function GlbModel({ url }: { url: string }) {
+function GlbModel({ url, brightness = 1.2 }: { url: string; brightness?: number }) {
   const { scene } = useGLTF(url);
-  // Raw model (no auto-fit/center) so its size/origin match the A-Frame viewer.
-  return <primitive object={scene.clone()} />;
+
+  // Clone the scene and cache original material colors
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone();
+    const originalColors = new Map<THREE.Material, THREE.Color>();
+
+    clone.traverse((node) => {
+      if ((node as THREE.Mesh).isMesh) {
+        const mesh = node as THREE.Mesh;
+        if (mesh.material) {
+          const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          
+          const clonedMaterials = materials.map((mat) => {
+            const mClone = mat.clone();
+            if ("color" in mClone && (mClone as any).color instanceof THREE.Color) {
+              originalColors.set(mClone, (mClone as any).color.clone());
+            }
+            return mClone;
+          });
+
+          mesh.material = Array.isArray(mesh.material) ? clonedMaterials : clonedMaterials[0];
+        }
+      }
+    });
+
+    return { clone, originalColors };
+  }, [scene]);
+
+  // Apply model-specific brightness factor (scaled relative to A-Frame default 1.2)
+  useEffect(() => {
+    clonedScene.originalColors.forEach((origColor, mat) => {
+      const factor = brightness / 1.2;
+      if ("color" in mat && (mat as any).color instanceof THREE.Color) {
+        (mat as any).color.copy(origColor).multiplyScalar(factor);
+      }
+    });
+  }, [clonedScene, brightness]);
+
+  return <primitive object={clonedScene.clone} />;
 }

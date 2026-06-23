@@ -58,6 +58,8 @@ export async function POST(req: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  // Always delete both: AR model row first (FK depends on card), then the card
+  // itself — so a deleted card truly vanishes from the dashboard.
   if (model) {
     const { error: delErr } = await supabase
       .from("ar_models")
@@ -65,14 +67,14 @@ export async function POST(req: Request) {
       .eq("id", model.id)
       .eq("user_id", user.id);
     if (delErr) return bad("Could not delete. Please try again.", 500);
-  } else {
-    const { error: delErr } = await supabase
-      .from("cards")
-      .delete()
-      .eq("id", cardId)
-      .eq("user_id", user.id);
-    if (delErr) return bad("Could not delete. Please try again.", 500);
   }
+
+  const { error: cardDelErr } = await supabase
+    .from("cards")
+    .delete()
+    .eq("id", cardId)
+    .eq("user_id", user.id);
+  if (cardDelErr) return bad("Could not delete the card. Please try again.", 500);
 
   // Best-effort storage cleanup: the card's photos sit at `${uid}/${cardId}/…`
   // and editor assets at `${uid}/${cardId}/assets/…`. A failure here must not

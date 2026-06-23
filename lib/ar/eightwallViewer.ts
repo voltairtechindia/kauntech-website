@@ -169,6 +169,50 @@ export function eightwallViewerHtml(view: EightwallView): string {
       });
     }
 
+    // gltf-brightness: model-specific brightness adjustments
+    if (AFRAME.registerComponent && !AFRAME.components['gltf-brightness']){
+      AFRAME.registerComponent('gltf-brightness', {
+        schema: { type: 'number', default: 1.2 },
+        init: function(){
+          var self = this;
+          this.el.addEventListener('model-loaded', function(e){
+            var model = e.detail && e.detail.model;
+            if (!model) return;
+            model.traverse(function(node){
+              if (node.isMesh && node.material){
+                var mats = Array.isArray(node.material) ? node.material : [node.material];
+                mats.forEach(function(mat){
+                  if (!mat.__origColor) {
+                    mat.__origColor = mat.color ? mat.color.clone() : new AFRAME.THREE.Color('#ffffff');
+                  }
+                  if (mat.color) {
+                    var factor = self.data / 1.2;
+                    mat.color.copy(mat.__origColor).multiplyScalar(factor);
+                  }
+                });
+              }
+            });
+          });
+        },
+        update: function(){
+          var self = this;
+          var model = this.el.getObject3D('mesh');
+          if (!model) return;
+          model.traverse(function(node){
+            if (node.isMesh && node.material){
+              var mats = Array.isArray(node.material) ? node.material : [node.material];
+              mats.forEach(function(mat){
+                if (mat.__origColor && mat.color){
+                  var factor = self.data / 1.2;
+                  mat.color.copy(mat.__origColor).multiplyScalar(factor);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+
     // Soft round contact shadow (radial dark → transparent), shared, so models
     // read as PLANTED on the card.
     var SHADOW_TEX = (function(){
@@ -199,6 +243,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
         node = document.createElement('a-gltf-model');
         node.setAttribute('src', el.url);
         if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat');
+        if (typeof el.brightness === 'number') node.setAttribute('gltf-brightness', el.brightness);
       } else if (el.type === 'image' && el.url){
         node = document.createElement('a-image');
         node.setAttribute('src', el.url); node.setAttribute('width', 0.3); node.setAttribute('height', 0.3);
@@ -259,8 +304,8 @@ export function eightwallViewerHtml(view: EightwallView): string {
     cam.setAttribute('cursor', 'fuse: false; rayOrigin: mouse');
     scene.appendChild(cam);
 
-    // Lighting — owner-controlled brightness, mirrors the MindAR viewer + editor.
-    var B = (D.lighting && typeof D.lighting.intensity === 'number') ? D.lighting.intensity : 1.2;
+    // Lighting — standard scene lighting defaults (equivalent to B = 1.2)
+    var B = 1.2;
     function light(attr){ var e = document.createElement('a-entity'); e.setAttribute('light', attr); return e; }
     scene.appendChild(light('type: ambient; intensity: ' + (1.1 * B).toFixed(3)));
     scene.appendChild(light('type: hemisphere; intensity: ' + (0.8 * B).toFixed(3) + '; color: #ffffff; groundColor: #b0b4bd'));

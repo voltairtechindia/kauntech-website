@@ -44,6 +44,8 @@ export interface ArElement {
   spin?: boolean;
   /** Hide from the scene and the published view (draft element). */
   hidden?: boolean;
+  /** Model-specific brightness multiplier. */
+  brightness?: number;
 }
 
 export const DEFAULT_TEXT_COLOR = "#18181b";

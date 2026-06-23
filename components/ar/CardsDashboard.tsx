@@ -32,15 +32,17 @@ export default function CardsDashboard({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
   // Active AR cards count against the plan cap; cards without AR are just
   // candidates you can still set up while under the cap.
-  const usedCount = items.filter((i) => i.status !== "none").length;
+  const visible = items.filter((i) => !removedIds.has(i.id));
+  const usedCount = visible.filter((i) => i.status !== "none").length;
   const atCap = usedCount >= arCap;
   const pct = arCap > 0 ? Math.min(100, Math.round((usedCount / arCap) * 100)) : 0;
 
   // Active first, then cards waiting to have AR added.
-  const ordered = [...items].sort((a, b) => Number(b.status !== "none") - Number(a.status !== "none"));
+  const ordered = [...visible].sort((a, b) => Number(b.status !== "none") - Number(a.status !== "none"));
 
   async function createCard() {
     setCreating(true);
@@ -68,6 +70,8 @@ export default function CardsDashboard({
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || "Could not delete.");
       setConfirmId(null);
+      // Optimistically hide the card so it never reappears
+      setRemovedIds((prev) => new Set(prev).add(id));
       router.refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not delete.");
@@ -91,6 +95,9 @@ export default function CardsDashboard({
           <div className="ar-meter" role="progressbar" aria-valuenow={usedCount} aria-valuemin={0} aria-valuemax={arCap}>
             <div className="ar-meter-fill" style={{ width: `${pct}%` }} />
           </div>
+          <span className="ar-muted" style={{ fontSize: "12px", marginTop: "6px", display: "block" }}>
+            Each card with published 3D or media models counts toward your {TIER_LABEL[tier]} plan cap.
+          </span>
         </div>
 
         <button
@@ -106,7 +113,7 @@ export default function CardsDashboard({
 
       {error ? <p className="ar-error">{error}</p> : null}
 
-      {items.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="ar-empty">
           <span className="ar-empty-ico" aria-hidden><IconBox /></span>
           <p className="ar-empty-title">No cards yet</p>
@@ -159,12 +166,12 @@ export default function CardsDashboard({
                       <IconPencil /> Edit
                     </Link>
                     {item.status === "published" ? (
-                      <a className="ar-icon-btn ar-icon-btn-bordered" title="Open AR viewer" href={`/ar/view/${item.id}`} target="_blank" rel="noreferrer">
-                        <IconExternal />
+                      <a className="ar-icon-btn-bordered" title="Open AR viewer" href={`/ar/view/${item.id}`} target="_blank" rel="noreferrer">
+                        <IconExternal /> View AR
                       </a>
                     ) : null}
-                    <button className="ar-icon-btn ar-icon-btn-bordered ar-icon-danger" title="Delete AR card" onClick={() => setConfirmId(item.id)}>
-                      <IconTrash />
+                    <button className="ar-icon-btn-bordered ar-icon-danger" title="Delete AR card" onClick={() => setConfirmId(item.id)}>
+                      <IconTrash /> Remove
                     </button>
                   </div>
                 ) : (
@@ -178,8 +185,8 @@ export default function CardsDashboard({
                         <IconPlus /> Set up AR
                       </Link>
                     )}
-                    <button className="ar-icon-btn ar-icon-btn-bordered ar-icon-danger" title="Delete card" onClick={() => setConfirmId(item.id)}>
-                      <IconTrash />
+                    <button className="ar-icon-btn-bordered ar-icon-danger" title="Delete card" onClick={() => setConfirmId(item.id)}>
+                      <IconTrash /> Remove
                     </button>
                   </div>
                 )}

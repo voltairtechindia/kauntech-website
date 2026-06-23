@@ -226,6 +226,8 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
   const [assetTab, setAssetTab] = useState<AssetTab>("model");
   const [mode, setMode] = useState<TransformMode>("translate");
   const [name, setName] = useState(model?.name ?? card.name ?? "");
+  const [sidebarTab, setSidebarTab] = useState<"setup" | "assets" | "layers">("setup");
+  const [propsTab, setPropsTab] = useState<"settings" | "layout">("layout");
   // Cards always publish on save — there's no draft state anymore. Adding or
   // changing the card photo auto-saves (below), so a card goes live the moment it
   // has a photo, with no manual publish step.
@@ -671,183 +673,243 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
       <div className="ar-workspace">
         {/* Left: controls */}
         <aside className="ar-side">
-          {/* Card setup — moved to top, collapsible */}
-          <Collapsible title="Card setup" icon={<IconTarget />} defaultOpen>
-            <div className="ar-stack">
-              <div>
-                <label className="ar-label" htmlFor="ar-name">Label (private)</label>
-                <input id="ar-name" className="ar-field" value={name} onChange={(e) => setName(e.target.value)} placeholder="My AR card" />
-              </div>
+          <div className="ar-sidebar-tabs">
+            <button
+              type="button"
+              className={`ar-sidebar-tab-btn ${sidebarTab === "setup" ? "is-active" : ""}`}
+              onClick={() => setSidebarTab("setup")}
+              title="Card Setup"
+            >
+              <IconTarget /> Setup
+            </button>
+            <button
+              type="button"
+              className={`ar-sidebar-tab-btn ${sidebarTab === "assets" ? "is-active" : ""}`}
+              onClick={() => setSidebarTab("assets")}
+              title="Add Assets"
+            >
+              <IconPlus /> Add
+            </button>
+            <button
+              type="button"
+              className={`ar-sidebar-tab-btn ${sidebarTab === "layers" ? "is-active" : ""}`}
+              onClick={() => setSidebarTab("layers")}
+              title="Manage Layers"
+            >
+              <IconBox /> Layers ({elements.length})
+            </button>
+          </div>
 
-              <div>
-                <span className="ar-label">Card photos</span>
-                <div className="ar-side-tabs">
-                  {(["front", "back"] as Side[]).map((s) => (
-                    <button key={s} className={`ar-side-tab ${activeSide === s ? "is-active" : ""}`} onClick={() => setActiveSide(s)}>
-                      {s === "front" ? "Front" : "Back"}
-                      {target === s ? <span className="ar-side-target-dot" title="AR target" /> : null}
+          <div className="ar-side-scroll-content">
+            {sidebarTab === "setup" && (
+              <div className="ar-sidebar-tab-content fade-in">
+                <div className="ar-card ar-stack">
+                  <span className="ar-label" style={{ margin: 0 }}>Card Setup</span>
+                  <div>
+                    <label className="ar-label" htmlFor="ar-name">Label (private)</label>
+                    <input id="ar-name" className="ar-field" value={name} onChange={(e) => setName(e.target.value)} placeholder="My AR card" />
+                  </div>
+
+                  <div>
+                    <span className="ar-label" style={{ marginBottom: "10px" }}>Card photos</span>
+                    <div className="ar-sidebar-setup-cards">
+                      {(["front", "back"] as Side[]).map((side) => {
+                        const url = sideUrl(side);
+                        const isTarget = target === side;
+                        const tier = url ? trackTier(side === "front" ? frontScore : backScore) : null;
+                        
+                        return (
+                          <div key={side} className={`ar-side-photo-card ${isTarget ? "is-target" : ""}`}>
+                            <div className="ar-side-photo-header">
+                              <span className="ar-side-photo-title">
+                                {side === "front" ? "Front Side" : "Back Side"}
+                              </span>
+                              {isTarget && (
+                                <span className="ar-side-photo-badge ar-side-photo-badge-target">
+                                  <IconCheck /> AR Target
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="ar-side-photo-preview-container">
+                              {url ? (
+                                <>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={url} alt={`Card ${side}`} className="ar-side-photo-img" />
+                                  <div className="ar-side-photo-overlay">
+                                    <button
+                                      type="button"
+                                      className="ar-side-photo-overlay-btn"
+                                      onClick={() => pickPhoto(side)}
+                                    >
+                                      <IconImage /> Replace
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ar-side-photo-overlay-btn ar-btn-danger"
+                                      onClick={() => clearSide(side)}
+                                      title="Remove photo"
+                                    >
+                                      <IconX /> Remove
+                                    </button>
+                                  </div>
+                                </>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="ar-side-photo-empty"
+                                  onClick={() => pickPhoto(side)}
+                                >
+                                  <span className="ar-side-photo-empty-icon"><IconImage /></span>
+                                  <span className="ar-side-photo-empty-text">Upload {side} photo</span>
+                                </button>
+                              )}
+                            </div>
+
+                            {url && (
+                              <div className="ar-side-photo-footer">
+                                {tier && (
+                                  <span className="ar-side-photo-badge ar-side-photo-badge-quality">
+                                    <span
+                                      className="ar-side-photo-badge-dot"
+                                      style={{ backgroundColor: tier.color }}
+                                    />
+                                    Tracking: {tier.label}
+                                  </span>
+                                )}
+                                <div className="ar-side-photo-actions-row">
+                                  {!isTarget && (
+                                    <button
+                                      type="button"
+                                      className="ar-btn ar-btn-ghost ar-btn-sm"
+                                      style={{ padding: "6px 12px", fontSize: "12px" }}
+                                      onClick={() => setTarget(side)}
+                                    >
+                                      Use for AR
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <span className="ar-muted" style={{ marginTop: 8, display: "block" }}>
+                      The AR target is the side people point their camera at. Front and back are both saved.
+                    </span>
+                    {(() => {
+                      const tier = trackTier(target === "front" ? frontScore : backScore);
+                      return hasTarget && tier && tier.label === "Low" ? (
+                        <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
+                          This side is low on detail, so AR may shake or drift at an angle. Use the busier side, or pick a card with more contrast and detail.
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
+
+                  <p className="ar-muted" style={{ margin: 0 }}>
+                    {hasTarget
+                      ? "Your card publishes automatically and shows in AR when people scan it."
+                      : "Add a card photo above and your card goes live automatically."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+          {sidebarTab === "assets" && (
+            <div className="ar-sidebar-tab-content fade-in">
+              {/* Assets — add models, images, video, text or social, by category */}
+              <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
+                <span className="ar-label" style={{ margin: 0 }}>Asset Library</span>
+                <div className="ar-asset-tabs" role="tablist">
+                  {ASSET_TABS.map((t) => (
+                    <button
+                      key={t.key}
+                      role="tab"
+                      aria-selected={assetTab === t.key}
+                      title={t.label}
+                      className={`ar-asset-tab ${assetTab === t.key ? "is-active" : ""}`}
+                      onClick={() => setAssetTab(t.key)}
+                    >
+                      <span className="ar-asset-tab-ico" aria-hidden>{t.icon}</span>
                     </button>
                   ))}
                 </div>
 
-                {(() => {
-                  const url = sideUrl(activeSide);
-                  const isTarget = target === activeSide;
-                  return (
-                    <div className={`ar-target ${isTarget && !url ? "ar-target-missing" : ""}`}>
-                      {url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={url} alt={`Card ${activeSide}`} className="ar-target-img" />
-                      ) : (
-                        <div className="ar-target-img ar-target-img-empty" aria-hidden><IconImage /></div>
-                      )}
-                      <div className="ar-target-body" style={{ flex: 1 }}>
-                        <span className={url ? "ar-target-ok" : "ar-target-warn"}>
-                          {url ? (
-                            isTarget ? <><IconCheck /> AR target</> : "Saved"
-                          ) : isTarget ? "Required to publish" : "Not set"}
-                        </span>
-                        {(() => {
-                          const tier = url ? trackTier(activeSide === "front" ? frontScore : backScore) : null;
-                          return tier ? (
-                            <span style={{ fontSize: 12, color: tier.color, marginTop: 2, display: "block" }}>
-                              Tracking quality: {tier.label}
-                            </span>
-                          ) : null;
-                        })()}
-                        <div className="ar-row" style={{ gap: 6, flexWrap: "wrap" }}>
-                          <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => pickPhoto(activeSide)}>
-                            {url ? "Replace" : "Upload"}
+                <div className="ar-asset-panel">
+                  {assetTab === "model" ? (
+                    <>
+                      <button className="ar-tab ar-asset-add ar-asset-gallery" onClick={() => setGalleryOpen(true)}>
+                        <span className="ar-tab-ico" aria-hidden><IconBox /></span>
+                        Choose from KaunTech gallery
+                      </button>
+                      <button className="ar-tab ar-asset-add ar-asset-add-ghost" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
+                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                        {uploading === "model" ? "Uploading…" : "Or upload your own .glb"}
+                      </button>
+                      <span className="ar-muted ar-asset-hint">Pick a ready-made 3D model, or upload a .glb. It floats above the card and can play its animation.</span>
+                    </>
+                  ) : assetTab === "image" ? (
+                    <>
+                      <button className="ar-tab ar-asset-add" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
+                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                        {uploading === "image" ? "Uploading…" : "Add image"}
+                      </button>
+                      <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card.</span>
+                    </>
+                  ) : assetTab === "video" ? (
+                    <>
+                      <button className="ar-tab ar-asset-add" onClick={addVideo}>
+                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                        Add video
+                      </button>
+                      <span className="ar-muted ar-asset-hint">Adds a video plane — paste the mp4 link in its properties.</span>
+                    </>
+                  ) : (
+                    <>
+                      <button className="ar-tab ar-asset-add" onClick={addText}>
+                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                        Add text
+                      </button>
+                      <span className="ar-muted ar-asset-hint">A line of text — edit the words and colour in its properties.</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {sidebarTab === "layers" && (
+            <div className="ar-sidebar-tab-content fade-in">
+              <div className="ar-card ar-stack">
+                <span className="ar-label" style={{ margin: 0 }}>Scene Layers ({elements.length})</span>
+                {elements.length === 0 ? (
+                  <span className="ar-muted">Nothing yet. Add a 3D model, image, text, or video from the Add asset tab.</span>
+                ) : (
+                  <div className="ar-stack" style={{ gap: 6 }}>
+                    {elements.map((el) => (
+                      <div key={el.id} className={`ar-el-row ${selectedId === el.id ? "is-selected" : ""} ${el.hidden ? "is-hidden" : ""}`}>
+                        <button className="ar-el-select" onClick={() => setSelectedId(el.id)}>
+                          <span className="ar-el-ico" aria-hidden>{elementIcon(el)}</span>
+                          <span className="ar-el-name">{typeLabel(el)}</span>
+                          {el.link || (el.type === "video" && el.url) ? <span className="ar-el-link" aria-hidden><IconLink /></span> : null}
+                        </button>
+                        <div className="ar-el-actions">
+                          <button className="ar-icon-btn" title={el.hidden ? "Show" : "Hide"}
+                            onClick={() => { update(el.id, { hidden: !el.hidden }); if (!el.hidden && selectedId === el.id) setSelectedId(null); }}>
+                            {el.hidden ? <IconEyeOff /> : <IconEye />}
                           </button>
-                          {url && !isTarget ? (
-                            <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setTarget(activeSide)}>Use for AR</button>
-                          ) : null}
-                          {url ? (
-                            <button className="ar-icon-btn ar-icon-danger" title="Remove" onClick={() => clearSide(activeSide)}><IconX /></button>
-                          ) : null}
+                          <button className="ar-icon-btn" title="Duplicate" onClick={() => duplicate(el.id)}><IconCopy /></button>
+                          <button className="ar-icon-btn ar-icon-danger" title="Delete" onClick={() => remove(el.id)}><IconTrash /></button>
                         </div>
                       </div>
-                    </div>
-                  );
-                })()}
-                <span className="ar-muted" style={{ marginTop: 6, display: "block" }}>
-                  The AR target is the side people point their camera at. Front and back are both saved.
-                </span>
-                {(() => {
-                  const tier = trackTier(target === "front" ? frontScore : backScore);
-                  return hasTarget && tier && tier.label === "Low" ? (
-                    <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
-                      This side is low on detail, so AR may shake or drift at an angle. Use the busier side, or pick a card with more contrast and detail.
-                    </span>
-                  ) : null;
-                })()}
-              </div>
-
-              <p className="ar-muted" style={{ margin: 0 }}>
-                {hasTarget
-                  ? "Your card publishes automatically and shows in AR when people scan it."
-                  : "Add a card photo above and your card goes live automatically."}
-              </p>
-            </div>
-          </Collapsible>
-
-          {/* Assets — add models, images, video, text or social, by category */}
-          <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
-            <span className="ar-label" style={{ margin: 0 }}>Assets</span>
-            <div className="ar-asset-tabs" role="tablist">
-              {ASSET_TABS.map((t) => (
-                <button
-                  key={t.key}
-                  role="tab"
-                  aria-selected={assetTab === t.key}
-                  title={t.label}
-                  className={`ar-asset-tab ${assetTab === t.key ? "is-active" : ""}`}
-                  onClick={() => setAssetTab(t.key)}
-                >
-                  <span className="ar-asset-tab-ico" aria-hidden>{t.icon}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="ar-asset-panel">
-              {assetTab === "model" ? (
-                <>
-                  <button className="ar-tab ar-asset-add ar-asset-gallery" onClick={() => setGalleryOpen(true)}>
-                    <span className="ar-tab-ico" aria-hidden><IconBox /></span>
-                    Choose from KaunTech gallery
-                  </button>
-                  <button className="ar-tab ar-asset-add ar-asset-add-ghost" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
-                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
-                    {uploading === "model" ? "Uploading…" : "Or upload your own .glb"}
-                  </button>
-                  <span className="ar-muted ar-asset-hint">Pick a ready-made 3D model, or upload a .glb. It floats above the card and can play its animation.</span>
-                </>
-              ) : assetTab === "image" ? (
-                <>
-                  <button className="ar-tab ar-asset-add" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
-                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
-                    {uploading === "image" ? "Uploading…" : "Add image"}
-                  </button>
-                  <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card.</span>
-                </>
-              ) : assetTab === "video" ? (
-                <>
-                  <button className="ar-tab ar-asset-add" onClick={addVideo}>
-                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
-                    Add video
-                  </button>
-                  <span className="ar-muted ar-asset-hint">Adds a video plane — paste the mp4 link in its properties.</span>
-                </>
-              ) : (
-                <>
-                  <button className="ar-tab ar-asset-add" onClick={addText}>
-                    <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
-                    Add text
-                  </button>
-                  <span className="ar-muted ar-asset-hint">A line of text — edit the words and colour in its properties.</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Lighting — scene-wide; the AR view looks darker than this editor, so
-              this is the knob to brighten models when scanned. */}
-          <div className="ar-card ar-stack">
-            <span className="ar-label" style={{ margin: 0 }}>Lighting</span>
-            <TransformSlider
-              icon={<IconSun />} label="Brightness" unit="×"
-              value={lighting.intensity} min={0.4} max={3} step={0.1} fixed={1}
-              onChange={(v) => setLighting({ intensity: Math.max(0.4, Math.min(3, v)) })}
-            />
-            <span className="ar-muted">Turn this up if your models look dark when the card is scanned in AR.</span>
-          </div>
-
-          {/* Layers — always visible */}
-          <div className="ar-card ar-stack">
-            <span className="ar-label" style={{ margin: 0 }}>Layers ({elements.length})</span>
-            {elements.length === 0 ? (
-              <span className="ar-muted">Nothing yet. Add a 3D model, image, text, social icon or video from the left.</span>
-            ) : (
-              <div className="ar-stack" style={{ gap: 6 }}>
-                {elements.map((el) => (
-                  <div key={el.id} className={`ar-el-row ${selectedId === el.id ? "is-selected" : ""} ${el.hidden ? "is-hidden" : ""}`}>
-                    <button className="ar-el-select" onClick={() => setSelectedId(el.id)}>
-                      <span className="ar-el-ico" aria-hidden>{elementIcon(el)}</span>
-                      <span className="ar-el-name">{typeLabel(el)}</span>
-                      {el.link || (el.type === "video" && el.url) ? <span className="ar-el-link" aria-hidden><IconLink /></span> : null}
-                    </button>
-                    <div className="ar-el-actions">
-                      <button className="ar-icon-btn" title={el.hidden ? "Show" : "Hide"}
-                        onClick={() => { update(el.id, { hidden: !el.hidden }); if (!el.hidden && selectedId === el.id) setSelectedId(null); }}>
-                        {el.hidden ? <IconEyeOff /> : <IconEye />}
-                      </button>
-                      <button className="ar-icon-btn" title="Duplicate" onClick={() => duplicate(el.id)}><IconCopy /></button>
-                      <button className="ar-icon-btn ar-icon-danger" title="Delete" onClick={() => remove(el.id)}><IconTrash /></button>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </div>
+          )}
           </div>
         </aside>
 
@@ -859,7 +921,6 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
             mode={mode}
             referenceImageUrl={trackableCardPhoto}
             cardColor={viewportCardColor}
-            brightness={lighting.intensity}
             onSelect={setSelectedId}
             onTransform={(id, t) => update(id, { position: t.position, rotationX: t.rotationX, rotationY: t.rotationY, rotationZ: t.rotationZ, scale: t.scale })}
           />
@@ -878,161 +939,206 @@ export default function Editor({ card, model, galleryAssets = [] }: { card: Owne
         </div>
 
         {/* Right: properties — appears when a layer is selected */}
-        <aside className="ar-props">
+        <aside className={`ar-props ${selected ? "is-open" : ""}`}>
           {selected ? (
             <div className="ar-card ar-stack">
-              <div className="ar-row ar-between">
-                <span className="ar-label" style={{ margin: 0 }}>{typeLabel(selected)} properties</span>
-                <button className="ar-icon-btn" title="Duplicate" onClick={() => duplicate(selected.id)}><IconCopy /></button>
+              <div className="ar-row ar-between" style={{ borderBottom: "1px solid var(--ar-border)", paddingBottom: "12px" }}>
+                <span className="ar-label" style={{ margin: 0 }}>{typeLabel(selected)} Properties</span>
+                <button className="ar-icon-btn-bordered" style={{ height: "28px", padding: "0 10px", fontSize: "12px" }} title="Duplicate layer" onClick={() => duplicate(selected.id)}>
+                  <IconCopy /> Duplicate
+                </button>
               </div>
 
-              {selected.type === "text" ? (
-                <>
-                  <div>
-                    <label className="ar-label">Text</label>
-                    <input
-                      className="ar-field"
-                      value={selected.text ?? ""}
-                      placeholder="Your name"
-                      onChange={(e) => update(selected.id, { text: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="ar-label">Colour</label>
-                    <div className="ar-row" style={{ gap: 8 }}>
-                      <input type="color" className="ar-color" value={selected.color ?? DEFAULT_TEXT_COLOR}
-                        onChange={(e) => update(selected.id, { color: e.target.value })} />
-                      <span className="ar-mono ar-muted">{(selected.color ?? DEFAULT_TEXT_COLOR).toUpperCase()}</span>
+              {/* Tab Selector */}
+              <div className="ar-properties-tabs">
+                <button
+                  type="button"
+                  className={`ar-properties-tab-btn ${propsTab === "layout" ? "is-active" : ""}`}
+                  onClick={() => setPropsTab("layout")}
+                >
+                  Layout
+                </button>
+                <button
+                  type="button"
+                  className={`ar-properties-tab-btn ${propsTab === "settings" ? "is-active" : ""}`}
+                  onClick={() => setPropsTab("settings")}
+                >
+                  Settings
+                </button>
+              </div>
+
+              {propsTab === "settings" && (
+                <div className="ar-properties-tab-content fade-in ar-stack">
+                  {selected.type === "text" ? (
+                    <>
+                      <div>
+                        <label className="ar-label">Text Content</label>
+                        <input
+                          className="ar-field"
+                          value={selected.text ?? ""}
+                          placeholder="Your name"
+                          onChange={(e) => update(selected.id, { text: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="ar-label">Text Colour</label>
+                        <div className="ar-row" style={{ gap: 8 }}>
+                          <input type="color" className="ar-color" value={selected.color ?? DEFAULT_TEXT_COLOR}
+                            onChange={(e) => update(selected.id, { color: e.target.value })} />
+                          <span className="ar-mono ar-muted">{(selected.color ?? DEFAULT_TEXT_COLOR).toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : selected.type === "video" ? (
+                    <div>
+                      <label className="ar-label">Video URL (mp4)</label>
+                      <input
+                        className="ar-field"
+                        value={selected.url ?? ""}
+                        placeholder="https://…/clip.mp4"
+                        onChange={(e) => update(selected.id, { url: e.target.value })}
+                        onBlur={(e) => update(selected.id, { url: e.target.value.trim() })}
+                      />
                     </div>
+                  ) : (
+                    <div>
+                      <label className="ar-label">Tap Action (redirect link)</label>
+                      <input
+                        className="ar-field"
+                        value={selected.link ?? ""}
+                        placeholder={socialPreset(selected.platform)?.prefix || "https://…"}
+                        onChange={(e) => update(selected.id, { link: e.target.value })}
+                        onBlur={(e) => update(selected.id, { link: e.target.value ? normalizeLink(e.target.value) : "" })}
+                      />
+                    </div>
+                  )}
+
+                  {/* Behaviours */}
+                  <div className="ar-stack" style={{ gap: 8 }}>
+                    <span className="ar-label" style={{ margin: 0 }}>Behaviour Settings</span>
+                    <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
+                      <input type="checkbox" checked={selected.spin ?? false}
+                        onChange={(e) => update(selected.id, { spin: e.target.checked })}
+                        style={{ accentColor: "var(--ar-orange)" }} />
+                      <span style={{ fontSize: "14px" }}>Self-rotate (spins when scanned)</span>
+                    </label>
+                    {selected.type === "model" ? (
+                      <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
+                        <input type="checkbox" checked={selected.animated ?? true}
+                          onChange={(e) => update(selected.id, { animated: e.target.checked })}
+                          style={{ accentColor: "var(--ar-orange)" }} />
+                        <span style={{ fontSize: "14px" }}>Play model animation</span>
+                      </label>
+                    ) : null}
                   </div>
-                </>
-              ) : selected.type === "video" ? (
-                <div>
-                  <label className="ar-label">Video URL (mp4)</label>
-                  <input
-                    className="ar-field"
-                    value={selected.url ?? ""}
-                    placeholder="https://…/clip.mp4"
-                    onChange={(e) => update(selected.id, { url: e.target.value })}
-                    onBlur={(e) => update(selected.id, { url: e.target.value.trim() })}
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="ar-label">Tap opens (link)</label>
-                  <input
-                    className="ar-field"
-                    value={selected.link ?? ""}
-                    placeholder={socialPreset(selected.platform)?.prefix || "https://…"}
-                    onChange={(e) => update(selected.id, { link: e.target.value })}
-                    onBlur={(e) => update(selected.id, { link: e.target.value ? normalizeLink(e.target.value) : "" })}
-                  />
+
+                  {/* Model Brightness (Model Specific Setting) */}
+                  {selected.type === "model" && (
+                    <div className="ar-card ar-stack" style={{ gap: 8, padding: "12px", border: "1px solid var(--ar-border)", background: "var(--ar-orange-soft)" }}>
+                      <span className="ar-label" style={{ margin: 0 }}>Model Brightness</span>
+                      <TransformSlider
+                        icon={<IconSun />} label="Brightness" unit="×"
+                        value={selected.brightness ?? 1.2} min={0.4} max={3} step={0.1} fixed={1}
+                        onChange={(v) => update(selected.id, { brightness: Math.max(0.4, Math.min(3, v)) })}
+                      />
+                      <span className="ar-muted" style={{ fontSize: "11px" }}>
+                        Turn this up if this specific model looks dark when scanning the card in AR.
+                      </span>
+                    </div>
+                  )}
+
+                  <button className="ar-btn ar-btn-ghost ar-btn-sm ar-del-full" style={{ marginTop: "12px" }} onClick={() => remove(selected.id)}>
+                    <IconTrash /> Delete Element
+                  </button>
                 </div>
               )}
 
-              {/* Position — left/right, up/down, depth. Drag or type exact values. */}
-              <div className="ar-transform-group">
-                <span className="ar-label">Position</span>
-                <TransformSlider
-                  icon={<IconAxisX />} label="Left / Right" unit="X"
-                  value={selected.position[0]} min={-1.5} max={1.5} step={0.01} fixed={2}
-                  onChange={(v) => setPos(selected.id, 0, v)}
-                />
-                <TransformSlider
-                  icon={<IconAxisY />} label="Up / Down" unit="Y"
-                  value={selected.position[1]} min={-1} max={2} step={0.01} fixed={2}
-                  onChange={(v) => setPos(selected.id, 1, v)}
-                />
-                <TransformSlider
-                  icon={<IconAxisZ />} label="Depth" unit="Z"
-                  value={selected.position[2]} min={-1} max={1} step={0.01} fixed={2}
-                  onChange={(v) => setPos(selected.id, 2, v)}
-                />
-              </div>
+              {propsTab === "layout" && (
+                <div className="ar-properties-tab-content fade-in ar-stack">
+                  {/* Viewport gizmo mode — drag the handle in the 3D view instead. */}
+                  <div>
+                    <span className="ar-label">Gizmo dragging tool</span>
+                    <div className="ar-row" style={{ gap: 6 }}>
+                      {(["translate", "rotate", "scale"] as TransformMode[]).map((m) => (
+                        <button key={m} className={`ar-btn ar-btn-sm ar-mode-btn ${mode === m ? "ar-btn-primary" : "ar-btn-ghost"}`}
+                          onClick={() => setMode(m)}>
+                          <span className="ar-mode-ico" aria-hidden>
+                            {m === "translate" ? <IconMove /> : m === "rotate" ? <IconRotate /> : <IconScale />}
+                          </span>
+                          {m === "translate" ? "Move" : m === "rotate" ? "Rotate" : "Scale"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              {/* Rotation — tilt (X), turn (Y), roll (Z) in degrees. */}
-              <div className="ar-transform-group">
-                <span className="ar-label">Rotation</span>
-                <TransformSlider
-                  icon={<IconRotate />} label="Tilt" unit="°X"
-                  value={toDeg(selected.rotationX ?? 0)} min={-180} max={180} step={1} fixed={0}
-                  onChange={(v) => update(selected.id, { rotationX: toRad(v) })}
-                />
-                <TransformSlider
-                  icon={<IconRotate />} label="Turn" unit="°Y"
-                  value={degY} min={-180} max={180} step={1} fixed={0}
-                  onChange={(v) => update(selected.id, { rotationY: toRad(v) })}
-                />
-                <TransformSlider
-                  icon={<IconRotate />} label="Roll" unit="°Z"
-                  value={toDeg(selected.rotationZ ?? 0)} min={-180} max={180} step={1} fixed={0}
-                  onChange={(v) => update(selected.id, { rotationZ: toRad(v) })}
-                />
-              </div>
+                  {/* Position — left/right, up/down, depth. Drag or type exact values. */}
+                  <div className="ar-transform-group">
+                    <span className="ar-label">Position Alignment</span>
+                    <TransformSlider
+                      icon={<IconAxisX />} label="Left / Right" unit="X"
+                      value={selected.position[0]} min={-1.5} max={1.5} step={0.01} fixed={2}
+                      onChange={(v) => setPos(selected.id, 0, v)}
+                    />
+                    <TransformSlider
+                      icon={<IconAxisY />} label="Up / Down" unit="Y"
+                      value={selected.position[1]} min={-1} max={2} step={0.01} fixed={2}
+                      onChange={(v) => setPos(selected.id, 1, v)}
+                    />
+                    <TransformSlider
+                      icon={<IconAxisZ />} label="Depth" unit="Z"
+                      value={selected.position[2]} min={-1} max={1} step={0.01} fixed={2}
+                      onChange={(v) => setPos(selected.id, 2, v)}
+                    />
+                    <span className="ar-muted" style={{ fontSize: "11px", marginTop: "2px", display: "block" }}>
+                      X sets horizontal alignment, Y controls height floating above the card surface, and Z controls vertical depth placement.
+                    </span>
+                  </div>
 
-              {/* Scale — a multiplier of the auto-fit size (1× = fitted). */}
-              <div className="ar-transform-group">
-                <span className="ar-label">Size</span>
-                <TransformSlider
-                  icon={<IconScale />} label="Scale" unit="×"
-                  value={selected.scale} min={0.1} max={3} step={0.05} fixed={2}
-                  onChange={(v) => update(selected.id, { scale: Math.max(0.1, v) })}
-                />
-                {selected.type === "model" && selected.url ? (
-                  <button className="ar-btn ar-btn-ghost ar-btn-sm" style={{ marginTop: 8 }}
-                    onClick={() => fitToCard(selected)}>
-                    <IconScale /> Fit to card
-                  </button>
-                ) : null}
-              </div>
+                  {/* Rotation — tilt (X), turn (Y), roll (Z) in degrees. */}
+                  <div className="ar-transform-group">
+                    <span className="ar-label">Rotation Alignment</span>
+                    <TransformSlider
+                      icon={<IconRotate />} label="Tilt" unit="°X"
+                      value={toDeg(selected.rotationX ?? 0)} min={-180} max={180} step={1} fixed={0}
+                      onChange={(v) => update(selected.id, { rotationX: toRad(v) })}
+                    />
+                    <TransformSlider
+                      icon={<IconRotate />} label="Turn" unit="°Y"
+                      value={degY} min={-180} max={180} step={1} fixed={0}
+                      onChange={(v) => update(selected.id, { rotationY: toRad(v) })}
+                    />
+                    <TransformSlider
+                      icon={<IconRotate />} label="Roll" unit="°Z"
+                      value={toDeg(selected.rotationZ ?? 0)} min={-180} max={180} step={1} fixed={0}
+                      onChange={(v) => update(selected.id, { rotationZ: toRad(v) })}
+                    />
+                    <span className="ar-muted" style={{ fontSize: "11px", marginTop: "2px", display: "block" }}>
+                      Tilt pitches the element forward/back, Turn spins it flat, and Roll tilts it side-to-side.
+                    </span>
+                  </div>
 
-              {/* Viewport gizmo mode — drag the handle in the 3D view instead. */}
-              <div>
-                <span className="ar-label">Drag handle in view</span>
-                <div className="ar-row" style={{ gap: 6 }}>
-                  {(["translate", "rotate", "scale"] as TransformMode[]).map((m) => (
-                    <button key={m} className={`ar-btn ar-btn-sm ar-mode-btn ${mode === m ? "ar-btn-primary" : "ar-btn-ghost"}`}
-                      onClick={() => setMode(m)}>
-                      <span className="ar-mode-ico" aria-hidden>
-                        {m === "translate" ? <IconMove /> : m === "rotate" ? <IconRotate /> : <IconScale />}
-                      </span>
-                      {m === "translate" ? "Move" : m === "rotate" ? "Rotate" : "Scale"}
-                    </button>
-                  ))}
+                  {/* Scale — a multiplier of the auto-fit size (1× = fitted). */}
+                  <div className="ar-transform-group">
+                    <span className="ar-label">Size Scale</span>
+                    <TransformSlider
+                      icon={<IconScale />} label="Scale" unit="×"
+                      value={selected.scale} min={0.1} max={3} step={0.05} fixed={2}
+                      onChange={(v) => update(selected.id, { scale: Math.max(0.1, v) })}
+                    />
+                    {selected.type === "model" && selected.url ? (
+                      <button className="ar-btn ar-btn-ghost ar-btn-sm" style={{ marginTop: 8 }}
+                        onClick={() => fitToCard(selected)}>
+                        <IconScale /> Fit to card
+                      </button>
+                    ) : null}
+                    <span className="ar-muted" style={{ fontSize: "11px", marginTop: "2px", display: "block" }}>
+                      Alters element scale dimensions relative to the card's bounding boundaries.
+                    </span>
+                  </div>
                 </div>
-                <span className="ar-muted">Drag the gizmo in the viewport, the sliders, or type exact values above.</span>
-              </div>
-
-              {/* Behaviours */}
-              <div className="ar-stack" style={{ gap: 8 }}>
-                <span className="ar-label" style={{ margin: 0 }}>Behaviour</span>
-                <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
-                  <input type="checkbox" checked={selected.spin ?? false}
-                    onChange={(e) => update(selected.id, { spin: e.target.checked })}
-                    style={{ accentColor: "var(--ar-orange)" }} />
-                  <span>Self-rotate (spins when scanned)</span>
-                </label>
-                {selected.type === "model" ? (
-                  <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
-                    <input type="checkbox" checked={selected.animated ?? true}
-                      onChange={(e) => update(selected.id, { animated: e.target.checked })}
-                      style={{ accentColor: "var(--ar-orange)" }} />
-                    <span>Play model animation</span>
-                  </label>
-                ) : null}
-              </div>
-
-              <button className="ar-btn ar-btn-ghost ar-btn-sm ar-del-full" onClick={() => remove(selected.id)}>
-                <IconTrash /> Delete element
-              </button>
+              )}
             </div>
-          ) : (
-            <div className="ar-props-empty">
-              <span className="ar-props-empty-ico" aria-hidden><IconTarget /></span>
-              <p className="ar-props-empty-title">Nothing selected</p>
-              <span className="ar-muted">Select a layer to edit its link, size and X / Y / Z position.</span>
-            </div>
-          )}
+          ) : null}
         </aside>
       </div>
     </div>

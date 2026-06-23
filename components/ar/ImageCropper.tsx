@@ -61,11 +61,7 @@ export default function ImageCropper({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [img]);
 
-  // keep the image covering the frame as zoom changes
-  useEffect(() => {
-    setOffset((o) => clamp(o));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [zoom]);
+
 
   function onPointerDown(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -154,8 +150,26 @@ export default function ImageCropper({
 
         <div>
           <label className="ar-label">Zoom</label>
-          <input type="range" min={1} max={4} step={0.02} value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))} className="ar-range" />
+           <input type="range" min={1} max={4} step={0.02} value={zoom}
+            onChange={(e) => {
+              const nextZoom = Number(e.target.value);
+              setOffset((o) => {
+                const cx = FRAME_W / 2;
+                const cy = frameH / 2;
+                const nextX = cx - (cx - o.x) * (nextZoom / zoom);
+                const nextY = cy - (cy - o.y) * (nextZoom / zoom);
+
+                const scale = base * nextZoom;
+                const dW = img ? img.naturalWidth * scale : 0;
+                const dH = img ? img.naturalHeight * scale : 0;
+
+                return {
+                  x: Math.min(0, Math.max(FRAME_W - dW, nextX)),
+                  y: Math.min(0, Math.max(frameH - dH, nextY)),
+                };
+              });
+              setZoom(nextZoom);
+            }} className="ar-range" />
         </div>
 
         <div className="ar-row ar-between">

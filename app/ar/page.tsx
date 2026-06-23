@@ -35,27 +35,63 @@ export default async function ArDashboard() {
       <div className="ar-container ar-dash-page">
         <div className="ar-dash-head">
           <h1 className="ar-h1" style={{ margin: 0 }}>Your AR cards</h1>
-          <p className="ar-sub" style={{ margin: "4px 0 0" }}>
-            Attach a 3D model, image or video to a card — it appears anchored on
-            top when someone scans the card in the KaunTech app.
+          <p className="ar-sub" style={{ margin: "6px 0 0" }}>
+            Create immersive business cards that display 3D models, custom text, buttons, and videos in augmented reality.
           </p>
+        </div>
+
+        <div className="ar-context-card">
+          <div className="ar-context-card-header">
+            <span className="ar-context-title">
+              <svg width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4" />
+                <path d="M12 8h.01" />
+              </svg>
+              How AR business cards work
+            </span>
+            <span className="ar-muted" style={{ fontSize: "13.5px" }}>Attach 3D assets or media overlays to your physical card in three quick steps:</span>
+          </div>
+          <div className="ar-context-steps">
+            <div className="ar-context-step">
+              <div className="ar-step-number">1</div>
+              <div className="ar-step-content">
+                <strong>Upload Card Target</strong>
+                <p>Upload a glare-free photo of your printed card to serve as the AR tracking reference target.</p>
+              </div>
+            </div>
+            <div className="ar-context-step">
+              <div className="ar-step-number">2</div>
+              <div className="ar-step-content">
+                <strong>Design your AR Scene</strong>
+                <p>Position 3D models, active link buttons, videos, or floating text labels directly floating on top of your card layout.</p>
+              </div>
+            </div>
+            <div className="ar-context-step">
+              <div className="ar-step-number">3</div>
+              <div className="ar-step-content">
+                <strong>Scan & Experience</strong>
+                <p>When someone scans your physical card via the KaunTech scanner or QR code, your virtual layout comes alive in 3D space.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {!canAuthor ? (
           <div className="ar-card">
             <h2 className="ar-h2">AR cards are a Pro / Ultra feature</h2>
             <p className="ar-sub" style={{ margin: "0 0 var(--ar-sp-lg)" }}>
-              Upgrade in the KaunTech app to unlock AR for your business card.
+              Upgrade in the KaunTech app to unlock custom 3D and augmented reality features for your business card.
             </p>
             <a className="ar-btn ar-btn-primary" href="https://www.kauntech.com/get">
-              Get the app
+              Get the app to upgrade
             </a>
           </div>
         ) : cards.length === 0 ? (
           <div className="ar-card">
-            <p className="ar-sub" style={{ margin: 0 }}>
-              You don’t have any cards yet. Create one in the KaunTech app first,
-              then come back to add AR.
+            <h2 className="ar-h2" style={{ margin: 0 }}>Create a card first</h2>
+            <p className="ar-sub" style={{ margin: "8px 0 var(--ar-sp-lg)" }}>
+              You don’t have any cards yet. Create your first card inside the KaunTech mobile app, then reload this page to configure its AR content.
             </p>
           </div>
         ) : (

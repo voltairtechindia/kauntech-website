@@ -104,6 +104,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
         baseScale: Number(el.baseScale) > 0 ? Number(el.baseScale) : 1,
         animated: !!el.animated,
         spin: !!el.spin,
+        brightness: typeof el.brightness === "number" ? el.brightness : null,
       };
     });
 
@@ -336,6 +337,50 @@ function viewerHtml(view: unknown): string {
     });
   }
 
+  // gltf-brightness: model-specific brightness adjustments
+  if (window.AFRAME && AFRAME.registerComponent && !AFRAME.components['gltf-brightness']){
+    AFRAME.registerComponent('gltf-brightness', {
+      schema: { type: 'number', default: 1.2 },
+      init: function(){
+        var self = this;
+        this.el.addEventListener('model-loaded', function(e){
+          var model = e.detail && e.detail.model;
+          if (!model) return;
+          model.traverse(function(node){
+            if (node.isMesh && node.material){
+              var mats = Array.isArray(node.material) ? node.material : [node.material];
+              mats.forEach(function(mat){
+                if (!mat.__origColor) {
+                  mat.__origColor = mat.color ? mat.color.clone() : new AFRAME.THREE.Color('#ffffff');
+                }
+                if (mat.color) {
+                  var factor = self.data / 1.2;
+                  mat.color.copy(mat.__origColor).multiplyScalar(factor);
+                }
+              });
+            }
+          });
+        });
+      },
+      update: function(){
+        var self = this;
+        var model = this.el.getObject3D('mesh');
+        if (!model) return;
+        model.traverse(function(node){
+          if (node.isMesh && node.material){
+            var mats = Array.isArray(node.material) ? node.material : [node.material];
+            mats.forEach(function(mat){
+              if (mat.__origColor && mat.color){
+                var factor = self.data / 1.2;
+                mat.color.copy(mat.__origColor).multiplyScalar(factor);
+              }
+            });
+          }
+        });
+      }
+    });
+  }
+
   // ── Device orientation, for COASTING through a track loss ─────────────────
   // The phone's orientation (already IMU-fused by the OS) as a three.js quaternion,
   // via the canonical DeviceOrientationControls mapping (incl. screen rotation).
@@ -565,6 +610,7 @@ function viewerHtml(view: unknown): string {
       node = document.createElement('a-gltf-model');
       node.setAttribute('src', el.url);
       if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat');
+      if (typeof el.brightness === 'number') node.setAttribute('gltf-brightness', el.brightness);
     } else if (el.type === 'image' && el.url){
       node = document.createElement('a-image');
       node.setAttribute('src', el.url);
@@ -677,10 +723,8 @@ function viewerHtml(view: unknown): string {
     cam.setAttribute('raycaster', 'objects: .clickable');
     scene.appendChild(cam);
 
-    // Scene brightness (owner-controlled in the editor). Default 1.2. Models
-    // looked dark partly because there was too little fill light — add a
-    // hemisphere + a back fill and scale everything by the chosen brightness.
-    var B = (D.lighting && typeof D.lighting.intensity === 'number') ? D.lighting.intensity : 1.2;
+    // Lighting — standard scene lighting defaults (equivalent to B = 1.2)
+    var B = 1.2;
     var light = document.createElement('a-entity');
     light.setAttribute('light', 'type: ambient; intensity: ' + (1.1 * B).toFixed(3));
     scene.appendChild(light);
