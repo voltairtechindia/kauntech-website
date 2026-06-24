@@ -129,6 +129,26 @@ export function eightwallViewerHtml(view: EightwallView): string {
   // still works on every device.
   var wt = !!D.worldTracking;
 
+  // The loaded target image's real pixel size (set once dims resolve). Used to
+  // decide the orientation correction below.
+  var targetDims = null;
+  // ── Editor↔viewer orientation calibration ──────────────────────────────────
+  // The editor composes the scene on the card lying in its own X-Y plane (content
+  // floating out along +Z). 8th Wall canonicalizes a LANDSCAPE planar target to
+  // portrait before tracking (its isRotated behaviour), so authored content lands
+  // turned 90° about the card normal vs what the owner arranged in the editor — a
+  // portrait target needs no such turn (8th Wall's own flyer example overlays
+  // content at rotation 0). So we spin the whole content group back about the card
+  // normal (Z) for landscape targets, making the published view match the editor
+  // exactly. ?cal=<deg> forces a specific angle for on-device sign-checking.
+  var calParam = (function(){ var m = /[?&]cal=(-?\d+(?:\.\d+)?)/i.exec(location.search); return m ? parseFloat(m[1]) : null; })();
+  function targetCorrectionZ(){
+    if (calParam !== null) return calParam;
+    var d = targetDims || {};
+    if (d.w && d.h && d.w > d.h) return -90; // landscape → undo 8th Wall's +90° canonical turn
+    return 0;                                 // portrait/square → already aligned
+  }
+
   function log(){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage('[ARView8] ' + Array.prototype.join.call(arguments, ' ')); } catch(e){} }
   function rnPost(obj){ try { window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify(obj)); } catch(e){} }
   function setProg(v){ v = Math.max(lastProg, Math.min(100, Math.round(v))); lastProg = v; if (barEl) barEl.style.width = v + '%'; if (pctEl) pctEl.textContent = v < 100 ? v + '%' : 'Ready'; rnPost({ type: 'ar-progress', value: v }); }
@@ -158,7 +178,8 @@ export function eightwallViewerHtml(view: EightwallView): string {
         frames++; var t = (window.performance ? performance.now() : Date.now());
         if (t - t0 >= 500){ fps = Math.round(frames * 1000 / (t - t0)); frames = 0; t0 = t; }
         el.textContent = 'build: 8thwall-v2\\n' + 'SLAM: ' + (D.worldTracking ? 'on' : 'off') + '\\n' +
-          'fps: ' + fps + '\\n' + 'state: ' + (window.__ARSTATE__ || 'starting');
+          'fps: ' + fps + '\\n' + 'state: ' + (window.__ARSTATE__ || 'starting') + '\\n' +
+          'corrZ: ' + targetCorrectionZ() + '°';
         requestAnimationFrame(loop);
       })();
     } catch(e){}
@@ -214,7 +235,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
   var xr8P = new Promise(function(res){ whenXR8(function(){ setProg(46); res(); }); });
 
   Promise.all([dimsP, xr8P]).then(function(r){
-    configureTargets(r[0]); setProg(60); gateStart();
+    targetDims = r[0]; configureTargets(r[0]); setProg(60); gateStart();
   });
 
   // ── start gate (motion permission on iOS) ──────────────────────────────────
@@ -365,6 +386,12 @@ export function eightwallViewerHtml(view: EightwallView): string {
 
     var wrap = document.createElement('a-entity');
     wrap.setAttribute('scale', UNIT + ' ' + UNIT + ' ' + UNIT);
+    // Spin the whole authored scene back about the card normal so it reads the way
+    // the owner arranged it in the editor (see targetCorrectionZ). Rotates content
+    // AND positions together about the card centre, so the layout stays intact.
+    var corrZ = targetCorrectionZ();
+    if (corrZ) wrap.setAttribute('rotation', '0 0 ' + corrZ);
+    log('orientation correction: ' + corrZ + '° (target ' + ((targetDims && targetDims.w) || '?') + 'x' + ((targetDims && targetDims.h) || '?') + ')');
     (D.elements || []).forEach(function(el){ var sh = buildShadow(el); if (sh) wrap.appendChild(sh); var n = buildElement(el); if (n) wrap.appendChild(n); });
     anchor.appendChild(wrap);
     scene.appendChild(anchor);
