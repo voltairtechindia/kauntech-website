@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { EffectiveTier } from "@/lib/ar/db";
 import { IconExternal, IconGlobe, IconLock, IconMail, IconPencil, IconPhone, IconPlus, IconTrash } from "./icons";
+import StorageMeter from "./StorageMeter";
 
 export type CardStatus = "published" | "draft" | "none";
 
@@ -15,6 +16,9 @@ export interface DashItem {
   status: CardStatus;
   /** QR image src (custom image URL or a generated vCard QR data URL). */
   qrSrc: string | null;
+  /** True when we generated the QR (so the K logo is overlaid); false for a
+   *  user's custom uploaded QR image, which is shown exactly as-is. */
+  qrGenerated: boolean;
   phone: string | null;
   email: string | null;
   website: string | null;
@@ -35,10 +39,14 @@ export default function CardsDashboard({
   tier,
   arCap,
   items,
+  storageUsedBytes,
+  storageCapBytes,
 }: {
   tier: EffectiveTier;
   arCap: number;
   items: DashItem[];
+  storageUsedBytes: number;
+  storageCapBytes: number;
 }) {
   const router = useRouter();
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -116,6 +124,13 @@ export default function CardsDashboard({
             Each card with published 3D or media models counts toward your {TIER_LABEL[tier]} plan cap.
           </span>
         </div>
+
+        <StorageMeter
+          usedBytes={storageUsedBytes}
+          capBytes={storageCapBytes}
+          label={`${TIER_LABEL[tier]} cloud storage`}
+          hint="One budget shared by your card photos and AR models. Bigger or more detailed 3D models use more."
+        />
       </div>
 
       {error ? <p className="ar-error">{error}</p> : null}
@@ -171,8 +186,12 @@ export default function CardsDashboard({
                       ) : (
                         <span className="ar-cardface-monogram">{initialOf(item.name)}</span>
                       )}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img className="ar-cardface-qrlogo" src="/assets/Kauntech_logo.png" alt="" />
+                      {item.qrSrc && item.qrGenerated ? (
+                        // Center K badge — only on QRs we generate, matching the app.
+                        // A user's custom QR image is shown untouched.
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="ar-cardface-qrlogo" src="/assets/logo-mark.png" alt="" />
+                      ) : null}
                     </div>
                   </div>
 

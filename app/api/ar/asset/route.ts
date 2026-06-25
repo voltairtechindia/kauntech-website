@@ -24,8 +24,8 @@ function bad(error: string, status = 400) {
 
 function mapErr(message: string): { error: string; status: number } {
   if (message.includes("ar_not_available_for_tier")) return { error: "AR is a Pro / Ultra feature.", status: 403 };
-  if (message.includes("ar_storage_limit_reached")) return { error: "This would exceed your AR storage limit.", status: 413 };
-  if (message.includes("ar_storage_not_available_for_tier")) return { error: "AR storage isn’t on your plan.", status: 403 };
+  if (message.includes("ar_storage_limit_reached")) return { error: "This would exceed your cloud storage limit.", status: 413 };
+  if (message.includes("ar_storage_not_available_for_tier")) return { error: "Cloud storage isn’t on your plan.", status: 403 };
   return { error: "Upload failed. Please retry.", status: 500 };
 }
 

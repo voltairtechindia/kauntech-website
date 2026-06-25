@@ -1,16 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard, EffectiveTier } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
+import { formatBytes } from "@/lib/ar/format";
+import StorageMeter from "./StorageMeter";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
   IconImage, IconLink, IconPlus, IconRoll, IconRotate, IconScale, IconSun, IconTarget, IconText,
-  IconTilt, IconTrash, IconTurn, IconVideo, IconX, socialIcon,
+  IconTilt, IconTrash, IconTurn, IconUpload, IconVideo, IconX, socialIcon,
 } from "./icons";
 
 const SceneViewport = dynamic(() => import("./SceneViewport"), { ssr: false });
@@ -232,8 +234,26 @@ function TransformSlider({
   );
 }
 
-export default function Editor({ card, model, galleryAssets = [], tier }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; templates?: unknown }) {
+export default function Editor({ card, model, galleryAssets = [], tier, storageUsedBytes = 0, storageCapBytes = 0 }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; storageUsedBytes?: number; storageCapBytes?: number; templates?: unknown }) {
   const router = useRouter();
+  // Live AR storage budget. Seeded from the server and kept fresh: it ticks up
+  // optimistically the moment a model/image uploads, then reconciles against the
+  // authoritative DB total (profiles.cloud_ar_bytes) via /api/ar/usage — so the
+  // owner can see what's left before picking another, bigger model.
+  const [usedBytes, setUsedBytes] = useState(storageUsedBytes);
+  const [capBytes, setCapBytes] = useState(storageCapBytes);
+  const refreshUsage = useCallback(async () => {
+    try {
+      const res = await fetch("/api/ar/usage", { cache: "no-store" });
+      const json = await res.json();
+      if (res.ok && json.ok) {
+        setUsedBytes(Number(json.usedBytes) || 0);
+        setCapBytes(Number(json.capBytes) || 0);
+      }
+    } catch {
+      /* keep the optimistic value if the refresh fails */
+    }
+  }, []);
   const [elements, setElements] = useState<ArElement[]>(() => readElements(model));
   const [lighting, setLighting] = useState<ArLighting>(() => readLighting((model?.scene as { lighting?: unknown } | null)?.lighting));
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -465,6 +485,17 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
 
   async function uploadAsset(file: File, kind: "model" | "image"): Promise<string | null> {
     setError(null);
+    // Pre-check against the live budget so the owner gets an instant, specific
+    // message ("needs X, only Y left") instead of a generic server rejection —
+    // and we don't waste a multi-MB upload the trigger will refuse anyway.
+    if (capBytes > 0 && usedBytes + file.size > capBytes) {
+      setError(
+        `That ${kind === "model" ? "model" : "image"} is ${formatBytes(file.size)}, but only ${formatBytes(
+          Math.max(0, capBytes - usedBytes),
+        )} of your ${formatBytes(capBytes)} cloud storage is left. Remove a model or pick a smaller file.`,
+      );
+      return null;
+    }
     setUploading(kind);
     try {
       const fd = new FormData();
@@ -474,6 +505,9 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       const res = await fetch("/api/ar/asset", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok || !json.ok) throw new Error(json.error || "Upload failed.");
+      // Reflect the new bytes right away, then reconcile with the DB total.
+      setUsedBytes((b) => b + file.size);
+      void refreshUsage();
       return json.url as string;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
@@ -588,6 +622,9 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       const newTargetUrl = target === "back" ? newBack : newFront;
       mindBaselineRef.current = JSON.stringify([target, newTargetUrl ?? null]);
       setSavedOnce(true);
+      // A save can free bytes (the upload route deletes a replaced card photo or
+      // a stale target), so re-read the authoritative storage total.
+      void refreshUsage();
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed.");
@@ -819,6 +856,14 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
 
           {sidebarTab === "assets" && (
             <div className="ar-sidebar-tab-content fade-in">
+              {capBytes > 0 && (
+                <StorageMeter
+                  usedBytes={usedBytes}
+                  capBytes={capBytes}
+                  label={`${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim()}
+                  hint="Card photos and AR models share this budget. Pick sizes that fit what's left."
+                />
+              )}
               {/* Assets — add models, images, video, text or social, by category */}
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
                 <span className="ar-label" style={{ margin: 0 }}>Asset Library</span>
@@ -840,15 +885,22 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                 <div className="ar-asset-panel">
                   {assetTab === "model" ? (
                     <>
-                      <button className="ar-tab ar-asset-add ar-asset-gallery" onClick={() => setGalleryOpen(true)}>
-                        <span className="ar-tab-ico" aria-hidden><IconBox /></span>
-                        Choose from KaunTech gallery
+                      <button className="ar-asset-cta" onClick={() => setGalleryOpen(true)}>
+                        <span className="ar-asset-cta-ico" aria-hidden><IconBox /></span>
+                        <span className="ar-asset-cta-text">
+                          <span className="ar-asset-cta-title">Choose from KaunTech gallery</span>
+                          <span className="ar-asset-cta-sub">Ready-made 3D models — pick &amp; place instantly</span>
+                        </span>
+                        <span className="ar-asset-cta-arrow" aria-hidden><IconChevron /></span>
                       </button>
-                      <button className="ar-tab ar-asset-add ar-asset-add-ghost" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
-                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
-                        {uploading === "model" ? "Uploading…" : "Or upload your own .glb"}
+                      <button className="ar-asset-upload" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
+                        <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
+                        <span className="ar-asset-cta-text">
+                          <span className="ar-asset-upload-title">{uploading === "model" ? "Uploading…" : "Upload your own .glb"}</span>
+                          <span className="ar-asset-upload-sub">Bring a custom model from your device</span>
+                        </span>
                       </button>
-                      <span className="ar-muted ar-asset-hint">Pick a ready-made 3D model, or upload a .glb. It floats above the card and can play its animation.</span>
+                      <span className="ar-muted ar-asset-hint">Models float above the card and can play their animation.</span>
                     </>
                   ) : assetTab === "image" ? (
                     <>

@@ -21,7 +21,14 @@ export default async function ArEditorPage({
   return (
     <div className="ar-editor-page">
       <ArHeader email={data.email} />
-      <Editor card={data.card} model={data.model} galleryAssets={galleryAssets} tier={data.tier} />
+      <Editor
+        card={data.card}
+        model={data.model}
+        galleryAssets={galleryAssets}
+        tier={data.tier}
+        storageUsedBytes={data.storageUsedBytes}
+        storageCapBytes={data.storageCapBytes}
+      />
     </div>
   );
 }

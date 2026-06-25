@@ -53,10 +53,32 @@ export const AR_MODEL_CAPS: Record<EffectiveTier, number> = {
   ultra: 3,
 };
 
+// Cloud-storage budget per tier, in bytes. Mirrors _cloud_storage_cap_bytes()
+// (Free 0 / Pro 50 MB / Ultra 250 MB) — ONE budget shared by card photos
+// (cloud_image_bytes) + AR models (cloud_ar_bytes), enforced by the DB triggers
+// in 20260625120000_unify_cloud_storage_bytes. These values only drive the UI
+// meters; keep in sync with the SQL.
+export const AR_STORAGE_CAPS: Record<EffectiveTier, number> = {
+  free: 0,
+  pro: 50 * 1024 * 1024,
+  ultra: 250 * 1024 * 1024,
+};
+
+// Total cloud-storage bytes used = card photos + AR models (they share one cap).
+function usedStorageBytes(
+  profile: { cloud_image_bytes?: number | null; cloud_ar_bytes?: number | null } | null,
+): number {
+  return Number(profile?.cloud_image_bytes ?? 0) + Number(profile?.cloud_ar_bytes ?? 0);
+}
+
 export interface DashboardData {
   email: string | null;
   tier: EffectiveTier;
   arCap: number;
+  /** Cumulative AR storage used by this owner, in bytes (profiles.cloud_ar_bytes). */
+  storageUsedBytes: number;
+  /** AR storage budget for the owner's tier, in bytes (AR_STORAGE_CAPS). */
+  storageCapBytes: number;
   cards: OwnerCard[];
   models: Record<string, ArModel>; // keyed by card_id
   /** True when the cards read failed (auth/transient) — distinct from an owner
@@ -81,7 +103,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   if (!user) return null;
 
   const [{ data: profile }, { data: cards, error: cardsError }, { data: models }] = await Promise.all([
-    supabase.from("profiles").select("subscription_tier, trial_ends_at").eq("id", user.id).single(),
+    supabase.from("profiles").select("subscription_tier, trial_ends_at, cloud_ar_bytes").eq("id", user.id).single(),
     supabase
       .from("cards")
       .select(CARD_COLUMNS)
@@ -104,16 +126,48 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     email: user.email ?? null,
     tier,
     arCap: AR_MODEL_CAPS[tier],
+    storageUsedBytes: usedStorageBytes(profile),
+    storageCapBytes: AR_STORAGE_CAPS[tier],
     cards: (cards ?? []) as OwnerCard[],
     models: byCard,
     loadError: !!cardsError,
   };
 }
 
+/** Owner's live AR storage usage + their tier cap, both in bytes. Used by the
+ *  /api/ar/usage route so the editor can refresh the meter after each upload. */
+export async function getArUsage(): Promise<{ usedBytes: number; capBytes: number; tier: EffectiveTier } | null> {
+  const supabase = await createArServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes")
+    .eq("id", user.id)
+    .single();
+
+  const tier = effectiveTier(profile?.subscription_tier ?? null, profile?.trial_ends_at ?? null);
+  return {
+    usedBytes: usedStorageBytes(profile),
+    capBytes: AR_STORAGE_CAPS[tier],
+    tier,
+  };
+}
+
 /** A single card + its AR model, for the editor. Returns null if not the owner. */
 export async function getCardForEditor(
   cardId: string,
-): Promise<{ email: string | null; tier: EffectiveTier; card: OwnerCard; model: ArModel | null } | null> {
+): Promise<{
+  email: string | null;
+  tier: EffectiveTier;
+  card: OwnerCard;
+  model: ArModel | null;
+  storageUsedBytes: number;
+  storageCapBytes: number;
+} | null> {
   const supabase = await createArServerClient();
   const {
     data: { user },
@@ -130,7 +184,7 @@ export async function getCardForEditor(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, trial_ends_at")
+    .select("subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes")
     .eq("id", user.id)
     .single();
 
@@ -143,10 +197,13 @@ export async function getCardForEditor(
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const tier = effectiveTier(profile?.subscription_tier ?? null, profile?.trial_ends_at ?? null);
   return {
     email: user.email ?? null,
-    tier: effectiveTier(profile?.subscription_tier ?? null, profile?.trial_ends_at ?? null),
+    tier,
     card: card as OwnerCard,
     model: (model as ArModel) ?? null,
+    storageUsedBytes: usedStorageBytes(profile),
+    storageCapBytes: AR_STORAGE_CAPS[tier],
   };
 }

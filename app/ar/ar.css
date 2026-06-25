@@ -562,6 +562,126 @@
   font-size: 12.5px;
 }
 
+/* Primary asset action — the hero CTA in the model tab */
+.ar-asset-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  font-family: inherit;
+  text-align: left;
+  border: none;
+  border-radius: var(--ar-r-md);
+  background: linear-gradient(135deg, var(--ar-orange), var(--ar-orange-deep));
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 6px 18px var(--ar-orange-glow);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ar-asset-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px var(--ar-orange-glow);
+}
+.ar-asset-cta:active {
+  transform: translateY(0);
+}
+.ar-asset-cta-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 19px;
+}
+.ar-asset-cta-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.ar-asset-cta-title {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+.ar-asset-cta-sub {
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  opacity: 0.85;
+}
+.ar-asset-cta-arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 16px;
+  opacity: 0.9;
+  transform: rotate(-90deg);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ar-asset-cta:hover .ar-asset-cta-arrow {
+  transform: translateX(3px) rotate(-90deg);
+}
+
+/* Secondary asset action — clear upload affordance */
+.ar-asset-upload {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 14px;
+  font-family: inherit;
+  text-align: left;
+  border: 1.5px dashed var(--ar-border-hover);
+  border-radius: var(--ar-r-md);
+  background: var(--ar-surface);
+  color: var(--ar-text);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ar-asset-upload:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--ar-orange);
+  background: var(--ar-orange-soft);
+}
+.ar-asset-upload:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ar-asset-upload-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--ar-orange-soft);
+  color: var(--ar-orange);
+  font-size: 17px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ar-asset-upload:hover:not(:disabled) .ar-asset-upload-ico {
+  background: var(--ar-orange);
+  color: #ffffff;
+}
+.ar-asset-upload-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.ar-asset-upload-sub {
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ar-text-muted);
+}
+
 /* Collapsible side sections */
 .ar-collapse-card {
   border: 1px solid var(--ar-border);
@@ -1087,6 +1207,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-size: 15px;
   padding: 0 24px;
 }
+.ar-dash-bar .ar-storage {
+  flex: 1;
+  justify-content: center;
+}
 .ar-usage {
   flex: 1;
   display: flex;
@@ -1133,6 +1257,76 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: linear-gradient(to right, var(--ar-orange), var(--ar-orange-deep));
   border-radius: 9999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── AR storage meter (StorageMeter.tsx) ─────────────────────────────────── */
+.ar-storage {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-r-lg);
+  background: var(--ar-card);
+  padding: 16px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+}
+.ar-storage-compact {
+  padding: 12px 14px;
+  border-radius: var(--ar-r-md);
+  gap: 0;
+}
+.ar-storage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ar-sp-md);
+  margin-bottom: 8px;
+}
+.ar-storage-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ar-text);
+}
+.ar-storage-count {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ar-text);
+}
+.ar-storage-of {
+  color: var(--ar-text-muted);
+  font-weight: 600;
+}
+.ar-storage-meter {
+  height: 7px;
+  border-radius: 9999px;
+  background: #f4f3f0;
+  overflow: hidden;
+}
+.ar-storage-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--ar-orange), var(--ar-orange-deep));
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.ar-storage-high .ar-storage-fill {
+  background: linear-gradient(to right, #f59e0b, #d97706);
+}
+.ar-storage-full .ar-storage-fill {
+  background: linear-gradient(to right, #ef4444, var(--ar-danger));
+}
+.ar-storage-foot {
+  margin-top: 7px;
+  font-size: 12px;
+  color: var(--ar-text-muted);
+}
+.ar-storage-full .ar-storage-foot {
+  color: var(--ar-danger);
+  font-weight: 600;
+}
+.ar-storage-hint {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--ar-text-muted);
 }
 
 /* Card layout redesign */
@@ -1317,9 +1511,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 26%;
   height: 26%;
   transform: translate(-50%, -50%);
-  border-radius: 6px;
-  background: #ffffff;
-  padding: 2px;
+  border-radius: 50%;
+  /* Same orange-red badge the app draws behind the K mark (QRGenerator's
+     logoBackgroundColor="#BF4321"); the mark itself is white on transparent. */
+  background: #bf4321;
+  padding: 4%;
   object-fit: contain;
 }
 .ar-cardface-monogram {

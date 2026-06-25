@@ -44,7 +44,7 @@ function mapDbError(message: string): { error: string; status: number } {
   if (message.includes("ar_model_limit_reached"))
     return { error: "You've reached your AR model limit for this plan.", status: 403 };
   if (message.includes("ar_storage_limit_reached"))
-    return { error: "This would exceed your AR storage limit.", status: 413 };
+    return { error: "This would exceed your cloud storage limit.", status: 413 };
   return { error: "Could not save. Please try again.", status: 500 };
 }
 

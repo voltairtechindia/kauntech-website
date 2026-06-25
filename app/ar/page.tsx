@@ -8,11 +8,12 @@ export const dynamic = "force-dynamic";
 
 const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u);
 
-// Sanitize a card_color to a plain #RRGGBB (strip any alpha), default to the
-// KaunTech orange so every tile has a valid accent for its gradient border.
+// Sanitize a card_color to a plain #RRGGBB (strip any alpha). Defaults to
+// #F59E0B — the EXACT same fallback the app card uses (BusinessCardItem's
+// `item.card_color || "#F59E0B"`) so the web card's accent matches mobile.
 function toAccent(color?: string | null): string {
   if (typeof color === "string" && /^#[0-9a-fA-F]{6}/.test(color)) return color.slice(0, 7);
-  return "#f97316";
+  return "#F59E0B";
 }
 
 // Mirror the app's BusinessCardItem.buildVCard so a generated QR encodes the
@@ -30,15 +31,17 @@ function buildVCard(c: OwnerCard): string {
   return lines.join("\n");
 }
 
-// QR source for the card face, mirroring the app: a custom QR image is used as
-// is; a `qrtext:` sentinel renders its text; otherwise we generate the vCard QR.
-// Generated QRs are inlined as an SVG data URL so the client just renders <img>.
-async function qrSrcFor(c: OwnerCard): Promise<string | null> {
+// QR source for the card face, mirroring the app: a custom QR IMAGE (uploaded
+// via mobile, stored as an http url in custom_qr_url) is shown as is; a
+// `qrtext:` sentinel renders its text; otherwise we generate the vCard QR.
+// `generated` is true only for QRs we draw ourselves — the center K logo is
+// overlaid on those, but never on a user's custom image (which is shown as-is,
+// exactly like the app). Generated QRs are inlined as an SVG data URL.
+async function qrFor(c: OwnerCard): Promise<{ src: string | null; generated: boolean }> {
   const custom = c.custom_qr_url;
-  // Use a plain test (not the isHttp type guard) so `custom` keeps its
-  // string|null type for the qrtext branch below — a non-http custom QR is
-  // still a valid string (e.g. "qrtext:…").
-  if (custom && /^https?:\/\//i.test(custom)) return custom;
+  // Plain test (not the isHttp type guard) so `custom` keeps its string|null
+  // type for the qrtext branch — a non-http custom QR is still a valid string.
+  if (custom && /^https?:\/\//i.test(custom)) return { src: custom, generated: false };
   const text = custom && custom.startsWith("qrtext:") ? custom.slice("qrtext:".length) : buildVCard(c);
   try {
     const svg = await QRCode.toString(text, {
@@ -47,9 +50,9 @@ async function qrSrcFor(c: OwnerCard): Promise<string | null> {
       errorCorrectionLevel: "M",
       color: { dark: "#09090B", light: "#FFFFFF" },
     });
-    return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+    return { src: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`, generated: true };
   } catch {
-    return null;
+    return { src: null, generated: false };
   }
 }
 
@@ -57,19 +60,21 @@ export default async function ArDashboard() {
   const data = await getDashboardData();
   if (!data) redirect("/ar/login");
 
-  const { email, tier, arCap, cards, models, loadError } = data;
+  const { email, tier, arCap, storageUsedBytes, storageCapBytes, cards, models, loadError } = data;
   const canAuthor = arCap > 0;
 
   const items: DashItem[] = await Promise.all(
     cards.map(async (card) => {
       const model = models[card.id];
       const status: CardStatus = !model ? "none" : model.is_published ? "published" : "draft";
+      const qr = await qrFor(card);
       return {
         id: card.id,
         name: card.name || "Untitled card",
         subtitle: [card.title, card.company].filter(Boolean).join(" · "),
         status,
-        qrSrc: await qrSrcFor(card),
+        qrSrc: qr.src,
+        qrGenerated: qr.generated,
         phone: card.phone || null,
         email: card.email || null,
         website: card.website || null,
@@ -160,7 +165,13 @@ export default async function ArDashboard() {
             </a>
           </div>
         ) : (
-          <CardsDashboard tier={tier} arCap={arCap} items={items} />
+          <CardsDashboard
+            tier={tier}
+            arCap={arCap}
+            items={items}
+            storageUsedBytes={storageUsedBytes}
+            storageCapBytes={storageCapBytes}
+          />
         )}
       </div>
     </>
