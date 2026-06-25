@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
  * so the printed-card image MindAR tracks is consistent and free of background
  * clutter (which improves tracking). Returns a File via onConfirm.
  */
-const FRAME_W = 360;
+const FRAME_MAX = 360;
 
 export default function ImageCropper({
   file,
@@ -23,6 +23,18 @@ export default function ImageCropper({
   onConfirm: (cropped: File) => void;
   onCancel: () => void;
 }) {
+  // Responsive crop frame: shrinks to fit narrow screens (so the modal never
+  // overflows) and caps at the desktop size. All the crop math derives from
+  // FRAME_W, so it stays consistent at any width; the exported canvas is a fixed
+  // high resolution regardless of the on-screen frame size.
+  const [FRAME_W, setFrameW] = useState(() =>
+    typeof window !== "undefined" ? Math.min(FRAME_MAX, window.innerWidth - 64) : FRAME_MAX,
+  );
+  useEffect(() => {
+    const onResize = () => setFrameW(Math.min(FRAME_MAX, window.innerWidth - 64));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
   const frameH = Math.round(FRAME_W / aspect);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = useState(1);

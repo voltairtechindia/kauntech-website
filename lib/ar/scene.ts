@@ -28,8 +28,15 @@ export interface ArElement {
   position: [number, number, number];
   /** Rotation around the Y axis (turn), in radians. Always present. */
   rotationY: number;
-  /** Rotation around the X axis (tilt forward/back), in radians. */
+  /** Rotation around the X axis (tilt forward/back), in radians. This is the
+   *  USER's tilt offset — it starts at 0 (upright). */
   rotationX?: number;
+  /** Auto stand-up tilt baked at add time (radians, X axis), analogous to
+   *  baseScale: models are authored Y-up but the card face is the ground, so a
+   *  model needs +90° about X to stand upright. Effective tilt = baseRotationX +
+   *  rotationX, so the user's Tilt slider is a clean offset from upright. Absent →
+   *  0 (legacy elements baked the stand tilt into rotationX itself). */
+  baseRotationX?: number;
   /** Rotation around the Z axis (roll), in radians. */
   rotationZ?: number;
   /** User-facing size as a MULTIPLIER of baseScale (1 = the auto-fit size). */
@@ -40,6 +47,9 @@ export interface ArElement {
   baseScale?: number;
   /** Play GLB animations (avatars). */
   animated?: boolean;
+  /** Playback-rate multiplier for the model's animation AND self-rotate spin
+   *  (1 = normal, 2 = twice as fast, 0.5 = half). Absent → 1. */
+  animationSpeed?: number;
   /** Continuously self-rotate in the published view. */
   spin?: boolean;
   /** Hide from the scene and the published view (draft element). */

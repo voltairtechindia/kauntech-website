@@ -9,14 +9,13 @@ import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import {
   IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
-  IconImage, IconLink, IconMove, IconPlus, IconRotate, IconScale, IconSun, IconTarget, IconText,
-  IconTrash, IconVideo, IconX, socialIcon,
+  IconImage, IconLink, IconPlus, IconRoll, IconRotate, IconScale, IconSun, IconTarget, IconText,
+  IconTilt, IconTrash, IconTurn, IconVideo, IconX, socialIcon,
 } from "./icons";
 
 const SceneViewport = dynamic(() => import("./SceneViewport"), { ssr: false });
 const ImageCropper = dynamic(() => import("./ImageCropper"), { ssr: false });
 const GalleryPicker = dynamic(() => import("./GalleryPicker"), { ssr: false });
-type TransformMode = "translate" | "rotate" | "scale";
 type Side = "front" | "back";
 
 interface SceneCard {
@@ -55,8 +54,10 @@ const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
 // down to be scanned, IS that ground — so a model dropped in with no tilt has its
 // up-axis lying in the card plane and ends up on its side ("sleeping"). Standing
 // it up means turning the model's +Y to point out of the card face (+Z): a +90°
-// pitch about X. Baked into every model on add so they arrive standing; the Tilt
-// slider can still override it per-model.
+// pitch about X. This is a CODE-level baseline (stored in the element's
+// baseRotationX, like baseScale), NOT a user value — so the Tilt slider starts at
+// 0 (upright) and is a clean offset on top of it. Effective tilt = baseRotationX +
+// rotationX, applied in both the editor preview and the viewer.
 const MODEL_STAND_TILT_X = Math.PI / 2;
 
 // Measure a glb and return the scale that makes its largest dimension ≈ TARGET
@@ -98,7 +99,17 @@ async function ocrImageSrc(src: File | string): Promise<string> {
 
 function readElements(model: ArModel | null): ArElement[] {
   const raw = (model?.scene as { elements?: unknown })?.elements;
-  return Array.isArray(raw) ? (raw as ArElement[]) : [];
+  if (!Array.isArray(raw)) return [];
+  // Migrate legacy models: the +90° stand tilt used to be baked into rotationX
+  // itself, so the Tilt slider opened at 90. Move that baseline into
+  // baseRotationX and make rotationX a clean offset (preserving the effective
+  // tilt for ANY stored value), so the slider opens at 0 = upright. Only touches
+  // models with no baseRotationX yet; new/already-migrated elements are untouched.
+  return (raw as ArElement[]).map((el) =>
+    el.type === "model" && el.baseRotationX === undefined
+      ? { ...el, baseRotationX: MODEL_STAND_TILT_X, rotationX: (el.rotationX ?? 0) - MODEL_STAND_TILT_X }
+      : el,
+  );
 }
 
 function typeLabel(el: ArElement): string {
@@ -227,7 +238,6 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
   const [lighting, setLighting] = useState<ArLighting>(() => readLighting((model?.scene as { lighting?: unknown } | null)?.lighting));
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [assetTab, setAssetTab] = useState<AssetTab>("model");
-  const [mode, setMode] = useState<TransformMode>("translate");
   const [name, setName] = useState(model?.name ?? card.name ?? "");
   const [sidebarTab, setSidebarTab] = useState<"setup" | "assets" | "layers">("setup");
   const [propsTab, setPropsTab] = useState<"settings" | "layout">("layout");
@@ -478,7 +488,7 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
     const url = await uploadAsset(file, "model");
     if (!url) return;
     const baseScale = await fitScaleFor(url);
-    add({ type: "model", url, animated: true, baseScale, scale: 1, rotationX: MODEL_STAND_TILT_X, rotationY: 0, position: [0, 0.22, 0.12] });
+    add({ type: "model", url, animated: true, baseScale, scale: 1, baseRotationX: MODEL_STAND_TILT_X, rotationX: 0, rotationY: 0, position: [0, 0.22, 0.12] });
   }
   async function onPickImage(file?: File) {
     if (!file) return;
@@ -504,7 +514,8 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       animated: a.animated ?? false,
       baseScale,
       scale: 1,
-      rotationX: MODEL_STAND_TILT_X,
+      baseRotationX: MODEL_STAND_TILT_X,
+      rotationX: 0,
       rotationY: 0,
       position: [0, 0.22, 0.12],
       // Social "coin" models carry their platform so the link field offers the
@@ -512,14 +523,6 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
       ...(a.platform ? { platform: a.platform, link: "" } : {}),
     });
   }
-  // Manual rescue for any model that's still the wrong size (e.g. one placed
-  // before auto-fit existed): re-measure and reset to the 1× fitted size.
-  async function fitToCard(el: ArElement) {
-    if (el.type !== "model" || !el.url) return;
-    const baseScale = await fitScaleFor(el.url);
-    update(el.id, { baseScale, scale: 1 });
-  }
-
   async function save() {
     setError(null);
     if (!hasTarget) {
@@ -651,7 +654,10 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
         </div>
         <div className="ar-row">
           {prep ? <span className="ar-muted">{prep}</span> : ocrBusy ? <span className="ar-muted">Reading card text…</span> : null}
-          <a className="ar-btn ar-btn-ghost" href="/ar">← All cards</a>
+          <a className="ar-btn ar-btn-ghost ar-editor-back" href="/ar" title="All cards" aria-label="All cards">
+            <span className="ar-editor-back-full">← All cards</span>
+            <span className="ar-editor-back-mini" aria-hidden>←</span>
+          </a>
           {dirty ? (
             <button className="ar-btn ar-btn-primary" onClick={save} disabled={busy}>
               {busy ? "Publishing…" : "Save & publish"}
@@ -912,11 +918,9 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
           <SceneViewport
             elements={elements}
             selectedId={selectedId}
-            mode={mode}
             referenceImageUrl={trackableCardPhoto}
             cardColor={viewportCardColor}
             onSelect={setSelectedId}
-            onTransform={(id, t) => update(id, { position: t.position, rotationX: t.rotationX, rotationY: t.rotationY, rotationZ: t.rotationZ, scale: t.scale })}
           />
           {trackableCardPhoto ? (
             <div className="ar-stage-thumb" title="The printed card the AR tracks">
@@ -938,8 +942,16 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
             <div className="ar-card ar-stack">
               <div className="ar-row ar-between" style={{ borderBottom: "1px solid var(--ar-border)", paddingBottom: "12px" }}>
                 <span className="ar-label" style={{ margin: 0 }}>{typeLabel(selected)} Properties</span>
-                <button className="ar-icon-btn-bordered" style={{ height: "28px", padding: "0 10px", fontSize: "12px" }} title="Duplicate layer" onClick={() => duplicate(selected.id)}>
-                  <IconCopy /> Duplicate
+                {/* Closes the bottom sheet on small screens (deselects the layer).
+                    Hidden on desktop via CSS — the side panel needs no close there. */}
+                <button
+                  type="button"
+                  className="ar-icon-btn ar-props-close"
+                  title="Close properties"
+                  aria-label="Close properties"
+                  onClick={() => setSelectedId(null)}
+                >
+                  <IconX />
                 </button>
               </div>
 
@@ -1062,6 +1074,21 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                     </div>
                   )}
 
+                  {/* Animation Speed (Model Specific Setting) */}
+                  {selected.type === "model" && (
+                    <div className="ar-card ar-stack" style={{ gap: 8, padding: "12px", border: "1px solid var(--ar-border)", background: "var(--ar-orange-soft)" }}>
+                      <span className="ar-label" style={{ margin: 0 }}>Animation Speed</span>
+                      <TransformSlider
+                        icon={<IconRotate />} label="Speed" unit="×"
+                        value={selected.animationSpeed ?? 1} min={0.1} max={4} step={0.1} fixed={1}
+                        onChange={(v) => update(selected.id, { animationSpeed: Math.max(0.1, Math.min(8, v)) })}
+                      />
+                      <span className="ar-muted" style={{ fontSize: "11px" }}>
+                        How fast the model’s animation and self-rotate play in AR. 1× is normal.
+                      </span>
+                    </div>
+                  )}
+
                   <button className="ar-btn ar-btn-ghost ar-btn-sm ar-del-full" style={{ marginTop: "12px" }} onClick={() => remove(selected.id)}>
                     <IconTrash /> Delete Element
                   </button>
@@ -1070,23 +1097,8 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
 
               {propsTab === "layout" && (
                 <div className="ar-properties-tab-content fade-in ar-stack">
-                  {/* Viewport gizmo mode — drag the handle in the 3D view instead. */}
-                  <div>
-                    <span className="ar-label">Gizmo dragging tool</span>
-                    <div className="ar-row" style={{ gap: 6 }}>
-                      {(["translate", "rotate", "scale"] as TransformMode[]).map((m) => (
-                        <button key={m} className={`ar-btn ar-btn-sm ar-mode-btn ${mode === m ? "ar-btn-primary" : "ar-btn-ghost"}`}
-                          onClick={() => setMode(m)}>
-                          <span className="ar-mode-ico" aria-hidden>
-                            {m === "translate" ? <IconMove /> : m === "rotate" ? <IconRotate /> : <IconScale />}
-                          </span>
-                          {m === "translate" ? "Move" : m === "rotate" ? "Rotate" : "Scale"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Position — left/right, up/down, depth. Drag or type exact values. */}
+                  {/* Position — left/right, up/down, depth. Drag the dots in the 3D
+                      view or type exact values. */}
                   <div className="ar-transform-group">
                     <span className="ar-label">Position Alignment</span>
                     {/* Land orientation: X = across the card, Z (card-depth) = height
@@ -1116,17 +1128,17 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                   <div className="ar-transform-group">
                     <span className="ar-label">Rotation Alignment</span>
                     <TransformSlider
-                      icon={<IconRotate />} label="Tilt" unit="°X"
+                      icon={<IconTilt />} label="Tilt" unit="°X"
                       value={toDeg(selected.rotationX ?? 0)} min={-180} max={180} step={1} fixed={0}
                       onChange={(v) => update(selected.id, { rotationX: toRad(v) })}
                     />
                     <TransformSlider
-                      icon={<IconRotate />} label="Turn" unit="°Y"
+                      icon={<IconTurn />} label="Turn" unit="°Y"
                       value={degY} min={-180} max={180} step={1} fixed={0}
                       onChange={(v) => update(selected.id, { rotationY: toRad(v) })}
                     />
                     <TransformSlider
-                      icon={<IconRotate />} label="Roll" unit="°Z"
+                      icon={<IconRoll />} label="Roll" unit="°Z"
                       value={toDeg(selected.rotationZ ?? 0)} min={-180} max={180} step={1} fixed={0}
                       onChange={(v) => update(selected.id, { rotationZ: toRad(v) })}
                     />
@@ -1140,15 +1152,9 @@ export default function Editor({ card, model, galleryAssets = [], tier }: { card
                     <span className="ar-label">Size Scale</span>
                     <TransformSlider
                       icon={<IconScale />} label="Scale" unit="×"
-                      value={selected.scale} min={0.1} max={3} step={0.05} fixed={2}
-                      onChange={(v) => update(selected.id, { scale: Math.max(0.1, v) })}
+                      value={selected.scale} min={0.1} max={10} step={0.05} fixed={2}
+                      onChange={(v) => update(selected.id, { scale: Math.max(0.1, Math.min(40, v)) })}
                     />
-                    {selected.type === "model" && selected.url ? (
-                      <button className="ar-btn ar-btn-ghost ar-btn-sm" style={{ marginTop: 8 }}
-                        onClick={() => fitToCard(selected)}>
-                        <IconScale /> Fit to card
-                      </button>
-                    ) : null}
                     <span className="ar-muted" style={{ fontSize: "11px", marginTop: "2px", display: "block" }}>
                       Alters element scale dimensions relative to the card's bounding boundaries.
                     </span>

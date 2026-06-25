@@ -435,6 +435,12 @@
   width: 328px;
   flex: none;
 }
+/* Affordances that only appear in the small-screen layouts (see the media
+   queries at the foot of this file). Hidden on desktop so the perfect
+   3-pane layout is untouched. The .ar-props-close selector is kept specific
+   enough to beat the .ar-icon-btn display it also carries. */
+.ar-props .ar-props-close { display: none; }
+.ar-editor-back-mini { display: none; }
 .ar-props-empty {
   display: flex;
   flex-direction: column;
@@ -777,16 +783,6 @@
   border-radius: 3px;
   background: #e7e5e4;
   outline: none;
-}
-.ar-mode-btn {
-  flex: 1;
-  gap: 6px;
-  font-size: 13.5px;
-  padding: 8px 12px;
-}
-.ar-mode-ico {
-  display: inline-flex;
-  font-size: 14px;
 }
 
 /* Target Side Picker (Front/Back upload target cards) */
@@ -1508,7 +1504,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
 }
 
+/* ───────────────────────────────────────────────────────────────────────
+   Responsive — tablet & phone (≤900px). The desktop layout (>900px) is
+   deliberately left untouched. On small screens the editor stops being a
+   fixed 3-pane desk and becomes one vertical scroll with:
+     • a compact topbar pinned to the top (Save always reachable),
+     • a sticky 3D stage that stays in view while you scroll the controls
+       (so you watch your scene update as you drag sliders, like desktop),
+     • a properties panel that rises as a bottom sheet, so it's reachable
+       no matter whether you selected a layer in the canvas or the list.
+   ─────────────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
+  /* Dashboard: usage meter + "Add card" stack */
   .ar-dash-bar {
     flex-direction: column;
   }
@@ -1516,32 +1523,219 @@ input[type="range"]::-webkit-slider-thumb:hover {
     width: 100%;
     padding: 14px;
   }
+
+  /* ── Editor shell becomes a scrolling document ── */
   .ar-editor-page {
     height: auto;
     overflow: visible;
+    --ar-topbar-h: 56px;
   }
+  /* Let the page scroll; the brand bar scrolls away so the editor topbar
+     can pin to the very top of the viewport. */
+  .ar-editor-page .ar-header {
+    position: static;
+  }
+  .ar-editor-main {
+    overflow: visible;
+  }
+
+  /* Compact, pinned topbar so the title + Save stay in reach */
+  .ar-editor-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    gap: var(--ar-sp-sm);
+    padding: 8px var(--ar-sp-lg);
+    min-height: var(--ar-topbar-h);
+  }
+  .ar-topbar-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .ar-topbar-title .ar-h1 {
+    font-size: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Subtitle, tier badge and background status text are noise on a tight bar */
+  .ar-topbar-title .ar-muted,
+  .ar-topbar-title .ar-badge {
+    display: none;
+  }
+  .ar-editor-topbar > .ar-row {
+    flex: none;
+    gap: var(--ar-sp-sm);
+  }
+  .ar-editor-topbar > .ar-row > .ar-muted {
+    display: none;
+  }
+  .ar-editor-topbar .ar-btn {
+    padding: 9px 14px;
+    font-size: 13.5px;
+  }
+  /* The "All cards" back link collapses to just its arrow */
+  .ar-editor-back-full {
+    display: none;
+  }
+  .ar-editor-back-mini {
+    display: inline;
+  }
+
+  .ar-editor-error {
+    margin: var(--ar-sp-sm) var(--ar-sp-lg) 0;
+  }
+
+  /* ── Workspace: single column ── */
   .ar-workspace {
     flex-direction: column;
     padding: var(--ar-sp-md);
+    gap: var(--ar-sp-md);
     height: auto;
     overflow: visible;
   }
-  .ar-side,
-  .ar-props {
+
+  /* The 3D stage pins just under the topbar and stays visible while the
+     controls scroll underneath it — the heart of the mobile editor. */
+  .ar-stage {
+    order: -1;
+    position: sticky;
+    top: var(--ar-topbar-h);
+    height: 42vh;
+    min-height: 240px;
+    flex: none;
+    z-index: 5;
+    border-radius: var(--ar-r-lg);
+  }
+
+  .ar-side {
     width: 100%;
     min-width: 0;
     max-width: none;
     overflow: visible;
     padding: 0;
+    margin-right: 0;
   }
-  .ar-props-empty {
-    margin-top: 8px;
-    height: auto;
+  .ar-side-scroll-content {
+    overflow: visible;
+    padding-right: 0;
   }
-  .ar-stage {
-    height: 50vh;
-    flex: none;
-    order: -1;
+
+  /* Properties → bottom sheet. `.is-open` is already toggled by the editor
+     whenever a layer is selected, so this needs no JS. */
+  .ar-props {
+    margin-left: 0;
+    padding-left: 0;
+  }
+  .ar-props:not(.is-open) {
+    display: none;
+  }
+  .ar-props.is-open {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    max-height: 60vh;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--ar-surface);
+    border-top: 1px solid var(--ar-border);
+    border-radius: var(--ar-r-xl) var(--ar-r-xl) 0 0;
+    box-shadow: 0 -16px 48px rgba(27, 25, 23, 0.22);
+    z-index: 60;
+    opacity: 1;
+    pointer-events: auto;
+    animation: arSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* Grab-handle pill, pinned to the top of the scrolling sheet */
+  .ar-props.is-open::before {
+    content: "";
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: block;
+    height: 20px;
+    background: var(--ar-surface);
+    background-image: linear-gradient(var(--ar-border-hover), var(--ar-border-hover));
+    background-repeat: no-repeat;
+    background-size: 38px 4px;
+    background-position: center 8px;
+    border-radius: var(--ar-r-xl) var(--ar-r-xl) 0 0;
+  }
+  .ar-props.is-open .ar-card {
+    width: 100%;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 var(--ar-sp-lg) calc(var(--ar-sp-xl) + env(safe-area-inset-bottom, 0px));
+  }
+  /* Mobile-only close button inside the properties header */
+  .ar-props.is-open .ar-props-close {
+    display: inline-flex;
+  }
+}
+
+@keyframes arSheetUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ── Phone polish (≤600px): tighter type, single-column grids, modal fits ── */
+@media (max-width: 600px) {
+  .ar-container {
+    padding: var(--ar-sp-xl) var(--ar-sp-lg) 72px;
+  }
+  .ar-header {
+    padding: var(--ar-sp-md) var(--ar-sp-lg);
+  }
+  .ar-brand {
+    font-size: 18px;
+  }
+  .ar-h1 {
+    font-size: 24px;
+  }
+  .ar-sub {
+    font-size: 15px;
+  }
+  .ar-context-card {
+    padding: var(--ar-sp-lg);
+  }
+  .ar-context-steps {
+    gap: var(--ar-sp-lg);
+  }
+
+  /* Dashboard cards: one comfortable column */
+  .ar-grid {
+    grid-template-columns: 1fr;
+    gap: var(--ar-sp-lg);
+  }
+
+  .ar-editor-topbar .ar-btn {
+    padding: 8px 12px;
+  }
+
+  /* Modals fit the viewport, scroll if they're taller than the screen */
+  .ar-modal-overlay {
+    padding: 12px;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+  .ar-modal {
+    padding: var(--ar-sp-lg);
+    width: 100%;
+  }
+  .ar-gallery-modal {
+    padding: var(--ar-sp-lg);
+    width: 100%;
+    max-height: 88vh;
+  }
+  .ar-gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
   }
 }
 

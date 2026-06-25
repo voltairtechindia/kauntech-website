@@ -7,15 +7,25 @@
  *
  * Standalone HTML loaded by the app's WebView. Scene model = the SAME A-Frame
  * element set the editor produces; only the tracking SYSTEM differs from before:
- *   <a-scene xrweb>  +  <xrextras-named-image-target>.
+ *   <a-scene xrweb>  +  a custom kt-image-anchor entity.
+ *
+ * The anchor is OUR component (kt-image-anchor, defined in buildScene), NOT
+ * xrextras-named-image-target: the xrextras one hides content the instant the
+ * image is lost and hard-copies the raw pose every frame (= flashing + shimmer,
+ * and the model "slips" the moment the card leaves frame). Ours smooths the pose,
+ * rejects lone outlier frames, and — with World Tracking on — holds the model in
+ * place via SLAM through image losses, so it stays glued at oblique angles and
+ * never blinks out. It listens to the same low-level engine events
+ * (xrimagefound/updated/lost), so it needs no extra library.
  *
  * Engine pieces (all allowed by the /ar CSP):
  *  - 8frame 1.5.0 — 8th Wall's A-Frame build (vendored to /ar8; bundles the xrweb
  *    integration vanilla A-Frame lacks).
- *  - @8thwall/engine-binary — camera + SLAM ("data-preload-chunks=slam").
- *  - @8thwall/xrextras — provides xrextras-named-image-target. We do NOT use its
- *    off-theme loading / landing-page / runtime-error UI: this page draws its own
- *    KaunTech-themed loader + permission gate instead.
+ *  - @8thwall/engine-binary — camera + SLAM ("data-preload-chunks=slam"), and the
+ *    source of the xrimagefound/updated/lost scene events kt-image-anchor consumes.
+ *  - @8thwall/xrextras — still loaded for its scene plumbing, but we no longer use
+ *    its named-image-target or its off-theme loading / landing-page / runtime-error
+ *    UI: this page draws its own KaunTech-themed loader + permission gate instead.
  *
  * CROSS-DEVICE START: World Tracking needs the device IMU. Android Chrome grants
  * DeviceMotion silently, but iOS (incl. in WKWebView) requires a USER GESTURE to
@@ -284,7 +294,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
     // animation-mixer: A-Frame core has none, so this tiny component loops GLB clips.
     if (AFRAME.registerComponent && !AFRAME.components['animation-mixer']){
       AFRAME.registerComponent('animation-mixer', {
-        schema: { clip: { default: '*' }, loop: { default: 'repeat' } },
+        schema: { clip: { default: '*' }, loop: { default: 'repeat' }, timeScale: { default: 1 } },
         init: function(){
           var self = this; this.mixer = null;
           this.el.addEventListener('model-loaded', function(e){
@@ -296,7 +306,106 @@ export function eightwallViewerHtml(view: EightwallView): string {
             } catch(err){ log('mixer err: ' + (err && err.message)); }
           });
         },
-        tick: function(t, dt){ if (this.mixer && dt) this.mixer.update(dt / 1000); }
+        // timeScale multiplies playback rate (set per-element from animationSpeed).
+        tick: function(t, dt){ if (this.mixer && dt) this.mixer.update((dt / 1000) * (this.data.timeScale || 1)); }
+      });
+    }
+
+    // kt-image-anchor — our OWN image-target anchor (replaces xrextras-named-image-
+    // target). xrextras hides content the instant the image is lost and hard-copies
+    // the raw pose every frame; that is exactly the flashing + shimmer and it means
+    // content is NOT actually held by SLAM at oblique angles. This instead:
+    //  - SMOOTHS the pose with a velocity-adaptive low-pass (heavy when nearly still
+    //    to kill jitter, light when moving to stay responsive) so it doesn't shimmer;
+    //  - REJECTS lone outlier frames (2-frame confirm before a big jump) so a single
+    //    tracking glitch can't pop the model across the scene;
+    //  - PERSISTS through image loss when World Tracking is on — SLAM keeps the world
+    //    pose, so the model stays glued and never blinks out / "slips" when the card
+    //    leaves frame or you look from a steep angle. It only re-snaps to correct
+    //    drift when the image is re-acquired;
+    //  - in image-only mode (no IMU) keeps the model for a short GRACE window after a
+    //    loss before hiding, so brief losses (motion blur, a finger) don't flash.
+    // It listens to the same low-level scene events xrextras consumes
+    // (xrimagefound/updated/lost, emitted by the 8th Wall engine), and re-emits
+    // xrextrasfound/xrextraslost so the existing hint UI keeps working — but it only
+    // emits "lost" when the content is ACTUALLY hidden, so SLAM persistence never
+    // nags "point at the card" while the model is happily glued.
+    if (AFRAME.registerComponent && !AFRAME.components['kt-image-anchor']){
+      AFRAME.registerComponent('kt-image-anchor', {
+        schema: {
+          name:     { default: 'card' },
+          persist:  { default: true },   // World Tracking on -> hold pose through loss
+          grace:    { default: 600 },    // image-only: ms to keep showing after loss
+          tauMove:  { default: 55 },     // ms low-pass time-constant while moving
+          tauStill: { default: 170 },    // ms low-pass while near-still (kills jitter)
+          snap:     { default: 0.18 }    // m jump that forces a re-snap (2-frame confirm)
+        },
+        init: function(){
+          var THREE = AFRAME.THREE;
+          this.tPos = new THREE.Vector3();
+          this.tQuat = new THREE.Quaternion();
+          this.tScale = 1;
+          this.has = false;        // have a target pose yet
+          this.shown = false;      // content currently visible
+          this.snapNext = false;   // copy (no lerp) on next applied pose
+          this.outliers = 0;       // consecutive big-jump frames seen
+          this.hideAt = 0;         // ts to hide at (image-only grace); 0 = none
+          this.el.object3D.visible = false; // hidden until first acquisition
+          var self = this, sc = this.el.sceneEl;
+          this.onPose = function(e){
+            var d = e && e.detail; if (!d || d.name !== self.data.name || !d.position) return;
+            if (self.has && !self.snapNext){
+              var dist = self.tPos.distanceTo(d.position); // vs last TARGET, not displayed
+              if (dist > self.data.snap){
+                if (++self.outliers < 2) return; // lone glitch frame -> ignore entirely
+                self.snapNext = true;            // confirmed real jump -> snap to it
+              } else { self.outliers = 0; }
+            }
+            self.tPos.copy(d.position);
+            if (d.rotation) self.tQuat.copy(d.rotation);
+            if (typeof d.scale === 'number') self.tScale = d.scale;
+            self.hideAt = 0;
+            window.__ARSTATE__ = 'TRACKING';
+            if (!self.shown){ self.shown = true; self.el.object3D.visible = true; self.snapNext = true; self.el.emit('xrextrasfound', {}, false); }
+            self.has = true;
+          };
+          this.onLost = function(e){
+            var d = e && e.detail; if (!d || d.name !== self.data.name) return;
+            if (self.data.persist){ window.__ARSTATE__ = 'PERSIST'; return; } // SLAM holds it
+            if (self.shown && !self.hideAt) self.hideAt = performance.now() + self.data.grace;
+          };
+          sc.addEventListener('xrimagefound', this.onPose);
+          sc.addEventListener('xrimageupdated', this.onPose);
+          sc.addEventListener('xrimagelost', this.onLost);
+        },
+        tick: function(t, dt){
+          if (!this.has) return;
+          var o = this.el.object3D;
+          if (this.hideAt && performance.now() >= this.hideAt){
+            this.hideAt = 0; this.shown = false; o.visible = false;
+            window.__ARSTATE__ = 'LOST'; this.el.emit('xrextraslost', {}, false);
+            return;
+          }
+          if (!o.visible) return;
+          if (this.snapNext){
+            o.position.copy(this.tPos); o.quaternion.copy(this.tQuat);
+            o.scale.set(this.tScale, this.tScale, this.tScale);
+            this.snapNext = false; return;
+          }
+          var ms = dt || 16;
+          var tau = o.position.distanceTo(this.tPos) < 0.004 ? this.data.tauStill : this.data.tauMove;
+          var a = 1 - Math.exp(-ms / tau); if (a > 1) a = 1; else if (a < 0) a = 0;
+          o.position.lerp(this.tPos, a);
+          o.quaternion.slerp(this.tQuat, a);
+          var s = o.scale.x + (this.tScale - o.scale.x) * a;
+          o.scale.set(s, s, s);
+        },
+        remove: function(){
+          var sc = this.el.sceneEl;
+          sc.removeEventListener('xrimagefound', this.onPose);
+          sc.removeEventListener('xrimageupdated', this.onPose);
+          sc.removeEventListener('xrimagelost', this.onLost);
+        }
       });
     }
 
@@ -321,11 +430,33 @@ export function eightwallViewerHtml(view: EightwallView): string {
       return sh;
     }
     function rad2deg(r){ return (r || 0) * 180 / Math.PI; }
+    // Per-model brightness: multiply each material's base color by brightness/1.2
+    // (1.2 = the neutral baseline the editor preview uses), so a model that looks
+    // dark in AR can be lifted — matching the editor's Model Brightness slider.
+    // Materials are CLONED first so two elements sharing a GLB can't tint each other.
+    function applyBrightness(node, brightness){
+      var f = (Number(brightness) > 0 ? Number(brightness) : 1.2) / 1.2;
+      if (Math.abs(f - 1) < 0.001) return; // neutral -> nothing to do
+      node.addEventListener('model-loaded', function(e){
+        try {
+          var root = e.detail && e.detail.model; if (!root || !root.traverse) return;
+          root.traverse(function(o){
+            if (!o.isMesh || !o.material) return;
+            var mats = Array.isArray(o.material) ? o.material : [o.material];
+            var out = mats.map(function(m){
+              var c = m.clone(); if (c.color && c.color.multiplyScalar) c.color.multiplyScalar(f); return c;
+            });
+            o.material = Array.isArray(o.material) ? out : out[0];
+          });
+        } catch(err){ log('brightness err: ' + (err && err.message)); }
+      });
+    }
     function buildElement(el){
       var node;
       if (el.type === 'model' && el.url){
         node = document.createElement('a-gltf-model'); node.setAttribute('src', el.url);
-        if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat');
+        if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat; timeScale: ' + (Number(el.animationSpeed) > 0 ? el.animationSpeed : 1));
+        applyBrightness(node, el.brightness);
       } else if (el.type === 'image' && el.url){
         node = document.createElement('a-image'); node.setAttribute('src', el.url); node.setAttribute('width', 0.3); node.setAttribute('height', 0.3);
       } else if (el.type === 'social'){
@@ -345,10 +476,22 @@ export function eightwallViewerHtml(view: EightwallView): string {
       if (!node) return null;
       var p = el.position || [0, 0, 0.15];
       node.setAttribute('position', p[0] + ' ' + p[1] + ' ' + p[2]);
-      node.setAttribute('rotation', rad2deg(el.rotationX) + ' ' + rad2deg(el.rotationY) + ' ' + rad2deg(el.rotationZ));
+      // Effective tilt = baseRotationX (code-level stand-up baseline) + rotationX
+      // (the user's offset). Legacy elements have no baseRotationX (0) and keep the
+      // tilt baked into rotationX, so both schemes render upright.
+      node.setAttribute('rotation', rad2deg((el.rotationX || 0) + (el.baseRotationX || 0)) + ' ' + rad2deg(el.rotationY) + ' ' + rad2deg(el.rotationZ));
       var s = (el.baseScale || 1) * (el.scale || 1);
       node.setAttribute('scale', s + ' ' + s + ' ' + s);
-      if (el.spin) node.setAttribute('animation__spin', 'property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear');
+      // Self-rotate: spin Y only, PRESERVING the element's tilt (X) and roll (Z).
+      // (The old 'to: 0 360 0' animated the whole vector, flattening any tilt to 0
+      // mid-spin — very visible now that every model is tilted 90° by default.)
+      if (el.spin){
+        var rx = rad2deg((el.rotationX || 0) + (el.baseRotationX || 0));
+        var ry = rad2deg(el.rotationY);
+        var rz = rad2deg(el.rotationZ);
+        var spinDur = Math.max(200, Math.round(6000 / (Number(el.animationSpeed) > 0 ? el.animationSpeed : 1)));
+        node.setAttribute('animation__spin', 'property: rotation; from: ' + rx + ' ' + ry + ' ' + rz + '; to: ' + rx + ' ' + (ry + 360) + ' ' + rz + '; loop: true; dur: ' + spinDur + '; easing: linear');
+      }
       if (el.link){ node.classList.add('clickable'); node.addEventListener('click', function(){ window.open(el.link, '_blank'); }); }
       return node;
     }
@@ -373,16 +516,59 @@ export function eightwallViewerHtml(view: EightwallView): string {
     var dir = light('type: directional; intensity: ' + (1.1 * B).toFixed(3)); dir.setAttribute('position', '1 2 1'); scene.appendChild(dir);
     var fill = light('type: directional; intensity: ' + (0.5 * B).toFixed(3)); fill.setAttribute('position', '-1 1 -1'); scene.appendChild(fill);
 
-    // Image-target anchor. Calibration wrapper (UNIT) corrects any unit mismatch
-    // vs the editor; for a LANDSCAPE card MindAR (width=1) and 8th Wall
-    // (longer-side=1) agree, so 1.0 should line up.
+    // Soft image-based lighting (IBL) so glossy/metallic models (e.g. a car body)
+    // get believable reflections instead of flat shading — MATCHING the editor
+    // preview, which uses a drei <Environment>. Built ONCE from an in-memory
+    // gradient (no HDR download): canvas equirect -> PMREM -> scene.environment.
+    // Best-effort; any failure just leaves the analytic lights (slightly flatter,
+    // never broken). Runs on realityready, when 8th Wall's renderer exists.
+    function applyEnv(){
+      try {
+        if (scene.__envDone) return;
+        var renderer = scene.renderer; if (!renderer) return;
+        var THREE = AFRAME.THREE; if (!THREE || !THREE.PMREMGenerator) return;
+        scene.__envDone = true;
+        var c = document.createElement('canvas'); c.width = 64; c.height = 32;
+        var g = c.getContext('2d'); if (!g) return;
+        var grd = g.createLinearGradient(0, 0, 0, 32);
+        grd.addColorStop(0.0, '#ffffff');   // overhead key
+        grd.addColorStop(0.45, '#e8edf5');
+        grd.addColorStop(0.75, '#aab2c0');
+        grd.addColorStop(1.0, '#6b7280');   // ground
+        g.fillStyle = grd; g.fillRect(0, 0, 64, 32);
+        var tex = new THREE.CanvasTexture(c);
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        var pmrem = new THREE.PMREMGenerator(renderer);
+        var rt = pmrem.fromEquirectangular(tex);
+        scene.object3D.environment = rt.texture;
+        tex.dispose(); pmrem.dispose();
+        log('env (IBL) applied');
+      } catch(e){ log('env err: ' + (e && e.message)); }
+    }
+
+    // Image-target anchor (our kt-image-anchor — see component above). Calibration
+    // wrapper (UNIT) corrects any unit mismatch vs the editor; for a LANDSCAPE card
+    // MindAR (width=1) and 8th Wall (longer-side=1) agree, so 1.0 should line up.
+    // persist = effective world-tracking (SLAM holds the model through image loss).
+    // The smoothing/grace/snap params are tunable on-device via query string
+    // (?taumove= ?taustill= ?grace= ?snap= ?persist=) so they can be dialled in
+    // without a redeploy, same pattern as ?cal= / ?debug=.
     var UNIT = 1.0;
-    var anchor = document.createElement('xrextras-named-image-target');
-    anchor.setAttribute('name', (D.target && D.target.name) || 'card');
+    var qNum = function(k){ try { var m = new RegExp('[?&]' + k + '=(-?\\d+(?:\\.\\d+)?)', 'i').exec(location.search); return m ? parseFloat(m[1]) : null; } catch(e){ return null; } };
+    var pOv = qNum('persist');
+    var anchorCfg = 'name: ' + ((D.target && D.target.name) || 'card') +
+      '; persist: ' + ((pOv !== null ? pOv : (wt ? 1 : 0)) ? 'true' : 'false');
+    var ov = { grace: qNum('grace'), tauMove: qNum('taumove'), tauStill: qNum('taustill'), snap: qNum('snap') };
+    Object.keys(ov).forEach(function(k){ if (ov[k] !== null) anchorCfg += '; ' + k + ': ' + ov[k]; });
+    var anchor = document.createElement('a-entity');
+    anchor.setAttribute('kt-image-anchor', anchorCfg);
     var lostTimer = null;
     function showHint(){ lostTimer = null; hintEl.textContent = 'Point at the card'; }
-    anchor.addEventListener('xrextrasfound', function(){ window.__ARSTATE__ = 'TRACKING'; if (lostTimer){ clearTimeout(lostTimer); lostTimer = null; } hintEl.textContent = ''; });
-    anchor.addEventListener('xrextraslost', function(){ window.__ARSTATE__ = 'LOST'; if (lostTimer) clearTimeout(lostTimer); lostTimer = setTimeout(showHint, 2600); });
+    // The component emits "found" on (re)acquire and "lost" ONLY when content is
+    // actually hidden — so in SLAM-persist mode the model stays put and this nag
+    // never fires; in image-only mode it appears shortly after the model hides.
+    anchor.addEventListener('xrextrasfound', function(){ if (lostTimer){ clearTimeout(lostTimer); lostTimer = null; } hintEl.textContent = ''; });
+    anchor.addEventListener('xrextraslost', function(){ if (lostTimer) clearTimeout(lostTimer); lostTimer = setTimeout(showHint, 800); });
 
     var wrap = document.createElement('a-entity');
     wrap.setAttribute('scale', UNIT + ' ' + UNIT + ' ' + UNIT);
@@ -396,7 +582,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
     anchor.appendChild(wrap);
     scene.appendChild(anchor);
 
-    scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); hintEl.textContent = 'Point at the card'; });
+    scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });
 
     document.body.appendChild(scene);

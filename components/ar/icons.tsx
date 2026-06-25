@@ -270,10 +270,41 @@ export const IconAxisY = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
-// Depth — Z axis (toward/away)
+// Forward/back — depth, a diagonal toward/away double-arrow (pairs with the
+// horizontal ↔ and vertical ↕ so the three position controls read as a set)
 export const IconAxisZ = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
-    <path d="M4 8 12 4l8 4-8 4-8-4Z" />
-    <path d="m4 8 8 4v8l-8-4V8Z" />
+    <path d="M7 17 17 7" />
+    <path d="M11.5 17H7v-4.5" />
+    <path d="M12.5 7H17v4.5" />
+  </Svg>
+);
+
+// Tilt (pitch) — rotation about the horizontal left/right axis: an upright ring
+// (vertical loop) threaded by a horizontal axis, so it reads as nodding fwd/back
+export const IconTilt = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <ellipse cx="12" cy="12" rx="4.5" ry="9" />
+    <path d="M3 12h4M17 12h4" />
+    <path d="M9.6 5 12 3l2 2.4" />
+  </Svg>
+);
+
+// Turn (yaw) — rotation about the vertical axis: a flat ring (horizontal loop)
+// threaded by a vertical axis, so it reads as spinning flat like a turntable
+export const IconTurn = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <ellipse cx="12" cy="12" rx="9" ry="4.5" />
+    <path d="M12 3v4M12 17v4" />
+    <path d="M19 9.6 21 12l-2.4 2" />
+  </Svg>
+);
+
+// Roll — rotation about the depth axis (face-on): a circular arrow spinning in
+// the screen plane, so it reads as tilting the element side-to-side
+export const IconRoll = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M20 12a8 8 0 1 1-2.3-5.65" />
+    <path d="M20 3.5V8h-4.5" />
   </Svg>
 );

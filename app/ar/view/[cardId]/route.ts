@@ -76,13 +76,22 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
         link: el.link ? normalizeLink(String(el.link)) : null,
         position: Array.isArray(el.position) ? el.position : [0, 0.2, 0.15],
         rotationX: Number(el.rotationX) || 0,
+        // Auto stand-up tilt baked at add time; effective tilt = baseRotationX +
+        // rotationX (legacy elements have no baseRotationX → the tilt is in
+        // rotationX itself, so 0 here keeps them upright).
+        baseRotationX: Number(el.baseRotationX) || 0,
         rotationY: Number(el.rotationY) || 0,
         rotationZ: Number(el.rotationZ) || 0,
         scale: Number(el.scale) || 1,
         // Auto-fit normalization factor; effective render scale = baseScale * scale.
         baseScale: Number(el.baseScale) > 0 ? Number(el.baseScale) : 1,
         animated: !!el.animated,
+        // Playback-rate multiplier for GLB animation + self-rotate spin (1 = normal).
+        animationSpeed: Number(el.animationSpeed) > 0 ? Number(el.animationSpeed) : 1,
         spin: !!el.spin,
+        // Per-model brightness multiplier (1.2 = neutral, matches the editor preview
+        // baseline). Applied to the model's material colors in the viewer.
+        brightness: Number(el.brightness) > 0 ? Number(el.brightness) : 1.2,
       };
     });
 

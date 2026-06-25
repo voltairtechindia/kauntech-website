@@ -10,7 +10,6 @@ import {
   OrbitControls,
   RoundedBox,
   Text,
-  TransformControls,
   useGLTF,
   useAnimations,
 } from "@react-three/drei";
@@ -18,19 +17,12 @@ import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.j
 import type { ArElement } from "@/lib/ar/scene";
 import { socialPreset } from "@/lib/ar/scene";
 
-export type TransformMode = "translate" | "rotate" | "scale";
-
 interface Props {
   elements: ArElement[];
   selectedId: string | null;
-  mode: TransformMode;
   referenceImageUrl?: string | null;
   cardColor?: string | null;
   onSelect: (id: string | null) => void;
-  onTransform: (
-    id: string,
-    t: { position: [number, number, number]; rotationX: number; rotationY: number; rotationZ: number; scale: number },
-  ) => void;
 }
 
 /**
@@ -45,11 +37,9 @@ interface Props {
 export default function SceneViewport({
   elements,
   selectedId,
-  mode,
   referenceImageUrl,
   cardColor,
   onSelect,
-  onTransform,
 }: Props) {
   return (
     <Canvas camera={{ position: [0, 1.25, 1.85], fov: 40 }} dpr={[1, 2]} shadows>
@@ -91,10 +81,8 @@ export default function SceneViewport({
 
         <Suspense fallback={null}>
           {elements.map((el) =>
-            el.hidden ? null : el.id === selectedId ? (
-              <SelectedElement key={el.id} element={el} mode={mode} onTransform={onTransform} onSelect={onSelect} />
-            ) : (
-              <ElementNode key={el.id} element={el} onSelect={onSelect} />
+            el.hidden ? null : (
+              <ElementNode key={el.id} element={el} selected={el.id === selectedId} onSelect={onSelect} />
             ),
           )}
         </Suspense>
@@ -157,56 +145,21 @@ function CardBase({
   );
 }
 
-function SelectedElement({
+// Elements are positioned/rotated/scaled entirely from the right-panel sliders —
+// there's no in-viewport gizmo. Clicking an element just selects it (and shows the
+// selection ring); a click on an already-selected element offers to open its link.
+function ElementNode({
   element,
-  mode,
-  onTransform,
+  selected,
   onSelect,
 }: {
   element: ArElement;
-  mode: TransformMode;
-  onTransform: Props["onTransform"];
+  selected: boolean;
   onSelect: Props["onSelect"];
 }) {
-  const ref = useRef<THREE.Group>(null);
   return (
-    <TransformControls
-      mode={mode}
-      // World space so the gizmo handles stay aligned to the LAND regardless of the
-      // card's flat-laid stage and the model's standing tilt: drag the red handle to
-      // move left/right, the green to lift off the ground, the blue forward/back.
-      // The object is a child of the stage group, so the values written back stay
-      // card-relative — the stored scene and the published viewer are unaffected.
-      space="world"
-      onObjectChange={() => {
-        const o = ref.current;
-        if (!o) return;
-        onTransform(element.id, {
-          position: [o.position.x, o.position.y, o.position.z],
-          rotationX: o.rotation.x,
-          rotationY: o.rotation.y,
-          rotationZ: o.rotation.z,
-          // The group is scaled by baseScale*scale; store back only the multiplier.
-          scale: o.scale.x / (element.baseScale ?? 1),
-        });
-      }}
-    >
-      <group
-        ref={ref}
-        position={element.position}
-        rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]}
-        scale={(element.baseScale ?? 1) * element.scale}
-      >
-        <ElementBody element={element} onSelect={onSelect} selected />
-      </group>
-    </TransformControls>
-  );
-}
-
-function ElementNode({ element, onSelect }: { element: ArElement; onSelect: Props["onSelect"] }) {
-  return (
-    <group position={element.position} rotation={[element.rotationX ?? 0, element.rotationY, element.rotationZ ?? 0]} scale={(element.baseScale ?? 1) * element.scale}>
-      <ElementBody element={element} onSelect={onSelect} />
+    <group position={element.position} rotation={[(element.baseRotationX ?? 0) + (element.rotationX ?? 0), element.rotationY, element.rotationZ ?? 0]} scale={(element.baseScale ?? 1) * element.scale}>
+      <ElementBody element={element} onSelect={onSelect} selected={selected} />
     </group>
   );
 }
@@ -241,6 +194,7 @@ function ElementBody({
             brightness={element.brightness ?? 1.2}
             animated={element.animated ?? false}
             spin={element.spin ?? false}
+            animationSpeed={element.animationSpeed ?? 1}
           />
         </Suspense>
         {selected ? <SelectRing /> : null}
@@ -322,11 +276,13 @@ function GlbModel({
   brightness = 1.2,
   animated = false,
   spin = false,
+  animationSpeed = 1,
 }: {
   url: string;
   brightness?: number;
   animated?: boolean;
   spin?: boolean;
+  animationSpeed?: number;
 }) {
   const { scene, animations } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
@@ -374,6 +330,7 @@ function GlbModel({
     if (animated) {
       clipActions.forEach((action) => {
         action.reset().setLoop(THREE.LoopRepeat, Infinity).play();
+        action.timeScale = animationSpeed;
       });
     } else {
       clipActions.forEach((action) => action.stop());
@@ -381,7 +338,7 @@ function GlbModel({
     return () => {
       clipActions.forEach((action) => action.stop());
     };
-  }, [actions, animated]);
+  }, [actions, animated, animationSpeed]);
 
   // Apply model-specific brightness factor (scaled relative to A-Frame default 1.2)
   useEffect(() => {
@@ -396,7 +353,7 @@ function GlbModel({
   // Continuous Y-axis spin when the `spin` toggle is on.
   useFrame((_, delta) => {
     if (spin && groupRef.current) {
-      groupRef.current.rotation.y += delta * 1.5;
+      groupRef.current.rotation.y += delta * 1.5 * animationSpeed;
     }
   });
 
