@@ -18,7 +18,13 @@ export interface OwnerCard {
   card_color: string | null;
   is_default: boolean;
   custom_qr_url: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
 }
+
+const CARD_COLUMNS =
+  "id, name, title, company, avatar_url, card_color, is_default, custom_qr_url, phone, email, website";
 
 export interface ArModel {
   id: string;
@@ -53,6 +59,10 @@ export interface DashboardData {
   arCap: number;
   cards: OwnerCard[];
   models: Record<string, ArModel>; // keyed by card_id
+  /** True when the cards read failed (auth/transient) — distinct from an owner
+   *  who genuinely has zero cards, so the UI can show "couldn't load" not
+   *  "No cards yet". */
+  loadError: boolean;
 }
 
 function effectiveTier(subscription_tier: string | null, trial_ends_at: string | null): EffectiveTier {
@@ -70,11 +80,11 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: profile }, { data: cards }, { data: models }] = await Promise.all([
+  const [{ data: profile }, { data: cards, error: cardsError }, { data: models }] = await Promise.all([
     supabase.from("profiles").select("subscription_tier, trial_ends_at").eq("id", user.id).single(),
     supabase
       .from("cards")
-      .select("id, name, title, company, avatar_url, card_color, is_default, custom_qr_url")
+      .select(CARD_COLUMNS)
       .eq("user_id", user.id)
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true }),
@@ -96,6 +106,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     arCap: AR_MODEL_CAPS[tier],
     cards: (cards ?? []) as OwnerCard[],
     models: byCard,
+    loadError: !!cardsError,
   };
 }
 
@@ -111,7 +122,7 @@ export async function getCardForEditor(
 
   const { data: card } = await supabase
     .from("cards")
-    .select("id, name, title, company, avatar_url, card_color, is_default, custom_qr_url")
+    .select(CARD_COLUMNS)
     .eq("id", cardId)
     .eq("user_id", user.id)
     .single();

@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EffectiveTier } from "@/lib/ar/db";
-import { IconBox, IconExternal, IconLock, IconPencil, IconPlus, IconTrash } from "./icons";
+import { IconExternal, IconGlobe, IconLock, IconMail, IconPencil, IconPhone, IconPlus, IconTrash } from "./icons";
 
 export type CardStatus = "published" | "draft" | "none";
 
@@ -13,7 +13,11 @@ export interface DashItem {
   name: string;
   subtitle: string;
   status: CardStatus;
-  previewUrl: string | null;
+  /** QR image src (custom image URL or a generated vCard QR data URL). */
+  qrSrc: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
   /** Card accent (#RRGGBB) — drives the gradient border, like the app card. */
   accent: string;
   avatarUrl: string | null;
@@ -39,11 +43,10 @@ export default function CardsDashboard({
   const router = useRouter();
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Cards whose AR we just removed — optimistically flip them to idle ("Set up
   // AR") until the server refetch lands. We never hide the card itself: removing
-  // AR on the web keeps the underlying business card.
+  // AR on the web keeps the underlying business card (cards are app-only).
   const [unArmedIds, setUnArmedIds] = useState<Set<string>>(new Set());
 
   // Active AR cards count against the plan cap; cards without AR are just
@@ -56,19 +59,20 @@ export default function CardsDashboard({
   // Active first, then cards waiting to have AR added.
   const ordered = [...visible].sort((a, b) => Number(b.status !== "none") - Number(a.status !== "none"));
 
-  async function createCard() {
-    setCreating(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/ar/card", { method: "POST" });
-      const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "Could not create the card.");
-      router.push(`/ar/editor/${json.card_id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not create the card.");
-      setCreating(false);
+  // Re-pull the server state whenever the tab regains focus — so coming back
+  // from the editor (or the app) reflects new/edited AR cards without a manual
+  // reload. The page is force-dynamic, so this just re-runs the server render.
+  useEffect(() => {
+    function refresh() {
+      if (document.visibilityState === "visible") router.refresh();
     }
-  }
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [router]);
 
   async function remove(id: string) {
     setBusyId(id);
@@ -95,7 +99,7 @@ export default function CardsDashboard({
 
   return (
     <div className="ar-dash">
-      {/* Compact top bar: usage meter + Add card */}
+      {/* Usage meter — cards are created in the app, so there's no "Add card". */}
       <div className="ar-dash-bar">
         <div className="ar-usage">
           <div className="ar-usage-head">
@@ -112,39 +116,23 @@ export default function CardsDashboard({
             Each card with published 3D or media models counts toward your {TIER_LABEL[tier]} plan cap.
           </span>
         </div>
-
-        {visible.length > 0 && (
-          <button
-            className="ar-btn ar-btn-primary ar-dash-add"
-            onClick={createCard}
-            disabled={atCap || creating}
-            title={atCap ? "Plan limit reached — delete one or upgrade" : "Create a new AR card"}
-          >
-            {atCap ? <IconLock /> : <IconPlus />}
-            {creating ? "Creating…" : atCap ? "Limit reached" : "Add card"}
-          </button>
-        )}
       </div>
 
       {error ? <p className="ar-error">{error}</p> : null}
 
       {visible.length === 0 ? (
         <div className="ar-empty">
-          <span className="ar-empty-ico" aria-hidden><IconBox /></span>
+          <span className="ar-empty-ico" aria-hidden>
+            <IconPlus />
+          </span>
           <p className="ar-empty-title">No cards yet</p>
-          <p className="ar-muted" style={{ margin: "0 0 12px" }}>
-            Your business cards from the KaunTech app show up here to add AR to. Don&apos;t have one yet?
-            Create a card below, or make one in the app and it&apos;ll appear here.
+          <p className="ar-muted" style={{ margin: "0 0 4px", maxWidth: "420px" }}>
+            Your business cards are made in the KaunTech app. Create a v-card there and it&apos;ll
+            show up here to add AR to.
           </p>
-          <button
-            className="ar-btn ar-btn-primary"
-            onClick={createCard}
-            disabled={atCap || creating}
-            title={atCap ? "Plan limit reached — delete one or upgrade" : "Create a new AR card"}
-          >
-            {atCap ? <IconLock /> : <IconPlus />}
-            {creating ? "Creating…" : atCap ? "Limit reached" : "Create first card"}
-          </button>
+          <a className="ar-btn ar-btn-ghost" href="https://www.kauntech.com/get">
+            Get the app
+          </a>
         </div>
       ) : (
         <div className="ar-grid ar-cardgrid">
@@ -152,13 +140,15 @@ export default function CardsDashboard({
             const active = item.status !== "none";
             const confirming = confirmId === item.id;
             const busy = busyId === item.id;
+            const hasContacts = !!(item.phone || item.email || item.website);
             return (
               <div
                 key={item.id}
                 className={`ar-tile ar-cardtile ${active ? "" : "ar-tile-idle"}`}
                 style={{ ["--tile-accent" as string]: item.accent }}
               >
-                {/* App-style business card face — dark, accent gradient border. */}
+                {/* App-style business card face — dark, accent gradient border,
+                    QR hero, identity, contact rows and the KAUNTECH wordmark. */}
                 <div className="ar-cardface">
                   {active ? (
                     <span className={`ar-badge ${item.status === "published" ? "ar-badge-published" : "ar-badge-draft"} ar-cardface-badge`}>
@@ -168,15 +158,36 @@ export default function CardsDashboard({
                     <span className="ar-badge ar-badge-locked ar-cardface-badge">No AR</span>
                   )}
 
-                  <div className="ar-cardface-hero">
-                    {item.previewUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={item.previewUrl} alt={item.name} />
-                    ) : (
-                      <span className="ar-cardface-monogram">{initialOf(item.name)}</span>
-                    )}
+                  {/* QR hero */}
+                  <div className="ar-cardface-qr">
+                    <span className="ar-qr-bracket ar-qr-tl" />
+                    <span className="ar-qr-bracket ar-qr-tr" />
+                    <span className="ar-qr-bracket ar-qr-bl" />
+                    <span className="ar-qr-bracket ar-qr-br" />
+                    <div className="ar-cardface-qrtile">
+                      {item.qrSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img className="ar-cardface-qrimg" src={item.qrSrc} alt={`${item.name} QR`} />
+                      ) : (
+                        <span className="ar-cardface-monogram">{initialOf(item.name)}</span>
+                      )}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img className="ar-cardface-qrlogo" src="/assets/Kauntech_logo.png" alt="" />
+                    </div>
                   </div>
 
+                  {item.isDefault ? (
+                    <span className="ar-cardface-primary">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                        <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l7.1-1.01L12 2z" />
+                      </svg>
+                      PRIMARY CARD
+                    </span>
+                  ) : null}
+
+                  <div className="ar-cardface-divider" />
+
+                  {/* Identity */}
                   <div className="ar-cardface-id">
                     <span className="ar-cardface-avatar">
                       {item.avatarUrl ? (
@@ -188,10 +199,30 @@ export default function CardsDashboard({
                     </span>
                     <span className="ar-cardface-idtext">
                       <strong className="ar-cardface-name">{item.name || "Untitled card"}</strong>
-                      <span className="ar-cardface-role">{item.subtitle || "—"}</span>
+                      {item.subtitle ? <span className="ar-cardface-role">{item.subtitle}</span> : null}
                     </span>
-                    {item.isDefault ? <span className="ar-cardface-primary">PRIMARY</span> : null}
                   </div>
+
+                  {/* Contact rows */}
+                  {hasContacts ? (
+                    <div className="ar-cardface-contacts">
+                      {item.phone ? (
+                        <span className="ar-cardface-contact">
+                          <IconPhone /> <span className="ar-cardface-contact-val">{item.phone}</span>
+                        </span>
+                      ) : null}
+                      {item.email ? (
+                        <span className="ar-cardface-contact">
+                          <IconMail /> <span className="ar-cardface-contact-val">{item.email}</span>
+                        </span>
+                      ) : null}
+                      {item.website ? (
+                        <span className="ar-cardface-contact">
+                          <IconGlobe /> <span className="ar-cardface-contact-val">{item.website}</span>
+                        </span>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="ar-cardface-foot">
                     <span className="ar-cardface-footline" />

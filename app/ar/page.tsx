@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
+import QRCode from "qrcode";
 import ArHeader from "@/components/ar/ArHeader";
 import CardsDashboard, { type CardStatus, type DashItem } from "@/components/ar/CardsDashboard";
-import { getDashboardData } from "@/lib/ar/db";
+import { getDashboardData, type OwnerCard } from "@/lib/ar/db";
 
 export const dynamic = "force-dynamic";
 
@@ -14,32 +15,74 @@ function toAccent(color?: string | null): string {
   return "#f97316";
 }
 
+// Mirror the app's BusinessCardItem.buildVCard so a generated QR encodes the
+// same payload the app shows (incl. the KaunTech card deep link the scanner
+// resolves to this card + its AR model).
+function buildVCard(c: OwnerCard): string {
+  const lines = ["BEGIN:VCARD", "VERSION:3.0", `FN:${c.name ?? ""}`];
+  if (c.title) lines.push(`TITLE:${c.title}`);
+  if (c.company) lines.push(`ORG:${c.company}`);
+  if (c.email) lines.push(`EMAIL:${c.email}`);
+  if (c.phone) lines.push(`TEL:${c.phone}`);
+  if (c.website) lines.push(`URL:${c.website}`);
+  if (c.id) lines.push(`URL;type=KaunTech:https://www.kauntech.com/card/${c.id}`);
+  lines.push("END:VCARD");
+  return lines.join("\n");
+}
+
+// QR source for the card face, mirroring the app: a custom QR image is used as
+// is; a `qrtext:` sentinel renders its text; otherwise we generate the vCard QR.
+// Generated QRs are inlined as an SVG data URL so the client just renders <img>.
+async function qrSrcFor(c: OwnerCard): Promise<string | null> {
+  const custom = c.custom_qr_url;
+  // Use a plain test (not the isHttp type guard) so `custom` keeps its
+  // string|null type for the qrtext branch below — a non-http custom QR is
+  // still a valid string (e.g. "qrtext:…").
+  if (custom && /^https?:\/\//i.test(custom)) return custom;
+  const text = custom && custom.startsWith("qrtext:") ? custom.slice("qrtext:".length) : buildVCard(c);
+  try {
+    const svg = await QRCode.toString(text, {
+      type: "svg",
+      margin: 1,
+      errorCorrectionLevel: "M",
+      color: { dark: "#09090B", light: "#FFFFFF" },
+    });
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 export default async function ArDashboard() {
   const data = await getDashboardData();
   if (!data) redirect("/ar/login");
 
-  const { email, tier, arCap, cards, models } = data;
+  const { email, tier, arCap, cards, models, loadError } = data;
   const canAuthor = arCap > 0;
 
-  const items: DashItem[] = cards.map((card) => {
-    const model = models[card.id];
-    const status: CardStatus = !model ? "none" : model.is_published ? "published" : "draft";
-    const sceneCard = (model?.scene as { card?: { frontUrl?: string; backUrl?: string } })?.card ?? {};
-    // Hero image: prefer the AR target photo, then the card's custom QR image.
-    const previewUrl =
-      [model?.reference_image_path, sceneCard.frontUrl, sceneCard.backUrl, card.custom_qr_url].find(isHttp) ??
-      null;
-    return {
-      id: card.id,
-      name: card.name || "Untitled card",
-      subtitle: [card.title, card.company].filter(Boolean).join(" · "),
-      status,
-      previewUrl,
-      accent: toAccent(card.card_color),
-      avatarUrl: isHttp(card.avatar_url) ? card.avatar_url : null,
-      isDefault: !!card.is_default,
-    };
-  });
+  const items: DashItem[] = await Promise.all(
+    cards.map(async (card) => {
+      const model = models[card.id];
+      const status: CardStatus = !model ? "none" : model.is_published ? "published" : "draft";
+      return {
+        id: card.id,
+        name: card.name || "Untitled card",
+        subtitle: [card.title, card.company].filter(Boolean).join(" · "),
+        status,
+        qrSrc: await qrSrcFor(card),
+        phone: card.phone || null,
+        email: card.email || null,
+        website: card.website || null,
+        accent: toAccent(card.card_color),
+        avatarUrl: isHttp(card.avatar_url) ? card.avatar_url : null,
+        isDefault: !!card.is_default,
+      };
+    }),
+  );
+
+  // Tell a failed read apart from a genuinely empty account so we never show a
+  // misleading "No cards yet" when the cards just didn't load.
+  const showLoadError = canAuthor && loadError && items.length === 0;
 
   return (
     <>
@@ -104,6 +147,16 @@ export default async function ArDashboard() {
             </p>
             <a className="ar-btn ar-btn-primary" href="https://www.kauntech.com/get">
               Get the app to upgrade
+            </a>
+          </div>
+        ) : showLoadError ? (
+          <div className="ar-card" style={{ textAlign: "center" }}>
+            <h2 className="ar-h2">Couldn&apos;t load your cards</h2>
+            <p className="ar-sub" style={{ margin: "0 0 var(--ar-sp-lg)" }}>
+              Your session may have expired. Try again — your cards aren&apos;t affected.
+            </p>
+            <a className="ar-btn ar-btn-primary" href="/ar">
+              Try again
             </a>
           </div>
         ) : (
