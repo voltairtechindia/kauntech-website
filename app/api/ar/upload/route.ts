@@ -224,21 +224,40 @@ export async function POST(req: Request) {
   // Keep storage lean: a card should hold only its CURRENT front/back photo and
   // the current 8th Wall luminance target. Delete every other top-level file left
   // behind by a previous save (an old model id, a removed side, a stale .mind or
-  // .lum) so only the current files stay. Element assets live in the `assets/`
-  // subfolder (a folder entry, which carries no `id`), so they're never touched
-  // here. Best-effort: never fail the save over cleanup.
+  // .lum) so only the current files stay. Best-effort: never fail the save over
+  // cleanup. Deleting a file fires the storage trigger that decrements
+  // cloud_ar_bytes, so the cloud-storage meter stays accurate.
   try {
+    const prefix = `${userId}/${cardId}`;
+
+    // Top-level files: keep only the current front/back photo + 8th Wall target.
     const keep = new Set(
       [keyFromPublicUrl(frontUrl), keyFromPublicUrl(backUrl), keyFromPublicUrl(eightwall?.lumUrl ?? null)]
         .filter((k): k is string => !!k)
         .map((k) => k.split("/").pop() as string),
     );
-    const prefix = `${userId}/${cardId}`;
     const { data: files } = await bucket.list(prefix, { limit: 100 });
     const stale = (files ?? [])
       .filter((f) => f.id && !keep.has(f.name)) // f.id present => a file (folders have none)
       .map((f) => `${prefix}/${f.name}`);
     if (stale.length) await bucket.remove(stale);
+
+    // Element assets (models/images) live in the `assets/` subfolder, each
+    // referenced by an element's `url`. When an element is removed or its model
+    // swapped, the old file would otherwise be orphaned and keep counting against
+    // cloud storage forever. Delete any asset no current element points at.
+    const keepAssets = new Set(
+      (scene.elements as Array<{ url?: unknown }>)
+        .map((el) => (typeof el?.url === "string" ? keyFromPublicUrl(el.url) : null))
+        .filter((k): k is string => !!k)
+        .map((k) => k.split("/").pop() as string),
+    );
+    const assetPrefix = `${prefix}/assets`;
+    const { data: assetFiles } = await bucket.list(assetPrefix, { limit: 200 });
+    const staleAssets = (assetFiles ?? [])
+      .filter((f) => f.id && !keepAssets.has(f.name))
+      .map((f) => `${assetPrefix}/${f.name}`);
+    if (staleAssets.length) await bucket.remove(staleAssets);
   } catch {
     /* best-effort cleanup */
   }
