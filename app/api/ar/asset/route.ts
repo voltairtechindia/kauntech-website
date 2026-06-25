@@ -1,10 +1,12 @@
 /**
- * Uploads ONE scene asset (a .glb model or an image) for the AR composer and
- * returns its public URL. The editor calls this when the owner adds an element;
- * the URL is then stored inside ar_models.scene.elements (saved via
- * /api/ar/upload). Authed — RLS + the ar-models byte-cap trigger enforce limits.
+ * Uploads ONE scene asset (a .glb model, image, video or audio clip) for the AR
+ * composer and returns its public URL. The editor calls this when the owner adds
+ * or replaces an element; the URL is then stored inside ar_models.scene.elements
+ * (saved via /api/ar/upload). Authed — RLS + the ar-models byte-cap trigger
+ * enforce the per-plan cloud-storage limit (every file in the ar-models bucket,
+ * regardless of type, counts against profiles.cloud_ar_bytes).
  *
- * POST /api/ar/asset  (multipart/form-data: card_id, kind=model|image, file)
+ * POST /api/ar/asset  (multipart/form-data: card_id, kind=model|image|video|audio, file)
  *   -> 200 { ok: true, url, path } | 4xx { ok:false, error }
  */
 import { randomUUID } from "node:crypto";
@@ -17,6 +19,8 @@ export const dynamic = "force-dynamic";
 const AR_BUCKET = "ar-models";
 const MAX_MODEL = 25 * 1024 * 1024;
 const MAX_IMAGE = 8 * 1024 * 1024;
+const MAX_VIDEO = 40 * 1024 * 1024;
+const MAX_AUDIO = 12 * 1024 * 1024;
 
 function bad(error: string, status = 400) {
   return NextResponse.json({ ok: false, error }, { status });
@@ -66,6 +70,20 @@ export async function POST(req: Request) {
     if (file.size > MAX_MODEL) return bad("Model is larger than 25 MB.", 413);
     ext = "glb";
     contentType = "model/gltf-binary";
+  } else if (kind === "video") {
+    const ok = ["video/mp4", "video/webm", "video/quicktime"].includes(file.type) || /\.(mp4|webm|m4v|mov)$/i.test(file.name);
+    if (!ok) return bad("Video must be an MP4 or WebM file.");
+    if (file.size > MAX_VIDEO) return bad("Video is larger than 40 MB. Trim or compress it first.", 413);
+    ext = /\.webm$/i.test(file.name) || file.type === "video/webm" ? "webm" : "mp4";
+    contentType = ext === "webm" ? "video/webm" : "video/mp4";
+  } else if (kind === "audio") {
+    const ok =
+      ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/mp4", "audio/aac", "audio/x-m4a"].includes(file.type) ||
+      /\.(mp3|wav|ogg|m4a|aac)$/i.test(file.name);
+    if (!ok) return bad("Audio must be an MP3, WAV, OGG or M4A file.");
+    if (file.size > MAX_AUDIO) return bad("Audio is larger than 12 MB. Trim or compress it first.", 413);
+    ext = /\.(\w+)$/i.exec(file.name)?.[1]?.toLowerCase() || (file.type.includes("mp4") || file.type.includes("m4a") ? "m4a" : "mp3");
+    contentType = file.type || "audio/mpeg";
   } else {
     const ok = ["image/jpeg", "image/png", "image/webp"].includes(file.type) || /\.(jpe?g|png|webp)$/i.test(file.name);
     if (!ok) return bad("Images must be JPG, PNG or WebP.");
@@ -84,4 +102,62 @@ export async function POST(req: Request) {
 
   const url = supabase.storage.from(AR_BUCKET).getPublicUrl(path).data.publicUrl;
   return NextResponse.json({ ok: true, url, path });
+}
+
+/**
+ * Delete ONE scene asset the editor uploaded but the owner then removed before
+ * saving — otherwise that file lingers in the bucket counting against cloud
+ * storage forever (the save-time cleanup only reclaims assets that were once
+ * persisted). The editor calls this on element removal / media replace for
+ * session-uploaded files. Deleting fires the storage trigger that decrements
+ * profiles.cloud_ar_bytes, so the meter stays accurate.
+ *
+ * DELETE /api/ar/asset  (application/json: { card_id, url })
+ *   -> 200 { ok:true } | 4xx { ok:false, error }
+ */
+export async function DELETE(req: Request) {
+  const supabase = await createArServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return bad("Not signed in.", 401);
+
+  let body: { card_id?: unknown; url?: unknown };
+  try {
+    body = (await req.json()) as { card_id?: unknown; url?: unknown };
+  } catch {
+    return bad("Expected JSON { card_id, url }.");
+  }
+  const cardId = typeof body.card_id === "string" ? body.card_id.trim() : "";
+  const url = typeof body.url === "string" ? body.url : "";
+  if (!cardId || !url) return bad("Missing card_id or url.");
+
+  // Confirm ownership of the card before deleting anything.
+  const { data: card } = await supabase
+    .from("cards")
+    .select("id")
+    .eq("id", cardId)
+    .eq("user_id", user.id)
+    .single();
+  if (!card) return bad("Card not found.", 404);
+
+  // Resolve the storage key from the public URL and HARD-SCOPE it to this owner's
+  // own assets folder for this card — so a crafted URL can never delete another
+  // user's (or another card's) files. RLS on the bucket is a second layer.
+  const marker = `/${AR_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return bad("Not an AR asset URL.");
+  let path = url.slice(idx + marker.length).split("?")[0];
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    /* keep raw */
+  }
+  if (!path.startsWith(`${user.id}/${cardId}/assets/`)) {
+    return bad("That asset doesn't belong to this card.", 403);
+  }
+
+  const { error } = await supabase.storage.from(AR_BUCKET).remove([path]);
+  if (error) return bad("Could not remove the asset. Please try again.", 500);
+  return NextResponse.json({ ok: true });
 }

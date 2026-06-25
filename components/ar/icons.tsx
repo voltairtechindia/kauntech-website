@@ -58,6 +58,14 @@ export const IconVideo = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
+export const IconAudio = (p: SVGProps<SVGSVGElement>) => (
+  <Svg {...p}>
+    <path d="M11 5 6 9H2v6h4l5 4z" />
+    <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+    <path d="M19 5a9 9 0 0 1 0 14" />
+  </Svg>
+);
+
 export const IconText = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
     <path d="M4 7V5h16v2" />

@@ -129,7 +129,7 @@ export default function CardsDashboard({
           usedBytes={storageUsedBytes}
           capBytes={storageCapBytes}
           label={`${TIER_LABEL[tier]} cloud storage`}
-          hint="One budget shared by your card photos and AR models. Bigger or more detailed 3D models use more."
+          hint="One budget shared by your card photos and AR content (3D models, images, video, audio). Bigger or more detailed assets use more."
         />
       </div>
 

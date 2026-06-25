@@ -48,7 +48,10 @@ const buildCsp = (allowEval: boolean) =>
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
     `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com`,
-    `media-src 'self' blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN}`,
+    // media-src governs <video>/<audio> sources. Uploaded AR clips live on the
+    // Supabase origins; the /ar studio + viewer ALSO let owners paste a direct
+    // external video/audio file URL, so those pages allow any https: media source.
+    `media-src 'self' blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN}${allowEval ? " https:" : ""}`,
     // SUPABASE_ORIGIN is the site project, home of the public `ar-gallery` bucket
     // (curated 3D models). three.js / a-gltf-model fetch those .glb files here, so
     // it must be in connect-src for both the editor previews and the WebAR viewer.

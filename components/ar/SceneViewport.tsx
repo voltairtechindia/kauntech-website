@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useRef, useMemo, useEffect } from "react";
+import { Component, type ReactNode, Suspense, useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
@@ -12,10 +12,12 @@ import {
   Text,
   useGLTF,
   useAnimations,
+  useTexture,
+  useVideoTexture,
 } from "@react-three/drei";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { ArElement } from "@/lib/ar/scene";
-import { socialPreset } from "@/lib/ar/scene";
+import { socialPreset, flatPlaneSize, FLAT_BASE } from "@/lib/ar/scene";
 
 interface Props {
   elements: ArElement[];
@@ -203,11 +205,18 @@ function ElementBody({
   }
 
   if (element.type === "image" && element.url) {
+    const [w, h] = flatPlaneSize(element.aspect, FLAT_BASE.image);
+    const placeholder = <ImagePlaceholder w={w} h={h} />;
     return (
       <group onClick={click}>
-        <Suspense fallback={null}>
-          <DreiImage url={element.url} transparent scale={0.3 as unknown as number} />
-        </Suspense>
+        {/* A broken image (bad URL / load failure) falls back to a neutral plane
+            instead of throwing and blanking the whole canvas — same safety net as
+            video. */}
+        <MediaErrorBoundary key={element.url} fallback={placeholder}>
+          <Suspense fallback={placeholder}>
+            <ImagePlane url={element.url} aspect={element.aspect} />
+          </Suspense>
+        </MediaErrorBoundary>
         {selected ? <SelectRing /> : null}
       </group>
     );
@@ -218,7 +227,6 @@ function ElementBody({
       <group onClick={click}>
         <Text
           fontSize={0.12}
-          color={element.color || "#18181b"}
           anchorX="center"
           anchorY="middle"
           maxWidth={1.4}
@@ -226,6 +234,9 @@ function ElementBody({
           outlineColor="#ffffff"
         >
           {element.text || "Text"}
+          {/* Double-sided so the text is still readable when the card is viewed
+              from behind in AR — matches the viewer's side:double a-text. */}
+          <meshBasicMaterial side={THREE.DoubleSide} color={element.color || "#18181b"} toneMapped={false} />
         </Text>
         {selected ? <SelectRing /> : null}
       </group>
@@ -247,19 +258,128 @@ function ElementBody({
     );
   }
 
-  // video placeholder
+  // Audio has no inherent geometry — show a small speaker chip so it can be
+  // selected and placed. In AR this same chip is tappable to mute / unmute.
+  if (element.type === "audio") {
+    return (
+      <group onClick={click}>
+        <AudioChip ready={!!element.url} />
+        {selected ? <SelectRing /> : null}
+      </group>
+    );
+  }
+
+  // Video: render the REAL clip (aspect-correct, double-sided) so the editor is
+  // WYSIWYG with the published AR. Until a URL is pasted — or if a cross-origin
+  // mp4 can't be used as a texture — fall back to the labelled placeholder.
+  if (element.type === "video") {
+    const [w, h] = flatPlaneSize(element.aspect, FLAT_BASE.video);
+    const placeholder = <VideoPlaceholder w={w} h={h} />;
+    return (
+      <group onClick={click}>
+        {element.url ? (
+          <MediaErrorBoundary key={element.url} fallback={placeholder}>
+            <Suspense fallback={placeholder}>
+              <VideoPlane url={element.url} w={w} h={h} />
+            </Suspense>
+          </MediaErrorBoundary>
+        ) : (
+          placeholder
+        )}
+        {selected ? <SelectRing /> : null}
+      </group>
+    );
+  }
+
+  return null;
+}
+
+// A flat image plane: the texture's true aspect (no square crop) and double-sided
+// so it's visible from behind the card — the published a-image now matches.
+function ImagePlane({ url, aspect }: { url: string; aspect?: number }) {
+  const tex = useTexture(url);
+  const [w, h] = flatPlaneSize(aspect, FLAT_BASE.image);
   return (
-    <group onClick={click}>
-      <mesh>
-        <planeGeometry args={[0.5, 0.3]} />
-        <meshStandardMaterial color="#0D0F14" />
+    <mesh>
+      <planeGeometry args={[w, h]} />
+      <meshBasicMaterial map={tex} side={THREE.DoubleSide} transparent toneMapped={false} />
+    </mesh>
+  );
+}
+
+// A flat video plane playing the mp4 as a live texture (muted/looped, same as the
+// AR viewer). Suspends while the metadata loads; a bad/cross-origin URL throws,
+// which MediaErrorBoundary turns back into the placeholder.
+function VideoPlane({ url, w, h }: { url: string; w: number; h: number }) {
+  const tex = useVideoTexture(url, { muted: true, loop: true, start: true, playsInline: true, crossOrigin: "anonymous" });
+  return (
+    <mesh>
+      <planeGeometry args={[w, h]} />
+      <meshBasicMaterial map={tex} side={THREE.DoubleSide} toneMapped={false} />
+    </mesh>
+  );
+}
+
+// A speaker "chip" standing in for an audio element (no geometry of its own). A
+// rounded dark tile with a simple speaker glyph drawn from meshes — mirrors the
+// tappable mute control the AR viewer shows.
+function AudioChip({ ready }: { ready: boolean }) {
+  return (
+    <group>
+      <RoundedBox args={[0.24, 0.24, 0.03]} radius={0.05} smoothness={4}>
+        <meshStandardMaterial color={ready ? "#F59E0B" : "#6B7280"} metalness={0.1} roughness={0.5} />
+      </RoundedBox>
+      {/* Speaker body + cone */}
+      <mesh position={[-0.03, 0, 0.02]}>
+        <boxGeometry args={[0.05, 0.06, 0.01]} />
+        <meshStandardMaterial color="#ffffff" />
       </mesh>
-      <Text position={[0, 0, 0.01]} fontSize={0.05} color="#9ca3af" anchorX="center" anchorY="middle">
-        video
+      <mesh position={[0.005, 0, 0.02]} rotation={[0, 0, Math.PI / 2]}>
+        <coneGeometry args={[0.06, 0.08, 16]} />
+        <meshStandardMaterial color="#ffffff" />
+      </mesh>
+      <Text position={[0, -0.085, 0.02]} fontSize={0.035} color="#ffffff" anchorX="center" anchorY="middle">
+        {ready ? "AUDIO" : "no file"}
       </Text>
-      {selected ? <SelectRing /> : null}
     </group>
   );
+}
+
+// Neutral stand-in for an image that hasn't loaded yet or failed to load, sized
+// to the element's aspect so the layout doesn't jump.
+function ImagePlaceholder({ w, h }: { w: number; h: number }) {
+  return (
+    <mesh>
+      <planeGeometry args={[w, h]} />
+      <meshStandardMaterial color="#d4d0c8" side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
+function VideoPlaceholder({ w, h }: { w: number; h: number }) {
+  return (
+    <group>
+      <mesh>
+        <planeGeometry args={[w, h]} />
+        <meshStandardMaterial color="#0D0F14" side={THREE.DoubleSide} />
+      </mesh>
+      <Text position={[0, 0, 0.01]} fontSize={Math.min(w, h) * 0.22} color="#9ca3af" anchorX="center" anchorY="middle">
+        video
+      </Text>
+    </group>
+  );
+}
+
+// Catches the texture-load error a cross-origin / unreachable video throws during
+// render, so one bad clip shows the placeholder instead of blanking the canvas.
+class MediaErrorBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
 }
 
 function SelectRing() {

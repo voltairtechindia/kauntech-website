@@ -502,6 +502,10 @@ export function eightwallViewerHtml(view: EightwallView): string {
       return sh;
     }
     function rad2deg(r){ return (r || 0) * 180 / Math.PI; }
+    // Flat media (image/video) plane size from its stored aspect (w/h), longest
+    // side = base. Mirrors flatPlaneSize() in scene.ts so the AR view matches the
+    // editor — no square crop, no stretch.
+    function flatSize(aspect, base){ var a = Number(aspect) > 0 ? Number(aspect) : 1; return a >= 1 ? [base, base / a] : [base * a, base]; }
     // Per-model brightness: multiply each material's base color by brightness/1.2
     // (1.2 = the neutral baseline the editor preview uses), so a model that looks
     // dark in AR can be lifted — matching the editor's Model Brightness slider.
@@ -530,7 +534,9 @@ export function eightwallViewerHtml(view: EightwallView): string {
         if (el.animated) node.setAttribute('animation-mixer', 'loop: repeat; timeScale: ' + (Number(el.animationSpeed) > 0 ? el.animationSpeed : 1));
         applyBrightness(node, el.brightness);
       } else if (el.type === 'image' && el.url){
-        node = document.createElement('a-image'); node.setAttribute('src', el.url); node.setAttribute('width', 0.3); node.setAttribute('height', 0.3);
+        node = document.createElement('a-image'); node.setAttribute('src', el.url);
+        var isz = flatSize(el.aspect, 0.3); node.setAttribute('width', isz[0]); node.setAttribute('height', isz[1]);
+        node.setAttribute('material', 'side', 'double'); // visible from behind the card
       } else if (el.type === 'social'){
         node = document.createElement('a-entity');
         var bg = document.createElement('a-plane'); bg.setAttribute('width', 0.26); bg.setAttribute('height', 0.26);
@@ -538,12 +544,76 @@ export function eightwallViewerHtml(view: EightwallView): string {
         var tx = document.createElement('a-text'); tx.setAttribute('value', el.label || 'Link'); tx.setAttribute('align', 'center');
         tx.setAttribute('color', '#ffffff'); tx.setAttribute('width', 0.6); tx.setAttribute('position', '0 0 0.01'); node.appendChild(tx);
       } else if (el.type === 'video' && el.url){
-        node = document.createElement('a-video'); node.setAttribute('src', el.url); node.setAttribute('width', 0.5); node.setAttribute('height', 0.3);
-        node.setAttribute('autoplay', 'true'); node.setAttribute('loop', 'true'); node.setAttribute('playsinline', 'true'); node.setAttribute('muted', 'true');
+        node = document.createElement('a-video'); node.setAttribute('src', el.url);
+        var vsz = flatSize(el.aspect, 0.5); node.setAttribute('width', vsz[0]); node.setAttribute('height', vsz[1]);
+        node.setAttribute('autoplay', 'true'); node.setAttribute('loop', el.loop === false ? 'false' : 'true');
+        node.setAttribute('playsinline', 'true'); node.setAttribute('muted', 'true');
+        node.setAttribute('material', 'side', 'double'); // visible from behind the card
+        // Show the plane ONLY if the clip is genuinely playable. We probe the URL
+        // with our own <video>: a YouTube/Vimeo page, a 404, a CORS-blocked file or
+        // a bad codec all fire 'error' (and a cross-origin file with no CORS can't
+        // be used as a WebGL texture anyway), so we drop the plane instead of
+        // showing a dead black rectangle. A clip that loads metadata stays and
+        // plays. crossOrigin matches a-video's own texture requirement.
+        node.setAttribute('visible', 'false');
+        (function(n, url){
+          var probe = document.createElement('video');
+          probe.muted = true; probe.preload = 'metadata'; probe.crossOrigin = 'anonymous';
+          probe.setAttribute('playsinline', ''); probe.setAttribute('webkit-playsinline', '');
+          var done = false;
+          function ok(){ if (done) return; done = true; n.setAttribute('visible', 'true'); log('video ok: ' + url); }
+          function drop(){ if (done) return; done = true; try { if (n.parentNode) n.parentNode.removeChild(n); } catch(e){} log('video dropped (unplayable): ' + url); }
+          probe.addEventListener('loadedmetadata', ok);
+          probe.addEventListener('canplay', ok);
+          probe.addEventListener('error', drop);
+          setTimeout(function(){ if (!done) drop(); }, 12000); // never hang on a stalled URL
+          try { probe.src = url; } catch(e){ drop(); }
+        })(node, el.url);
+      } else if (el.type === 'audio' && el.url){
+        // Sound + a tappable speaker chip. Web Audio is unlocked / started by the
+        // chip tap (and any first touch); autoplay-on-found is attempted too but is
+        // blocked by the browser until a gesture, hence the always-tappable chip.
+        node = document.createElement('a-entity');
+        node.setAttribute('data-kt-audio', '1');
+        node.setAttribute('data-kt-autoplay', el.autoplay === false ? '0' : '1');
+        node.setAttribute('sound', 'src: url(' + el.url + '); loop: ' + (el.loop === false ? 'false' : 'true') + '; positional: false; autoplay: false; volume: 1');
+        var abg = document.createElement('a-plane');
+        abg.setAttribute('width', 0.24); abg.setAttribute('height', 0.24);
+        abg.setAttribute('color', '#F59E0B'); abg.setAttribute('material', 'shader: flat; side: double');
+        abg.classList.add('clickable');
+        var atx = document.createElement('a-text');
+        atx.setAttribute('value', 'AUDIO'); atx.setAttribute('align', 'center'); atx.setAttribute('color', '#ffffff');
+        atx.setAttribute('width', 1.2); atx.setAttribute('position', '0 0 0.01'); atx.setAttribute('side', 'double');
+        node.appendChild(abg); node.appendChild(atx);
+        abg.addEventListener('click', function(){
+          try {
+            resumeAudioCtx();
+            var s = node.components && node.components.sound; if (!s) return;
+            if (node.__ktPlaying){ s.pauseSound(); node.__ktPlaying = false; abg.setAttribute('color', '#6B7280'); }
+            else { s.playSound(); node.__ktPlaying = true; abg.setAttribute('color', '#F59E0B'); }
+          } catch(e){}
+        });
+        // Same graceful-skip as video: only show the speaker chip if the audio is
+        // actually playable. A streaming-page link / 404 / CORS failure fires
+        // 'error', and we drop the whole element so there's no dead control.
+        node.setAttribute('visible', 'false');
+        (function(n, url){
+          var probe = document.createElement('audio');
+          probe.muted = true; probe.preload = 'metadata'; probe.crossOrigin = 'anonymous';
+          var done = false;
+          function ok(){ if (done) return; done = true; n.setAttribute('visible', 'true'); log('audio ok: ' + url); }
+          function drop(){ if (done) return; done = true; try { if (n.parentNode) n.parentNode.removeChild(n); } catch(e){} log('audio dropped (unplayable): ' + url); }
+          probe.addEventListener('loadedmetadata', ok);
+          probe.addEventListener('canplay', ok);
+          probe.addEventListener('error', drop);
+          setTimeout(function(){ if (!done) drop(); }, 12000);
+          try { probe.src = url; } catch(e){ drop(); }
+        })(node, el.url);
       } else if (el.type === 'text' && el.text){
         node = document.createElement('a-text'); node.setAttribute('value', el.text); node.setAttribute('align', 'center');
         node.setAttribute('color', el.color || '#18181b'); node.setAttribute('width', 1.4); node.setAttribute('wrap-count', 16);
         node.setAttribute('baseline', 'center'); node.setAttribute('anchor', 'center');
+        node.setAttribute('side', 'double'); // readable from behind the card
       }
       if (!node) return null;
       var p = el.position || [0, 0, 0.15];
@@ -653,6 +723,33 @@ export function eightwallViewerHtml(view: EightwallView): string {
     (D.elements || []).forEach(function(el){ var sh = buildShadow(el); if (sh) wrap.appendChild(sh); var n = buildElement(el); if (n) wrap.appendChild(n); });
     anchor.appendChild(wrap);
     scene.appendChild(anchor);
+
+    // ── Audio playback control ──────────────────────────────────────────────
+    // Web Audio starts SUSPENDED until a user gesture, so an audio element can't
+    // legally autoplay on its own. The speaker chip's tap unlocks + toggles it;
+    // any first touch/click also unlocks the context; and once unlocked, autoplay
+    // clips start the next time the card is found. (resumeAudioCtx is a hoisted
+    // declaration so the chip click handlers above can call it.)
+    function resumeAudioCtx(){
+      try {
+        var THREE = AFRAME.THREE;
+        var ctx = THREE && THREE.AudioContext && THREE.AudioContext.getContext ? THREE.AudioContext.getContext() : null;
+        if (ctx && ctx.state === 'suspended') ctx.resume();
+      } catch(e){}
+    }
+    function playAutoAudio(){
+      resumeAudioCtx();
+      var ns = scene.querySelectorAll('[data-kt-audio]');
+      for (var i = 0; i < ns.length; i++){
+        var n = ns[i];
+        if (n.getAttribute('data-kt-autoplay') !== '1' || n.__ktPlaying) continue;
+        var s = n.components && n.components.sound;
+        if (s){ try { s.playSound(); n.__ktPlaying = true; } catch(e){} }
+      }
+    }
+    anchor.addEventListener('xrextrasfound', playAutoAudio);
+    window.addEventListener('touchstart', resumeAudioCtx, { passive: true });
+    window.addEventListener('click', resumeAudioCtx);
 
     scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });

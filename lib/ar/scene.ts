@@ -8,13 +8,18 @@
  * (app/ar/view/[cardId]) renders them; the editor (components/ar/Editor) builds
  * them. Asset files are uploaded via /api/ar/asset and referenced by URL.
  */
-export type ArElementType = "model" | "image" | "video" | "social" | "text";
+export type ArElementType = "model" | "image" | "video" | "social" | "text" | "audio";
 
 export interface ArElement {
   id: string;
   type: ArElementType;
-  /** Asset URL for model (.glb) / image / video. */
+  /** Asset URL for model (.glb) / image / video / audio. */
   url?: string;
+  /** Loop playback (video / audio). Absent → true (media loops by default). */
+  loop?: boolean;
+  /** Auto-play on scan (audio). Absent → true. Audio also has a tappable speaker
+   *  control in AR for devices that block autoplay. */
+  autoplay?: boolean;
   /** Social platform key (for type 'social'). */
   platform?: string;
   /** Tap action — opens this URL. */
@@ -41,6 +46,11 @@ export interface ArElement {
   rotationZ?: number;
   /** User-facing size as a MULTIPLIER of baseScale (1 = the auto-fit size). */
   scale: number;
+  /** Natural aspect ratio (width / height) of a flat media element (image /
+   *  video), captured when it's added so its plane keeps the media's real shape
+   *  instead of being squashed into a square. Analogous to baseScale for models.
+   *  Absent → 1 (square). */
+  aspect?: number;
   /** Auto-fit normalization factor set when a model is added, so wildly-sized
    *  glbs (icon vs. car) all start at a sane size. Effective render scale =
    *  (baseScale ?? 1) * scale. Absent on older elements → treated as 1. */
@@ -59,6 +69,19 @@ export interface ArElement {
 }
 
 export const DEFAULT_TEXT_COLOR = "#18181b";
+
+/** Base size (longest side, in card-width units) of a flat media plane, before
+ *  the user's scale multiplier. Image and video start a touch differently so each
+ *  lands at a sensible on-card size. */
+export const FLAT_BASE = { image: 0.3, video: 0.5 } as const;
+
+/** Width/height of a flat media plane for a given aspect (w/h), keeping the
+ *  longest side at `base`. Shared by the editor preview AND the AR viewer so what
+ *  you compose is what gets published (no square-cropping / stretching). */
+export function flatPlaneSize(aspect: number | undefined, base: number): [number, number] {
+  const a = Number(aspect) > 0 ? Number(aspect) : 1;
+  return a >= 1 ? [base, base / a] : [base * a, base];
+}
 
 /** Scene-wide lighting. `intensity` is a brightness multiplier on every light
  *  (1 = default). Models render dark in AR if this is too low. */
@@ -98,6 +121,21 @@ export const SOCIAL_PRESETS: SocialPreset[] = [
 
 export function socialPreset(key?: string): SocialPreset | undefined {
   return SOCIAL_PRESETS.find((s) => s.key === key);
+}
+
+/** A streaming-site page URL (YouTube/Vimeo/etc.) that is NOT a direct video
+ *  file. AR plays video as a WebGL texture, so these don't work — only direct
+ *  .mp4/.webm files do. Used to warn the owner in the editor. */
+export function isStreamingPageUrl(raw: string): boolean {
+  return /(youtube\.com|youtu\.be|vimeo\.com|dailymotion\.com|tiktok\.com|facebook\.com\/watch|drive\.google\.com|dropbox\.com\/s)/i.test(
+    raw || "",
+  );
+}
+
+/** A direct, playable media file URL (by extension) — the only thing AR video can
+ *  actually render. */
+export function isDirectVideoUrl(raw: string): boolean {
+  return /\.(mp4|webm|m4v|mov)(\?|#|$)/i.test(raw || "");
 }
 
 /** Normalize a tap link — allow tel:/mailto:, else ensure https://. */

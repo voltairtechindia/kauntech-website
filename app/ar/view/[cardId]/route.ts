@@ -85,6 +85,12 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
         scale: Number(el.scale) || 1,
         // Auto-fit normalization factor; effective render scale = baseScale * scale.
         baseScale: Number(el.baseScale) > 0 ? Number(el.baseScale) : 1,
+        // Flat-media (image/video) aspect ratio (w/h) so the plane keeps its real
+        // shape instead of being squashed square. Absent → 1.
+        aspect: Number(el.aspect) > 0 ? Number(el.aspect) : 1,
+        // Video/audio playback flags. Absent → loop on, autoplay on (audio).
+        loop: el.loop !== false,
+        autoplay: el.autoplay !== false,
         animated: !!el.animated,
         // Playback-rate multiplier for GLB animation + self-rotate spin (1 = normal).
         animationSpeed: Number(el.animationSpeed) > 0 ? Number(el.animationSpeed) : 1,

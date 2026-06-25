@@ -4,13 +4,13 @@ import dynamic from "next/dynamic";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ArModel, OwnerCard, EffectiveTier } from "@/lib/ar/db";
-import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
+import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, isDirectVideoUrl, isStreamingPageUrl, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import { formatBytes } from "@/lib/ar/format";
 import StorageMeter from "./StorageMeter";
 import {
-  IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
+  IconAudio, IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
   IconImage, IconLink, IconPlus, IconRoll, IconRotate, IconScale, IconSun, IconTarget, IconText,
   IconTilt, IconTrash, IconTurn, IconUpload, IconVideo, IconX, socialIcon,
 } from "./icons";
@@ -38,6 +38,13 @@ function readCard(model: ArModel | null): SceneCard {
   return c && typeof c === "object" ? c : {};
 }
 const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u);
+
+// A public URL pointing at one of OUR uploaded scene assets — they live under
+// `<ar-models bucket>/<uid>/<card>/assets/`. Card photos (no `/assets/`) and
+// gallery models (different bucket) never match, so the orphan-cleanup below
+// can't touch them.
+const isOurUploadedAsset = (u?: string | null): u is string =>
+  !!u && /\/ar-models\/[^?#]*\/assets\//.test(u);
 
 // Bucket a 0..100 trackability score into a user-facing tier. A low-detail card
 // can't track steadily no matter how the viewer is tuned, so this warns the owner
@@ -99,6 +106,28 @@ async function ocrImageSrc(src: File | string): Promise<string> {
   }
 }
 
+// Read a flat asset's true aspect ratio (width / height) so its AR plane keeps
+// the media's real shape instead of being squashed into a square. Best-effort —
+// returns a sensible default on any failure (the plane still works).
+function imageAspect(src: string): Promise<number> {
+  return new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve(im.naturalWidth && im.naturalHeight ? im.naturalWidth / im.naturalHeight : 1);
+    im.onerror = () => resolve(1);
+    im.src = src;
+  });
+}
+function videoAspect(src: string): Promise<number> {
+  return new Promise((resolve) => {
+    const v = document.createElement("video");
+    v.preload = "metadata";
+    v.muted = true;
+    v.onloadedmetadata = () => resolve(v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : 16 / 9);
+    v.onerror = () => resolve(16 / 9);
+    v.src = src;
+  });
+}
+
 function readElements(model: ArModel | null): ArElement[] {
   const raw = (model?.scene as { elements?: unknown })?.elements;
   if (!Array.isArray(raw)) return [];
@@ -129,6 +158,7 @@ const TYPE_ICON: Record<ArElementType, ReactNode> = {
   video: <IconVideo />,
   social: socialIcon(),
   text: <IconText />,
+  audio: <IconAudio />,
 };
 
 /** Icon for a layer row — brand glyph for socials, type glyph otherwise. */
@@ -140,12 +170,13 @@ function elementIcon(el: ArElement): ReactNode {
 // as real 3D models from the KaunTech gallery (the flat social billboards are
 // gone). The `social` element type is kept in scene.ts only so cards published
 // before this change still render.
-type AssetTab = "model" | "image" | "video" | "text";
-const ASSET_TABS: { key: AssetTab; label: string; icon: ReactNode }[] = [
-  { key: "model", label: "3D model", icon: <IconBox /> },
-  { key: "image", label: "Image", icon: <IconImage /> },
-  { key: "video", label: "Video", icon: <IconVideo /> },
-  { key: "text", label: "Text", icon: <IconText /> },
+type AssetTab = "model" | "image" | "video" | "audio" | "text";
+const ASSET_TABS: { key: AssetTab; label: string; hint: string; icon: ReactNode }[] = [
+  { key: "model", label: "3D model", hint: "3D model — pick from the gallery or upload a .glb", icon: <IconBox /> },
+  { key: "image", label: "Image", hint: "Image — a photo or logo shown flat on the card", icon: <IconImage /> },
+  { key: "video", label: "Video", hint: "Video — play a clip on the card (upload or .mp4 link)", icon: <IconVideo /> },
+  { key: "audio", label: "Audio", hint: "Audio — play a sound when the card is scanned", icon: <IconAudio /> },
+  { key: "text", label: "Text", hint: "Text — a line of text in any colour", icon: <IconText /> },
 ];
 
 // Collapsible sidebar section: a header button that toggles its body. Used to
@@ -323,8 +354,22 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
   const modelInput = useRef<HTMLInputElement>(null);
   const imageInput = useRef<HTMLInputElement>(null);
+  const videoInput = useRef<HTMLInputElement>(null);
+  const audioInput = useRef<HTMLInputElement>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const pendingSide = useRef<Side>("front");
+  // When set, a fresh video/audio file picked from the properties panel REPLACES
+  // this element's url (vs. adding a new element from the asset library).
+  const replaceMediaFor = useRef<string | null>(null);
+  // Asset URLs that are already PERSISTED in the saved scene. An uploaded asset
+  // removed before it was ever saved is an orphan we delete immediately (it would
+  // otherwise leak cloud storage, since the save-time cleanup only reclaims
+  // assets that were once persisted). Seeded from the loaded model, refreshed on
+  // each successful save. Lazy-init like mindBaselineRef.
+  const persistedAssetsRef = useRef<Set<string> | null>(null);
+  if (persistedAssetsRef.current === null) {
+    persistedAssetsRef.current = new Set(readElements(model).map((e) => e.url).filter(isOurUploadedAsset));
+  }
 
   // Dirty tracking: the Save button only appears when the savable state differs
   // from what was last persisted. A freshly cropped photo (frontFile/backFile)
@@ -464,8 +509,33 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       }),
     );
   }
+  // Best-effort delete of a session-uploaded asset the owner removed before it
+  // was ever saved, so it doesn't linger in the bucket counting against cloud
+  // storage. Never touches already-persisted assets (the save-time cleanup owns
+  // those) — so a locally-removed-but-not-saved persisted asset is left intact
+  // and the published card keeps working until the removal is actually saved.
+  function deleteAsset(url: string) {
+    void fetch("/api/ar/asset", {
+      method: "DELETE",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ card_id: card.id, url }),
+    })
+      .then(() => refreshUsage())
+      .catch(() => {});
+  }
+  // Reclaim `url` only if it's one of our uploads, isn't persisted yet, and no
+  // remaining element still references it (e.g. a duplicate sharing the file).
+  function reclaimIfOrphan(url: string | undefined, remaining: ArElement[]) {
+    if (!isOurUploadedAsset(url)) return;
+    if (persistedAssetsRef.current?.has(url)) return;
+    if (remaining.some((e) => e.url === url)) return;
+    deleteAsset(url);
+  }
   function remove(id: string) {
-    setElements((p) => p.filter((e) => e.id !== id));
+    const el = elements.find((e) => e.id === id);
+    const remaining = elements.filter((e) => e.id !== id);
+    if (el?.url) reclaimIfOrphan(el.url, remaining);
+    setElements(remaining);
     if (selectedId === id) setSelectedId(null);
   }
   function duplicate(id: string) {
@@ -483,16 +553,16 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     });
   }
 
-  async function uploadAsset(file: File, kind: "model" | "image"): Promise<string | null> {
+  async function uploadAsset(file: File, kind: "model" | "image" | "video" | "audio"): Promise<string | null> {
     setError(null);
     // Pre-check against the live budget so the owner gets an instant, specific
     // message ("needs X, only Y left") instead of a generic server rejection —
     // and we don't waste a multi-MB upload the trigger will refuse anyway.
     if (capBytes > 0 && usedBytes + file.size > capBytes) {
       setError(
-        `That ${kind === "model" ? "model" : "image"} is ${formatBytes(file.size)}, but only ${formatBytes(
+        `That ${kind} is ${formatBytes(file.size)}, but only ${formatBytes(
           Math.max(0, capBytes - usedBytes),
-        )} of your ${formatBytes(capBytes)} cloud storage is left. Remove a model or pick a smaller file.`,
+        )} of your ${formatBytes(capBytes)} cloud storage is left. Remove an asset or pick a smaller file.`,
       );
       return null;
     }
@@ -526,11 +596,53 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   }
   async function onPickImage(file?: File) {
     if (!file) return;
+    // Measure the picture's real aspect from a local object-url (no CORS, no wait
+    // on the upload) so it lands on the card un-squashed.
+    const localUrl = URL.createObjectURL(file);
+    const aspect = await imageAspect(localUrl).catch(() => 1);
+    URL.revokeObjectURL(localUrl);
     const url = await uploadAsset(file, "image");
-    if (url) add({ type: "image", url, scale: 0.35, rotationY: 0 });
+    if (url) add({ type: "image", url, aspect, scale: 0.35, rotationY: 0 });
   }
   function addVideo() {
-    add({ type: "video", url: "", scale: 0.7, rotationY: 0, position: [0, 0.55, 0.05] });
+    // Default to 16:9 until a clip URL is pasted (its real aspect is read on blur).
+    add({ type: "video", url: "", aspect: 16 / 9, loop: true, scale: 0.7, rotationY: 0, position: [0, 0.55, 0.05] });
+  }
+  async function onPickVideoFile(file?: File) {
+    if (!file) return;
+    const localUrl = URL.createObjectURL(file);
+    const aspect = await videoAspect(localUrl).catch(() => 16 / 9);
+    URL.revokeObjectURL(localUrl);
+    const url = await uploadAsset(file, "video");
+    if (!url) return;
+    const replaceId = replaceMediaFor.current;
+    replaceMediaFor.current = null;
+    if (replaceId) {
+      const oldUrl = elements.find((e) => e.id === replaceId)?.url;
+      update(replaceId, { url, aspect });
+      if (oldUrl && oldUrl !== url) reclaimIfOrphan(oldUrl, elements.filter((e) => e.id !== replaceId));
+    } else {
+      add({ type: "video", url, aspect, loop: true, scale: 0.7, rotationY: 0, position: [0, 0.55, 0.05] });
+    }
+  }
+  function addAudio() {
+    // Audio is invisible sound + a small tappable speaker control in AR. Paste a
+    // direct audio URL or upload a file in its properties.
+    add({ type: "audio", url: "", loop: true, autoplay: true, scale: 1, rotationY: 0, position: [0, 0.3, 0.06] });
+  }
+  async function onPickAudioFile(file?: File) {
+    if (!file) return;
+    const url = await uploadAsset(file, "audio");
+    if (!url) return;
+    const replaceId = replaceMediaFor.current;
+    replaceMediaFor.current = null;
+    if (replaceId) {
+      const oldUrl = elements.find((e) => e.id === replaceId)?.url;
+      update(replaceId, { url });
+      if (oldUrl && oldUrl !== url) reclaimIfOrphan(oldUrl, elements.filter((e) => e.id !== replaceId));
+    } else {
+      add({ type: "audio", url, loop: true, autoplay: true, scale: 1, rotationY: 0, position: [0, 0.3, 0.06] });
+    }
   }
   function addText() {
     add({ type: "text", text: card.name || "Your name", color: DEFAULT_TEXT_COLOR, scale: 1, rotationY: 0, position: [0, 0.42, 0.06] });
@@ -563,10 +675,10 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       setError("Add your card photo first. It's the image people point their camera at when they scan.");
       return;
     }
-    const emptyVideo = elements.find((e) => e.type === "video" && !e.url?.trim());
-    if (emptyVideo) {
-      setSelectedId(emptyVideo.id);
-      setError("One of your videos has no URL yet. Paste an mp4 link or remove it.");
+    const emptyMedia = elements.find((e) => (e.type === "video" || e.type === "audio") && !e.url?.trim());
+    if (emptyMedia) {
+      setSelectedId(emptyMedia.id);
+      setError(`One of your ${emptyMedia.type === "video" ? "videos" : "audio clips"} has no file yet. Upload a file, paste a direct link, or remove it.`);
       return;
     }
     setBusy(true);
@@ -615,6 +727,10 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       // Re-baseline to exactly what's now persisted so the Save button hides
       // until the next real change.
       baselineRef.current = JSON.stringify({ elements, lighting, name, publish, target, frontUrl: newFront, backUrl: newBack });
+      // Everything in the scene we just saved is now persisted — so a later
+      // removal of any of these reverts to the save-time cleanup path, never the
+      // immediate delete (which is only for never-saved session uploads).
+      persistedAssetsRef.current = new Set(elements.map((e) => e.url).filter(isOurUploadedAsset));
       // Adopt the saved target (or its absence) so the next save only rebuilds the
       // target when the target side or its photo changes again. Baseline must match
       // the (target-aware) targetSig shape.
@@ -653,6 +769,10 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
         onChange={(e) => { onPickModel(e.target.files?.[0]); e.currentTarget.value = ""; }} />
       <input ref={imageInput} type="file" accept="image/*" style={{ display: "none" }}
         onChange={(e) => { onPickImage(e.target.files?.[0]); e.currentTarget.value = ""; }} />
+      <input ref={videoInput} type="file" accept="video/mp4,video/webm,.mp4,.webm,.m4v,.mov" style={{ display: "none" }}
+        onChange={(e) => { onPickVideoFile(e.target.files?.[0]); e.currentTarget.value = ""; }} />
+      <input ref={audioInput} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.aac" style={{ display: "none" }}
+        onChange={(e) => { onPickAudioFile(e.target.files?.[0]); e.currentTarget.value = ""; }} />
       <input ref={photoInput} type="file" accept="image/*" style={{ display: "none" }}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) setCropFor({ side: pendingSide.current, file: f }); e.currentTarget.value = ""; }} />
 
@@ -861,7 +981,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                   usedBytes={usedBytes}
                   capBytes={capBytes}
                   label={`${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim()}
-                  hint="Card photos and AR models share this budget. Pick sizes that fit what's left."
+                  hint="Card photos and AR content (models, images, video, audio) share this budget. Pick sizes that fit what's left."
                 />
               )}
               {/* Assets — add models, images, video, text or social, by category */}
@@ -873,7 +993,8 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                       key={t.key}
                       role="tab"
                       aria-selected={assetTab === t.key}
-                      title={t.label}
+                      aria-label={t.label}
+                      title={t.hint}
                       className={`ar-asset-tab ${assetTab === t.key ? "is-active" : ""}`}
                       onClick={() => setAssetTab(t.key)}
                     >
@@ -885,7 +1006,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                 <div className="ar-asset-panel">
                   {assetTab === "model" ? (
                     <>
-                      <button className="ar-asset-cta" onClick={() => setGalleryOpen(true)}>
+                      <button className="ar-asset-cta" title="Browse KaunTech's ready-made 3D models and place one instantly" onClick={() => setGalleryOpen(true)}>
                         <span className="ar-asset-cta-ico" aria-hidden><IconBox /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-cta-title">Choose from KaunTech gallery</span>
@@ -893,7 +1014,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         </span>
                         <span className="ar-asset-cta-arrow" aria-hidden><IconChevron /></span>
                       </button>
-                      <button className="ar-asset-upload" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
+                      <button className="ar-asset-upload" title="Upload a .glb model from your device (counts toward cloud storage)" onClick={() => modelInput.current?.click()} disabled={!!uploading}>
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "model" ? "Uploading…" : "Upload your own .glb"}</span>
@@ -904,7 +1025,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </>
                   ) : assetTab === "image" ? (
                     <>
-                      <button className="ar-tab ar-asset-add" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
+                      <button className="ar-tab ar-asset-add" title="Add a photo or logo (PNG, JPG or WebP) — counts toward cloud storage" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         {uploading === "image" ? "Uploading…" : "Add image"}
                       </button>
@@ -912,15 +1033,37 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </>
                   ) : assetTab === "video" ? (
                     <>
-                      <button className="ar-tab ar-asset-add" onClick={addVideo}>
-                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
-                        Add video
+                      <button className="ar-asset-upload" title="Upload an MP4 or WebM video (counts toward cloud storage)" onClick={() => { replaceMediaFor.current = null; videoInput.current?.click(); }} disabled={!!uploading}>
+                        <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
+                        <span className="ar-asset-cta-text">
+                          <span className="ar-asset-upload-title">{uploading === "video" ? "Uploading…" : "Upload a video file"}</span>
+                          <span className="ar-asset-upload-sub">MP4 / WebM — counts toward your cloud storage</span>
+                        </span>
                       </button>
-                      <span className="ar-muted ar-asset-hint">Adds a video plane — paste the mp4 link in its properties.</span>
+                      <button className="ar-tab ar-asset-add" title="Add a video plane, then paste a direct .mp4 link in its properties" onClick={addVideo}>
+                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                        Add video by URL
+                      </button>
+                      <span className="ar-muted ar-asset-hint">A video plane on the card. Upload a file, or paste a direct .mp4 link in its properties (YouTube/Vimeo links don’t play in AR).</span>
+                    </>
+                  ) : assetTab === "audio" ? (
+                    <>
+                      <button className="ar-asset-upload" title="Upload an MP3, WAV or M4A clip (counts toward cloud storage)" onClick={() => { replaceMediaFor.current = null; audioInput.current?.click(); }} disabled={!!uploading}>
+                        <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
+                        <span className="ar-asset-cta-text">
+                          <span className="ar-asset-upload-title">{uploading === "audio" ? "Uploading…" : "Upload an audio file"}</span>
+                          <span className="ar-asset-upload-sub">MP3 / WAV / M4A — counts toward your cloud storage</span>
+                        </span>
+                      </button>
+                      <button className="ar-tab ar-asset-add" title="Add an audio clip, then paste a direct audio link in its properties" onClick={addAudio}>
+                        <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
+                        Add audio by URL
+                      </button>
+                      <span className="ar-muted ar-asset-hint">Plays when the card is scanned, with a tappable speaker so viewers can mute it. Upload a file or paste a direct audio link.</span>
                     </>
                   ) : (
                     <>
-                      <button className="ar-tab ar-asset-add" onClick={addText}>
+                      <button className="ar-tab ar-asset-add" title="Add a line of text — edit the words and colour in its properties" onClick={addText}>
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         Add text
                       </button>
@@ -945,7 +1088,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <button className="ar-el-select" onClick={() => setSelectedId(el.id)}>
                           <span className="ar-el-ico" aria-hidden>{elementIcon(el)}</span>
                           <span className="ar-el-name">{typeLabel(el)}</span>
-                          {el.link || (el.type === "video" && el.url) ? <span className="ar-el-link" aria-hidden><IconLink /></span> : null}
+                          {el.link || ((el.type === "video" || el.type === "audio") && el.url) ? <span className="ar-el-link" aria-hidden><IconLink /></span> : null}
                         </button>
                         <div className="ar-el-actions">
                           <button className="ar-icon-btn" title={el.hidden ? "Show" : "Hide"}
@@ -1049,14 +1192,101 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </>
                   ) : selected.type === "video" ? (
                     <div>
-                      <label className="ar-label">Video URL (mp4)</label>
+                      <label className="ar-label">Video file</label>
+                      <button
+                        type="button"
+                        className="ar-asset-upload"
+                        style={{ width: "100%", marginBottom: 8 }}
+                        disabled={!!uploading}
+                        onClick={() => { replaceMediaFor.current = selected.id; videoInput.current?.click(); }}
+                      >
+                        <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
+                        <span className="ar-asset-cta-text">
+                          <span className="ar-asset-upload-title">{uploading === "video" ? "Uploading…" : selected.url ? "Replace with an upload" : "Upload a video file"}</span>
+                          <span className="ar-asset-upload-sub">MP4 / WebM — counts toward your cloud storage</span>
+                        </span>
+                      </button>
+                      <label className="ar-label">…or paste a direct video URL</label>
                       <input
                         className="ar-field"
                         value={selected.url ?? ""}
                         placeholder="https://…/clip.mp4"
                         onChange={(e) => update(selected.id, { url: e.target.value })}
+                        onBlur={(e) => {
+                          const url = e.target.value.trim();
+                          update(selected.id, { url });
+                          // Read the clip's real aspect so its plane isn't forced to a
+                          // shape — keeps the preview and AR matching the actual video.
+                          if (url) videoAspect(url).then((a) => update(selected.id, { aspect: a }));
+                        }}
+                      />
+                      {selected.url && isStreamingPageUrl(selected.url) ? (
+                        <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
+                          YouTube / Vimeo links don’t play in AR — they’re web pages, not video files. Upload the clip above, or paste a direct .mp4/.webm file link.
+                        </span>
+                      ) : selected.url && !isDirectVideoUrl(selected.url) ? (
+                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block", color: "var(--ar-orange-deep)" }}>
+                          This doesn’t look like a direct video file (.mp4/.webm). If it doesn’t play, upload the file instead.
+                        </span>
+                      ) : (
+                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
+                          The clip plays muted &amp; looped and shows on both sides of the card.
+                        </span>
+                      )}
+                      <label className="ar-row" style={{ gap: 8, cursor: "pointer", marginTop: 10 }}>
+                        <input type="checkbox" checked={selected.loop ?? true}
+                          onChange={(e) => update(selected.id, { loop: e.target.checked })}
+                          style={{ accentColor: "var(--ar-orange)" }} />
+                        <span style={{ fontSize: "14px" }}>Loop the video</span>
+                      </label>
+                    </div>
+                  ) : selected.type === "audio" ? (
+                    <div>
+                      <label className="ar-label">Audio file</label>
+                      <button
+                        type="button"
+                        className="ar-asset-upload"
+                        style={{ width: "100%", marginBottom: 8 }}
+                        disabled={!!uploading}
+                        onClick={() => { replaceMediaFor.current = selected.id; audioInput.current?.click(); }}
+                      >
+                        <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
+                        <span className="ar-asset-cta-text">
+                          <span className="ar-asset-upload-title">{uploading === "audio" ? "Uploading…" : selected.url ? "Replace with an upload" : "Upload an audio file"}</span>
+                          <span className="ar-asset-upload-sub">MP3 / WAV / M4A — counts toward your cloud storage</span>
+                        </span>
+                      </button>
+                      <label className="ar-label">…or paste a direct audio URL</label>
+                      <input
+                        className="ar-field"
+                        value={selected.url ?? ""}
+                        placeholder="https://…/track.mp3"
+                        onChange={(e) => update(selected.id, { url: e.target.value })}
                         onBlur={(e) => update(selected.id, { url: e.target.value.trim() })}
                       />
+                      {selected.url && isStreamingPageUrl(selected.url) ? (
+                        <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
+                          Streaming-page links (Spotify, YouTube…) don’t play in AR. Upload the audio file above, or paste a direct .mp3/.m4a link.
+                        </span>
+                      ) : (
+                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
+                          Plays when the card is scanned. Viewers see a small speaker on the card they can tap to mute / unmute.
+                        </span>
+                      )}
+                      <div className="ar-stack" style={{ gap: 8, marginTop: 10 }}>
+                        <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
+                          <input type="checkbox" checked={selected.autoplay ?? true}
+                            onChange={(e) => update(selected.id, { autoplay: e.target.checked })}
+                            style={{ accentColor: "var(--ar-orange)" }} />
+                          <span style={{ fontSize: "14px" }}>Play automatically on scan</span>
+                        </label>
+                        <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
+                          <input type="checkbox" checked={selected.loop ?? true}
+                            onChange={(e) => update(selected.id, { loop: e.target.checked })}
+                            style={{ accentColor: "var(--ar-orange)" }} />
+                          <span style={{ fontSize: "14px" }}>Loop the audio</span>
+                        </label>
+                      </div>
                     </div>
                   ) : (
                     <div>
@@ -1092,7 +1322,8 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </div>
                   )}
 
-                  {/* Behaviours */}
+                  {/* Behaviours — audio has no visible body to spin, so it's skipped. */}
+                  {selected.type !== "audio" && (
                   <div className="ar-stack" style={{ gap: 8 }}>
                     <span className="ar-label" style={{ margin: 0 }}>Behaviour Settings</span>
                     <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>
@@ -1110,6 +1341,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                       </label>
                     ) : null}
                   </div>
+                  )}
 
                   {/* Model Brightness (Model Specific Setting) */}
                   {selected.type === "model" && (
