@@ -80,6 +80,10 @@ export function eightwallViewerHtml(view: EightwallView): string {
   /* Start gate (iOS motion permission needs a tap) */
   #startbox{display:none;flex-direction:column;align-items:center}
   #startbox.show{display:flex}
+  /* Base styles live HERE, not inline: an inline style:display:flex would beat the
+     .hide class (inline > class specificity), so the loader could never be hidden
+     and showed UNDER the iOS "Tap to start" gate / the desktop gate. */
+  #loadbox{width:100%;display:flex;flex-direction:column;align-items:center}
   #loadbox.hide{display:none}
   .st-sub{font-size:14px;color:#9AA3B2;line-height:1.5;margin-bottom:22px;max-width:260px}
   .st-btn{appearance:none;border:none;cursor:pointer;background:#F59E0B;color:#1A1206;font-size:16px;font-weight:700;
@@ -90,6 +94,15 @@ export function eightwallViewerHtml(view: EightwallView): string {
   #err{display:none;flex-direction:column;align-items:center}
   #err.show{display:flex}
   .er-msg{font-size:15px;color:#E6EDF3;line-height:1.5;margin-bottom:20px;max-width:280px}
+  /* Desktop gate (AR is a phone/tablet experience) */
+  #desktop{display:none;flex-direction:column;align-items:center}
+  #desktop.show{display:flex}
+  .dk-icon{width:54px;height:54px;border-radius:16px;background:rgba(245,158,11,.14);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+  .dk-title{font-size:20px;font-weight:700;margin-bottom:10px}
+  .dk-sub{font-size:14px;color:#9AA3B2;line-height:1.55;max-width:300px;margin-bottom:20px}
+  .dk-qr{background:#fff;padding:12px;border-radius:14px;line-height:0;min-width:80px;min-height:80px;margin-bottom:14px}
+  .dk-qr img{display:block;width:184px;height:184px;image-rendering:pixelated}
+  .dk-url{font-size:12px;color:#6B7280;word-break:break-all;max-width:300px}
   #hint{position:fixed;top:16px;left:0;right:0;text-align:center;z-index:20;pointer-events:none;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.6)}
   #dbg{position:fixed;top:8px;left:8px;z-index:40;display:none;font:600 12px/1.45 ui-monospace,Menlo,monospace;
     color:#7CFFB2;background:rgba(0,0,0,.62);padding:7px 9px;border-radius:8px;white-space:pre;pointer-events:none}
@@ -101,7 +114,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
 <body>
 <div id="status"><div class="ld">
   <div class="ld-logo">KaunTech <b>AR</b></div>
-  <div id="loadbox" style="width:100%;display:flex;flex-direction:column;align-items:center">
+  <div id="loadbox">
     <div class="ld-track"><div id="bar" class="ld-bar"></div></div>
     <div id="pct" class="ld-pct">Starting…</div>
   </div>
@@ -115,6 +128,15 @@ export function eightwallViewerHtml(view: EightwallView): string {
   <div id="err">
     <div id="ermsg" class="er-msg">AR couldn’t start.</div>
     <button id="retrybtn" class="st-btn">Try again</button>
+  </div>
+  <div id="desktop">
+    <div class="dk-icon" aria-hidden>
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2.5"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+    </div>
+    <div class="dk-title">Open on your phone</div>
+    <div class="dk-sub">This AR card comes to life on a phone or tablet — point its camera at the printed KaunTech card. Scan this code to open it on your phone.</div>
+    <div id="qr" class="dk-qr"></div>
+    <div id="dkurl" class="dk-url"></div>
   </div>
 </div></div>
 <div id="hint"></div>
@@ -174,6 +196,56 @@ export function eightwallViewerHtml(view: EightwallView): string {
     rnPost({ type: 'ar-error', message: msg });
   }
   if (retryBtn) retryBtn.addEventListener('click', function(){ location.reload(); });
+
+  // ── Mobile-only gate ────────────────────────────────────────────────────────
+  // AR needs the rear camera (+ motion) — pointless on a desktop PC/Mac. Detect
+  // CLIENT-SIDE (not via the UA header) so a phone/tablet in "Request Desktop Site"
+  // mode still passes: its UA is spoofed to a desktop string, but the device still
+  // reports multi-touch, which no conventional PC/Mac does.
+  function isMobileDevice(){
+    try {
+      if (/[?&]force=1/i.test(location.search)) return true;   // dev/test bypass
+      if (window.ReactNativeWebView) return true;              // the KaunTech app (phone-only)
+      var ua = navigator.userAgent || '';
+      if (/Android|iPhone|iPod|Windows Phone|webOS|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
+      var uad = navigator.userAgentData;
+      if (uad && uad.mobile === true) return true;
+      // Touch-first device (incl. iPadOS/Android desktop-mode, where the UA lies):
+      // multi-touch + a coarse primary pointer = a real phone/tablet, not a PC/Mac.
+      var touch = (navigator.maxTouchPoints || 0) > 1;
+      var coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      if (touch && coarse) return true;
+      // iPadOS in desktop mode reports as "Macintosh" but is multi-touch (no Mac is).
+      if (/Macintosh/i.test(ua) && touch) return true;
+      return false;
+    } catch(e){ return true; } // never hard-block on a detection error
+  }
+  function showDesktopGate(){
+    try {
+      window.__ARSTATE__ = 'DESKTOP';
+      rnPost({ type: 'ar-desktop' });
+      loadBox.classList.add('hide');
+      if (startBox) startBox.classList.remove('show');
+      if (errBox) errBox.classList.remove('show');
+      statusEl.classList.remove('done', 'hide');
+      var dk = document.getElementById('desktop'); if (dk) dk.classList.add('show');
+      var urlEl = document.getElementById('dkurl'); if (urlEl) urlEl.textContent = location.host + location.pathname;
+      // QR of this exact URL so a desktop visitor can jump to it on their phone.
+      // qrcode-generator (jsDelivr — already allowed by the /ar script-src) renders
+      // to a data-URI <img> (allowed by img-src data:), so no CSP change is needed.
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+      s.crossOrigin = 'anonymous';
+      s.onload = function(){
+        // Encode the CLEAN card URL (no internal ?worldtracking/?debug/etc.) so the
+        // phone gets the full default experience.
+        try { var qr = window.qrcode(0, 'M'); qr.addData(location.origin + location.pathname); qr.make();
+          var box = document.getElementById('qr'); if (box) box.innerHTML = qr.createImgTag(5, 0); } catch(e){}
+      };
+      document.head.appendChild(s);
+    } catch(e){}
+  }
+  if (!isMobileDevice()){ showDesktopGate(); return; }
 
   setProg(6);
   log('engine: 8th Wall; worldTracking=' + (D.worldTracking ? 'on' : 'off'));

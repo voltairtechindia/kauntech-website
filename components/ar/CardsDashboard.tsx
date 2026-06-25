@@ -14,6 +14,15 @@ export interface DashItem {
   subtitle: string;
   status: CardStatus;
   previewUrl: string | null;
+  /** Card accent (#RRGGBB) — drives the gradient border, like the app card. */
+  accent: string;
+  avatarUrl: string | null;
+  isDefault: boolean;
+}
+
+function initialOf(name: string): string {
+  const c = (name || "").trim().charAt(0);
+  return c ? c.toUpperCase() : "?";
 }
 
 const TIER_LABEL: Record<EffectiveTier, string> = { free: "Free", pro: "Pro", ultra: "Ultra" };
@@ -32,11 +41,14 @@ export default function CardsDashboard({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  // Cards whose AR we just removed — optimistically flip them to idle ("Set up
+  // AR") until the server refetch lands. We never hide the card itself: removing
+  // AR on the web keeps the underlying business card.
+  const [unArmedIds, setUnArmedIds] = useState<Set<string>>(new Set());
 
   // Active AR cards count against the plan cap; cards without AR are just
   // candidates you can still set up while under the cap.
-  const visible = items.filter((i) => !removedIds.has(i.id));
+  const visible = items.map((i) => (unArmedIds.has(i.id) ? { ...i, status: "none" as CardStatus } : i));
   const usedCount = visible.filter((i) => i.status !== "none").length;
   const atCap = usedCount >= arCap;
   const pct = arCap > 0 ? Math.min(100, Math.round((usedCount / arCap) * 100)) : 0;
@@ -68,13 +80,14 @@ export default function CardsDashboard({
         body: JSON.stringify({ card_id: id }),
       });
       const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "Could not delete.");
+      if (!res.ok || !json.ok) throw new Error(json.error || "Could not remove the AR card.");
       setConfirmId(null);
-      // Optimistically hide the card so it never reappears
-      setRemovedIds((prev) => new Set(prev).add(id));
+      // Optimistically flip the card to idle (keeps it on the grid as a
+      // "Set up AR" candidate); the refresh re-reads the real state.
+      setUnArmedIds((prev) => new Set(prev).add(id));
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not delete.");
+      setError(e instanceof Error ? e.message : "Could not remove the AR card.");
     } finally {
       setBusyId(null);
     }
@@ -119,7 +132,10 @@ export default function CardsDashboard({
         <div className="ar-empty">
           <span className="ar-empty-ico" aria-hidden><IconBox /></span>
           <p className="ar-empty-title">No cards yet</p>
-          <p className="ar-muted" style={{ margin: "0 0 12px" }}>Add your first AR card to get started.</p>
+          <p className="ar-muted" style={{ margin: "0 0 12px" }}>
+            Your business cards from the KaunTech app show up here to add AR to. Don&apos;t have one yet?
+            Create a card below, or make one in the app and it&apos;ll appear here.
+          </p>
           <button
             className="ar-btn ar-btn-primary"
             onClick={createCard}
@@ -131,43 +147,69 @@ export default function CardsDashboard({
           </button>
         </div>
       ) : (
-        <div className="ar-grid">
+        <div className="ar-grid ar-cardgrid">
           {ordered.map((item) => {
             const active = item.status !== "none";
             const confirming = confirmId === item.id;
             const busy = busyId === item.id;
             return (
-              <div key={item.id} className={`ar-tile ${active ? "" : "ar-tile-idle"}`}>
-                <div className="ar-tile-thumb">
-                  {item.previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={item.previewUrl} alt={item.name} />
-                  ) : (
-                    <span className="ar-tile-thumb-empty" aria-hidden><IconBox /></span>
-                  )}
+              <div
+                key={item.id}
+                className={`ar-tile ar-cardtile ${active ? "" : "ar-tile-idle"}`}
+                style={{ ["--tile-accent" as string]: item.accent }}
+              >
+                {/* App-style business card face — dark, accent gradient border. */}
+                <div className="ar-cardface">
                   {active ? (
-                    <span className={`ar-badge ${item.status === "published" ? "ar-badge-published" : "ar-badge-draft"} ar-tile-badge`}>
+                    <span className={`ar-badge ${item.status === "published" ? "ar-badge-published" : "ar-badge-draft"} ar-cardface-badge`}>
                       {item.status === "published" ? "Live" : "Draft"}
                     </span>
                   ) : (
-                    <span className="ar-badge ar-badge-locked ar-tile-badge">No AR</span>
+                    <span className="ar-badge ar-badge-locked ar-cardface-badge">No AR</span>
                   )}
+
+                  <div className="ar-cardface-hero">
+                    {item.previewUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={item.previewUrl} alt={item.name} />
+                    ) : (
+                      <span className="ar-cardface-monogram">{initialOf(item.name)}</span>
+                    )}
+                  </div>
+
+                  <div className="ar-cardface-id">
+                    <span className="ar-cardface-avatar">
+                      {item.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={item.avatarUrl} alt="" />
+                      ) : (
+                        initialOf(item.name)
+                      )}
+                    </span>
+                    <span className="ar-cardface-idtext">
+                      <strong className="ar-cardface-name">{item.name || "Untitled card"}</strong>
+                      <span className="ar-cardface-role">{item.subtitle || "—"}</span>
+                    </span>
+                    {item.isDefault ? <span className="ar-cardface-primary">PRIMARY</span> : null}
+                  </div>
+
+                  <div className="ar-cardface-foot">
+                    <span className="ar-cardface-footline" />
+                    <span className="ar-cardface-wordmark">KAUNTECH</span>
+                    <span className="ar-cardface-footline" />
+                  </div>
                 </div>
 
-                <div className="ar-tile-body">
-                  <strong className="ar-tile-name">{item.name || "Untitled card"}</strong>
-                  <span className="ar-muted">{item.subtitle || "—"}</span>
-                </div>
-
+                {/* Actions sit on the tile, below the card face. */}
                 {confirming ? (
                   <div className="ar-tile-actions ar-tile-confirm">
-                    <span className="ar-muted">{active ? "Remove the AR from this card?" : "Delete this card?"}</span>
+                    <span className="ar-muted">Remove the AR from this card? Your card stays in the app.</span>
                     <div className="ar-row">
                       <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setConfirmId(null)} disabled={busy}>
                         Cancel
                       </button>
                       <button className="ar-btn ar-btn-sm ar-btn-danger" onClick={() => remove(item.id)} disabled={busy}>
-                        {busy ? "Deleting…" : "Delete"}
+                        {busy ? "Removing…" : "Remove AR"}
                       </button>
                     </div>
                   </div>
@@ -181,8 +223,8 @@ export default function CardsDashboard({
                         <IconExternal /> View AR
                       </a>
                     ) : null}
-                    <button className="ar-icon-btn-bordered ar-icon-danger" title="Delete AR card" onClick={() => setConfirmId(item.id)}>
-                      <IconTrash /> Remove
+                    <button className="ar-icon-btn-bordered ar-icon-danger" title="Remove the AR from this card (keeps the card)" onClick={() => setConfirmId(item.id)}>
+                      <IconTrash /> Remove AR
                     </button>
                   </div>
                 ) : (
@@ -196,9 +238,6 @@ export default function CardsDashboard({
                         <IconPlus /> Set up AR
                       </Link>
                     )}
-                    <button className="ar-icon-btn-bordered ar-icon-danger" title="Delete card" onClick={() => setConfirmId(item.id)}>
-                      <IconTrash /> Remove
-                    </button>
                   </div>
                 )}
               </div>

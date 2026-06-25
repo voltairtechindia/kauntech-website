@@ -1,12 +1,16 @@
 /**
- * Delete from the owner's AR dashboard. Two cases, both authed (RLS scopes the
- * delete to the owner):
- *   - Card HAS an AR model: drop the ar_models row, which frees a slot against
- *     the plan's AR model cap and leaves the underlying card in place.
- *   - Card has NO AR model (setup never finished): drop the card row itself, so
- *     a half-set-up or abandoned card can actually be cleared from the studio.
- * Either way we best-effort remove the card's uploaded files from storage so a
- * delete frees both the count and the byte budget.
+ * Remove the AR layer from one of the owner's cards. The web studio NEVER
+ * deletes the underlying business card — those are owned by the app, and a card
+ * deleted here would also vanish from the user's app (the AR model cascades off
+ * the card, not the other way round). So this only ever drops the ar_models row:
+ *   - Card HAS an AR model: drop the ar_models row, freeing a slot against the
+ *     plan's AR cap, and best-effort clear the AR assets from storage. The card
+ *     itself stays put — both in the cloud and in the app.
+ *   - Card has NO AR model: nothing to remove; returns ok as a no-op so the UI
+ *     can stay simple. The card is left untouched.
+ *
+ * (Deleting the card entirely is an app-only action — see the app's delete flow,
+ * which warns first because it cascades the AR card away too.)
  *
  * POST /api/ar/delete  (application/json)
  *   { card_id }  ->  200 { ok:true } | 4xx { ok:false, error }
@@ -48,9 +52,9 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!card) return bad("Card not found.", 404);
 
-  // If there's an AR model, removing it frees the plan slot but keeps the card.
-  // If there isn't (setup never finished), there's nothing to "un-AR" — the
-  // user wants the card gone, so delete the card row itself.
+  // Find the AR model, if any. Removing it frees the plan slot and keeps the
+  // card. If there's none, there's nothing to do — and we deliberately do NOT
+  // delete the card (that's an app-only action), so this is a safe no-op.
   const { data: model } = await supabase
     .from("ar_models")
     .select("id")
@@ -58,27 +62,19 @@ export async function POST(req: Request) {
     .eq("user_id", user.id)
     .maybeSingle();
 
-  // Always delete both: AR model row first (FK depends on card), then the card
-  // itself — so a deleted card truly vanishes from the dashboard.
-  if (model) {
-    const { error: delErr } = await supabase
-      .from("ar_models")
-      .delete()
-      .eq("id", model.id)
-      .eq("user_id", user.id);
-    if (delErr) return bad("Could not delete. Please try again.", 500);
-  }
+  if (!model) return NextResponse.json({ ok: true, noop: true });
 
-  const { error: cardDelErr } = await supabase
-    .from("cards")
+  const { error: delErr } = await supabase
+    .from("ar_models")
     .delete()
-    .eq("id", cardId)
+    .eq("id", model.id)
     .eq("user_id", user.id);
-  if (cardDelErr) return bad("Could not delete the card. Please try again.", 500);
+  if (delErr) return bad("Could not remove the AR card. Please try again.", 500);
 
-  // Best-effort storage cleanup: the card's photos sit at `${uid}/${cardId}/…`
+  // Best-effort storage cleanup: AR target photos sit at `${uid}/${cardId}/…`
   // and editor assets at `${uid}/${cardId}/assets/…`. A failure here must not
-  // fail the delete — the row is already gone.
+  // fail the delete — the AR model row is already gone. The card's own data is
+  // untouched.
   try {
     const bucket = supabase.storage.from(AR_BUCKET);
     const prefixes = [`${user.id}/${cardId}`, `${user.id}/${cardId}/assets`];

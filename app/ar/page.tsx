@@ -7,6 +7,13 @@ export const dynamic = "force-dynamic";
 
 const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u);
 
+// Sanitize a card_color to a plain #RRGGBB (strip any alpha), default to the
+// KaunTech orange so every tile has a valid accent for its gradient border.
+function toAccent(color?: string | null): string {
+  if (typeof color === "string" && /^#[0-9a-fA-F]{6}/.test(color)) return color.slice(0, 7);
+  return "#f97316";
+}
+
 export default async function ArDashboard() {
   const data = await getDashboardData();
   if (!data) redirect("/ar/login");
@@ -18,14 +25,19 @@ export default async function ArDashboard() {
     const model = models[card.id];
     const status: CardStatus = !model ? "none" : model.is_published ? "published" : "draft";
     const sceneCard = (model?.scene as { card?: { frontUrl?: string; backUrl?: string } })?.card ?? {};
+    // Hero image: prefer the AR target photo, then the card's custom QR image.
     const previewUrl =
-      [model?.reference_image_path, sceneCard.frontUrl, sceneCard.backUrl].find(isHttp) ?? null;
+      [model?.reference_image_path, sceneCard.frontUrl, sceneCard.backUrl, card.custom_qr_url].find(isHttp) ??
+      null;
     return {
       id: card.id,
       name: card.name || "Untitled card",
       subtitle: [card.title, card.company].filter(Boolean).join(" · "),
       status,
       previewUrl,
+      accent: toAccent(card.card_color),
+      avatarUrl: isHttp(card.avatar_url) ? card.avatar_url : null,
+      isDefault: !!card.is_default,
     };
   });
 
