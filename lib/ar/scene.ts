@@ -20,6 +20,15 @@ export interface ArElement {
   /** Auto-play on scan (audio). Absent → true. Audio also has a tappable speaker
    *  control in AR for devices that block autoplay. */
   autoplay?: boolean;
+  /** Start the video silent (video). Absent → false (the clip's own sound plays).
+   *  A muted clip stays silent; an unmuted one starts muted only long enough to
+   *  satisfy the browser's autoplay rule, then un-mutes on the first tap. */
+  muted?: boolean;
+  /** Playback volume 0–1 (video). Absent → 1 (full). */
+  volume?: number;
+  /** Playback speed multiplier (video). 1 = normal, 0.5 = half, 2 = double.
+   *  Absent → 1. */
+  playbackRate?: number;
   /** Social platform key (for type 'social'). */
   platform?: string;
   /** Tap action — opens this URL. */

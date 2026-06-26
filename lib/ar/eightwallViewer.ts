@@ -547,8 +547,32 @@ export function eightwallViewerHtml(view: EightwallView): string {
         node = document.createElement('a-video'); node.setAttribute('src', el.url);
         var vsz = flatSize(el.aspect, 0.5); node.setAttribute('width', vsz[0]); node.setAttribute('height', vsz[1]);
         node.setAttribute('autoplay', 'true'); node.setAttribute('loop', el.loop === false ? 'false' : 'true');
+        // Always START muted — browsers block autoplay WITH sound until a gesture.
+        // If the author left sound on, unlockVideos() un-mutes on the first tap.
         node.setAttribute('playsinline', 'true'); node.setAttribute('muted', 'true');
         node.setAttribute('material', 'side', 'double'); // visible from behind the card
+        // Sound settings, applied to the real <video> a-frame builds for the clip.
+        var vVol = (typeof el.volume === 'number') ? Math.max(0, Math.min(1, el.volume)) : 1;
+        var vRate = (Number(el.playbackRate) > 0) ? Number(el.playbackRate) : 1;
+        node.setAttribute('data-kt-video', '1');
+        node.__ktWantSound = el.muted !== true && vVol > 0; // author wants it audible
+        node.__ktVol = vVol; node.__ktRate = vRate; node.__ktForceMute = el.muted === true;
+        // Reach the underlying media element and apply volume / speed (and keep it
+        // hard-muted if the author chose silent). Fires when a-frame loads the clip.
+        function ktApplyVid(){
+          try {
+            var m = node.components && node.components.material;
+            var img = m && m.material && m.material.map && m.material.map.image;
+            if (img && img.tagName === 'VIDEO'){
+              node.__ktVideo = img;
+              try { img.playbackRate = vRate; } catch(e){}
+              img.volume = vVol;
+              if (node.__ktForceMute) img.muted = true;
+            }
+          } catch(e){}
+        }
+        node.addEventListener('materialvideoloadeddata', ktApplyVid);
+        node.addEventListener('loaded', ktApplyVid);
         // Show the plane ONLY if the clip is genuinely playable. We probe the URL
         // with our own <video>: a YouTube/Vimeo page, a 404, a CORS-blocked file or
         // a bad codec all fire 'error' (and a cross-origin file with no CORS can't
@@ -750,6 +774,34 @@ export function eightwallViewerHtml(view: EightwallView): string {
     anchor.addEventListener('xrextrasfound', playAutoAudio);
     window.addEventListener('touchstart', resumeAudioCtx, { passive: true });
     window.addEventListener('click', resumeAudioCtx);
+
+    // ── Video sound ──────────────────────────────────────────────────────────
+    // A video plays muted so it can autoplay the moment the card is found. The
+    // first tap/click anywhere un-mutes every clip whose author left sound on
+    // (and applies its volume + speed). A clip the author set to silent stays
+    // muted. Re-resolves the <video> each time in case the material loaded late.
+    function ktVideoOf(n){
+      if (n.__ktVideo) return n.__ktVideo;
+      try {
+        var m = n.components && n.components.material;
+        var img = m && m.material && m.material.map && m.material.map.image;
+        if (img && img.tagName === 'VIDEO'){ n.__ktVideo = img; return img; }
+      } catch(e){}
+      return null;
+    }
+    function unlockVideos(){
+      var ns = scene.querySelectorAll('[data-kt-video]');
+      for (var i = 0; i < ns.length; i++){
+        var n = ns[i]; if (!n.__ktWantSound) continue;
+        var v = ktVideoOf(n); if (!v || !v.muted) continue;
+        try { v.muted = false; v.volume = n.__ktVol; v.playbackRate = n.__ktRate; var p = v.play(); if (p && p.catch) p.catch(function(){}); } catch(e){}
+      }
+    }
+    window.addEventListener('touchstart', unlockVideos, { passive: true });
+    window.addEventListener('click', unlockVideos);
+    // The "Start AR" tap is a sticky user gesture, so by the time a card is found
+    // the browser already allows unmuted playback — fire sound on first detect.
+    anchor.addEventListener('xrextrasfound', unlockVideos);
 
     scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });

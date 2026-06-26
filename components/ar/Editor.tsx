@@ -811,6 +811,16 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
         </div>
         <div className="ar-row">
           {prep ? <span className="ar-muted">{prep}</span> : ocrBusy ? <span className="ar-muted">Reading card text…</span> : null}
+          {capBytes > 0 && (
+            <div style={{ minWidth: 180, maxWidth: 240 }}>
+              <StorageMeter
+                usedBytes={usedBytes}
+                capBytes={capBytes}
+                label={`${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim()}
+                compact
+              />
+            </div>
+          )}
           <a className="ar-btn ar-btn-ghost ar-editor-back" href="/ar" title="All cards" aria-label="All cards">
             <span className="ar-editor-back-full">← All cards</span>
             <span className="ar-editor-back-mini" aria-hidden>←</span>
@@ -976,14 +986,6 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
           {sidebarTab === "assets" && (
             <div className="ar-sidebar-tab-content fade-in">
-              {capBytes > 0 && (
-                <StorageMeter
-                  usedBytes={usedBytes}
-                  capBytes={capBytes}
-                  label={`${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim()}
-                  hint="Card photos and AR content (models, images, video, audio) share this budget. Pick sizes that fit what's left."
-                />
-              )}
               {/* Assets — add models, images, video, text or social, by category */}
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
                 <span className="ar-label" style={{ margin: 0 }}>Asset Library</span>
@@ -1230,7 +1232,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         </span>
                       ) : (
                         <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
-                          The clip plays muted &amp; looped and shows on both sides of the card.
+                          The clip plays its own sound and shows on both sides of the card.
                         </span>
                       )}
                       <label className="ar-row" style={{ gap: 8, cursor: "pointer", marginTop: 10 }}>
@@ -1239,6 +1241,52 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           style={{ accentColor: "var(--ar-orange)" }} />
                         <span style={{ fontSize: "14px" }}>Loop the video</span>
                       </label>
+
+                      {/* Sound controls — mute, volume, and playback speed. */}
+                      <span className="ar-label" style={{ marginTop: 14, display: "block" }}>Sound</span>
+                      <label className="ar-row" style={{ gap: 8, cursor: "pointer", marginBottom: 10 }}>
+                        <input type="checkbox" checked={selected.muted ?? false}
+                          onChange={(e) => update(selected.id, { muted: e.target.checked })}
+                          style={{ accentColor: "var(--ar-orange)" }} />
+                        <span style={{ fontSize: "14px" }}>Mute (play silent)</span>
+                      </label>
+                      <div className="ar-row ar-between" style={{ marginBottom: 4 }}>
+                        <span style={{ fontSize: "13px", opacity: selected.muted ? 0.5 : 1 }}>Volume</span>
+                        <span className="ar-muted" style={{ fontSize: "12px" }}>{Math.round((selected.volume ?? 1) * 100)}%</span>
+                      </div>
+                      <input type="range" min={0} max={1} step={0.05}
+                        value={selected.volume ?? 1}
+                        disabled={selected.muted ?? false}
+                        onChange={(e) => update(selected.id, { volume: Number(e.target.value) })}
+                        style={{ width: "100%", accentColor: "var(--ar-orange)", marginBottom: 12 }} />
+                      <div className="ar-row ar-between" style={{ marginBottom: 4 }}>
+                        <span style={{ fontSize: "13px" }}>Playback speed</span>
+                        <span className="ar-muted" style={{ fontSize: "12px" }}>{(selected.playbackRate ?? 1)}×</span>
+                      </div>
+                      <div className="ar-row" style={{ gap: 6 }}>
+                        {[0.5, 0.75, 1, 1.5, 2].map((rate) => {
+                          const active = (selected.playbackRate ?? 1) === rate;
+                          return (
+                            <button
+                              key={rate}
+                              type="button"
+                              className="ar-tab"
+                              onClick={() => update(selected.id, { playbackRate: rate })}
+                              style={{
+                                flex: 1,
+                                fontSize: "12px",
+                                padding: "6px 0",
+                                fontWeight: active ? 700 : 500,
+                                background: active ? "var(--ar-orange)" : undefined,
+                                color: active ? "#fff" : undefined,
+                                borderColor: active ? "var(--ar-orange)" : undefined,
+                              }}
+                            >
+                              {rate}×
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   ) : selected.type === "audio" ? (
                     <div>

@@ -217,7 +217,6 @@ function ElementBody({
             <ImagePlane url={element.url} aspect={element.aspect} />
           </Suspense>
         </MediaErrorBoundary>
-        {selected ? <SelectRing /> : null}
       </group>
     );
   }
@@ -280,13 +279,12 @@ function ElementBody({
         {element.url ? (
           <MediaErrorBoundary key={element.url} fallback={placeholder}>
             <Suspense fallback={placeholder}>
-              <VideoPlane url={element.url} w={w} h={h} />
+              <VideoPlane url={element.url} w={w} h={h} rate={element.playbackRate} />
             </Suspense>
           </MediaErrorBoundary>
         ) : (
           placeholder
         )}
-        {selected ? <SelectRing /> : null}
       </group>
     );
   }
@@ -310,8 +308,14 @@ function ImagePlane({ url, aspect }: { url: string; aspect?: number }) {
 // A flat video plane playing the mp4 as a live texture (muted/looped, same as the
 // AR viewer). Suspends while the metadata loads; a bad/cross-origin URL throws,
 // which MediaErrorBoundary turns back into the placeholder.
-function VideoPlane({ url, w, h }: { url: string; w: number; h: number }) {
+function VideoPlane({ url, w, h, rate }: { url: string; w: number; h: number; rate?: number }) {
   const tex = useVideoTexture(url, { muted: true, loop: true, start: true, playsInline: true, crossOrigin: "anonymous" });
+  // Mirror the AR clip's playback speed so the editor preview matches what plays.
+  // (Sound stays muted in the editor — preview only, no surprise audio.)
+  useEffect(() => {
+    const v = tex.image as HTMLVideoElement | undefined;
+    if (v) v.playbackRate = Number(rate) > 0 ? Number(rate) : 1;
+  }, [tex, rate]);
   return (
     <mesh>
       <planeGeometry args={[w, h]} />

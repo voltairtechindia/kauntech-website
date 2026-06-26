@@ -20,7 +20,10 @@ export default async function ArEditorPage({
 
   return (
     <div className="ar-editor-page">
-      <ArHeader email={data.email} />
+      {/* Account area (email + sign out) intentionally hidden in the editor — the
+          storage meter takes the top-right slot instead. Sign-out still lives on
+          the /ar dashboard. */}
+      <ArHeader />
       <Editor
         card={data.card}
         model={data.model}
