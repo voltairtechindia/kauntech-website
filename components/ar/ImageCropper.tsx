@@ -38,6 +38,7 @@ export default function ImageCropper({
   const frameH = Math.round(FRAME_W / aspect);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0); // degrees, about the image center
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(null);
   const srcUrl = useRef<string>("");
@@ -47,11 +48,27 @@ export default function ImageCropper({
   const dispW = img ? img.naturalWidth * base * zoom : 0;
   const dispH = img ? img.naturalHeight * base * zoom : 0;
 
-  function clamp(o: { x: number; y: number }) {
-    return {
-      x: Math.min(0, Math.max(FRAME_W - dispW, o.x)),
-      y: Math.min(0, Math.max(frameH - dispH, o.y)),
-    };
+  // Clamp the image so it keeps covering the frame. Rotation-aware: we clamp the
+  // image *center* using the rotated bounding box, which reduces exactly to the
+  // old axis-aligned clamp at rotation 0. When a side of the rotated box can no
+  // longer cover the frame (e.g. a 90° turn of a landscape card), that axis is
+  // centered instead, and any exposed corners are filled white on export.
+  function clamp(
+    o: { x: number; y: number },
+    rot: number = rotation,
+    dW: number = dispW,
+    dH: number = dispH,
+  ) {
+    const rad = (rot * Math.PI) / 180;
+    const c = Math.abs(Math.cos(rad));
+    const s = Math.abs(Math.sin(rad));
+    const bbW = dW * c + dH * s;
+    const bbH = dW * s + dH * c;
+    let cx = o.x + dW / 2;
+    let cy = o.y + dH / 2;
+    cx = bbW >= FRAME_W ? Math.min(bbW / 2, Math.max(FRAME_W - bbW / 2, cx)) : FRAME_W / 2;
+    cy = bbH >= frameH ? Math.min(bbH / 2, Math.max(frameH - bbH / 2, cy)) : frameH / 2;
+    return { x: cx - dW / 2, y: cy - dH / 2 };
   }
 
   useEffect(() => {
@@ -69,6 +86,7 @@ export default function ImageCropper({
     const w = img.naturalWidth * base;
     const h = img.naturalHeight * base;
     setZoom(1);
+    setRotation(0);
     setOffset({ x: (FRAME_W - w) / 2, y: (frameH - h) / 2 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [img]);
@@ -89,19 +107,25 @@ export default function ImageCropper({
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
   }
 
+  // Wrap an angle into (-180, 180].
+  function wrap(deg: number) {
+    return (((deg + 180) % 360) + 360) % 360 - 180;
+  }
+  function rotate90() {
+    const next = wrap(rotation + 90);
+    setOffset((o) => clamp(o, next));
+    setRotation(next);
+  }
+
   function confirm() {
     if (!img) return;
-    const scale = base * zoom;
-    const sx = -offset.x / scale;
-    const sy = -offset.y / scale;
-    const sw = FRAME_W / scale;
-    const sh = frameH / scale;
 
     // Higher-res, sharper target = more MindAR feature points = better tracking.
     // 1440px is a good balance (more detail than 1024 without ballooning the
     // on-device compile time). High-quality smoothing for crisp edges.
     const outW = 1440;
-    const outH = Math.round(outW / aspect);
+    const k = outW / FRAME_W; // scale frame space → output space (uniform)
+    const outH = Math.round(frameH * k);
     const canvas = document.createElement("canvas");
     canvas.width = outW;
     canvas.height = outH;
@@ -111,7 +135,15 @@ export default function ImageCropper({
     ctx.imageSmoothingQuality = "high";
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, outW, outH);
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
+    // Replay the on-screen transform (pan + zoom + rotate about the image
+    // center), scaled into the output canvas, so the export matches the preview
+    // exactly. Corners exposed by rotation stay white.
+    ctx.save();
+    ctx.scale(k, k);
+    ctx.translate(offset.x + dispW / 2, offset.y + dispH / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(img, -dispW / 2, -dispH / 2, dispW, dispH);
+    ctx.restore();
     canvas.toBlob(
       (blob) => {
         if (!blob) return;
@@ -149,6 +181,8 @@ export default function ImageCropper({
                 height: dispH,
                 left: offset.x,
                 top: offset.y,
+                transform: `rotate(${rotation}deg)`,
+                transformOrigin: "center",
                 maxWidth: "none",
                 userSelect: "none",
                 pointerEvents: "none",
@@ -165,22 +199,32 @@ export default function ImageCropper({
            <input type="range" min={1} max={4} step={0.02} value={zoom}
             onChange={(e) => {
               const nextZoom = Number(e.target.value);
+              const scale = base * nextZoom;
+              const dW = img ? img.naturalWidth * scale : 0;
+              const dH = img ? img.naturalHeight * scale : 0;
               setOffset((o) => {
                 const cx = FRAME_W / 2;
                 const cy = frameH / 2;
                 const nextX = cx - (cx - o.x) * (nextZoom / zoom);
                 const nextY = cy - (cy - o.y) * (nextZoom / zoom);
-
-                const scale = base * nextZoom;
-                const dW = img ? img.naturalWidth * scale : 0;
-                const dH = img ? img.naturalHeight * scale : 0;
-
-                return {
-                  x: Math.min(0, Math.max(FRAME_W - dW, nextX)),
-                  y: Math.min(0, Math.max(frameH - dH, nextY)),
-                };
+                return clamp({ x: nextX, y: nextY }, rotation, dW, dH);
               });
               setZoom(nextZoom);
+            }} className="ar-range" />
+        </div>
+
+        <div>
+          <div className="ar-row ar-between">
+            <label className="ar-label" style={{ margin: 0 }}>Rotate</label>
+            <button type="button" className="ar-btn ar-btn-ghost ar-btn-sm" onClick={rotate90}>
+              Rotate 90°
+            </button>
+          </div>
+          <input type="range" min={-180} max={180} step={1} value={rotation}
+            onChange={(e) => {
+              const nextRot = Number(e.target.value);
+              setOffset((o) => clamp(o, nextRot));
+              setRotation(nextRot);
             }} className="ar-range" />
         </div>
 
