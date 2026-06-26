@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, type ReactNode, Suspense, useRef, useMemo, useEffect } from "react";
+import { Component, type ReactNode, type RefObject, Suspense, useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import {
@@ -18,6 +18,13 @@ import {
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import type { ArElement } from "@/lib/ar/scene";
 import { socialPreset, flatPlaneSize, FLAT_BASE } from "@/lib/ar/scene";
+
+// Shared wireframe-cube edges + scratch math for the selection highlight (only one
+// element is selected at a time, so module-level temporaries are safe to reuse).
+const UNIT_BOX_EDGES = new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, 1));
+const _selInv = new THREE.Matrix4();
+const _selM = new THREE.Matrix4();
+const _selV = new THREE.Vector3();
 
 interface Props {
   elements: ArElement[];
@@ -149,7 +156,7 @@ function CardBase({
 
 // Elements are positioned/rotated/scaled entirely from the right-panel sliders —
 // there's no in-viewport gizmo. Clicking an element just selects it (and shows the
-// selection ring); a click on an already-selected element offers to open its link.
+// selection box); a click on an already-selected element offers to open its link.
 function ElementNode({
   element,
   selected,
@@ -159,10 +166,67 @@ function ElementNode({
   selected: boolean;
   onSelect: Props["onSelect"];
 }) {
+  const nodeRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Group>(null);
   return (
-    <group position={element.position} rotation={[(element.baseRotationX ?? 0) + (element.rotationX ?? 0), element.rotationY, element.rotationZ ?? 0]} scale={(element.baseScale ?? 1) * element.scale}>
-      <ElementBody element={element} onSelect={onSelect} selected={selected} />
+    <group ref={nodeRef} position={element.position} rotation={[(element.baseRotationX ?? 0) + (element.rotationX ?? 0), element.rotationY, element.rotationZ ?? 0]} scale={(element.baseScale ?? 1) * element.scale}>
+      <group ref={bodyRef}>
+        <ElementBody element={element} onSelect={onSelect} selected={selected} />
+      </group>
+      {selected ? <SelectionBox nodeRef={nodeRef} bodyRef={bodyRef} /> : null}
     </group>
+  );
+}
+
+// Selection highlight: a tight wireframe box around whatever is selected — model,
+// text, image, video, social or audio. Re-measured each frame in the element's
+// OWN local frame (so it tracks animation / rotation / scale), and drawn on top
+// (depthTest off) so it stays legible against any content. No fill, no ground disc.
+function SelectionBox({
+  nodeRef,
+  bodyRef,
+}: {
+  nodeRef: RefObject<THREE.Group | null>;
+  bodyRef: RefObject<THREE.Group | null>;
+}) {
+  const ref = useRef<THREE.LineSegments>(null);
+  const box = useMemo(() => new THREE.Box3(), []);
+  const size = useMemo(() => new THREE.Vector3(), []);
+  const center = useMemo(() => new THREE.Vector3(), []);
+  useFrame(() => {
+    const node = nodeRef.current;
+    const body = bodyRef.current;
+    const ls = ref.current;
+    if (!node || !body || !ls) return;
+    node.updateWorldMatrix(true, true);
+    _selInv.copy(node.matrixWorld).invert();
+    box.makeEmpty();
+    body.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      const geom = mesh.geometry as THREE.BufferGeometry | undefined;
+      if (!mesh.isMesh || !geom) return;
+      if (!geom.boundingBox) geom.computeBoundingBox();
+      const gb = geom.boundingBox;
+      if (!gb) return;
+      // Express each geometry corner in the node's local frame, then grow the box.
+      _selM.copy(_selInv).multiply(mesh.matrixWorld);
+      for (let i = 0; i < 8; i++) {
+        _selV.set(i & 1 ? gb.max.x : gb.min.x, i & 2 ? gb.max.y : gb.min.y, i & 4 ? gb.max.z : gb.min.z).applyMatrix4(_selM);
+        box.expandByPoint(_selV);
+      }
+    });
+    if (box.isEmpty()) { ls.visible = false; return; }
+    ls.visible = true;
+    box.getSize(size);
+    box.getCenter(center);
+    const pad = Math.max(size.x, size.y, size.z) * 0.05 + 0.006;
+    ls.position.copy(center);
+    ls.scale.set(size.x + pad, size.y + pad, size.z + pad);
+  });
+  return (
+    <lineSegments ref={ref} geometry={UNIT_BOX_EDGES} raycast={() => null} renderOrder={999}>
+      <lineBasicMaterial color="#FF7A00" transparent opacity={0.95} depthTest={false} toneMapped={false} />
+    </lineSegments>
   );
 }
 
@@ -199,7 +263,6 @@ function ElementBody({
             animationSpeed={element.animationSpeed ?? 1}
           />
         </Suspense>
-        {selected ? <SelectRing /> : null}
       </group>
     );
   }
@@ -237,7 +300,6 @@ function ElementBody({
               from behind in AR — matches the viewer's side:double a-text. */}
           <meshBasicMaterial side={THREE.DoubleSide} color={element.color || "#18181b"} toneMapped={false} />
         </Text>
-        {selected ? <SelectRing /> : null}
       </group>
     );
   }
@@ -252,7 +314,6 @@ function ElementBody({
         <Text position={[0, 0, 0.02]} fontSize={0.07} color="#ffffff" anchorX="center" anchorY="middle" maxWidth={0.22}>
           {p?.label || "Link"}
         </Text>
-        {selected ? <SelectRing /> : null}
       </group>
     );
   }
@@ -263,7 +324,6 @@ function ElementBody({
     return (
       <group onClick={click}>
         <AudioChip ready={!!element.url} />
-        {selected ? <SelectRing /> : null}
       </group>
     );
   }
@@ -384,15 +444,6 @@ class MediaErrorBoundary extends Component<{ fallback: ReactNode; children: Reac
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
   }
-}
-
-function SelectRing() {
-  return (
-    <mesh position={[0, 0, -0.02]}>
-      <ringGeometry args={[0.3, 0.33, 32]} />
-      <meshBasicMaterial color="#F59E0B" />
-    </mesh>
-  );
 }
 
 function GlbModel({
