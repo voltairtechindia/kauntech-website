@@ -91,6 +91,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
         // Video/audio playback flags. Absent → loop on, autoplay on (audio).
         loop: el.loop !== false,
         autoplay: el.autoplay !== false,
+        // Video sound: muted (absent → false = the clip's own sound plays),
+        // volume 0–1 (absent → 1), and playback-speed multiplier (absent → 1).
+        muted: el.muted === true,
+        volume: typeof el.volume === "number" ? Math.max(0, Math.min(1, el.volume)) : 1,
+        playbackRate: Number(el.playbackRate) > 0 ? Number(el.playbackRate) : 1,
         animated: !!el.animated,
         // Playback-rate multiplier for GLB animation + self-rotate spin (1 = normal).
         animationSpeed: Number(el.animationSpeed) > 0 ? Number(el.animationSpeed) : 1,

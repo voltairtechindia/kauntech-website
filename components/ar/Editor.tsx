@@ -598,7 +598,9 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     // Fresh ids so a template can be applied repeatedly without id collisions.
     const placed = els.map((e) => ({ ...e, id: uid() }));
     setElements(placed);
-    if (scene?.lighting) setLighting(scene.lighting);
+    // Coerce through readLighting so a template with missing/empty lighting (e.g.
+    // an admin default snapshot) still yields a valid intensity, not undefined.
+    if (scene?.lighting) setLighting(readLighting(scene.lighting));
     setSelectedId(null);
     setSidebarTab("layers");
     // Persist + publish right away when the card already has its photo. Without a
@@ -612,15 +614,15 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
   async function saveAsTemplate() {
     if (elements.length === 0) { setError("Add something to the card before saving a template."); return; }
-    const name = window.prompt("Name this template (you can reuse it on any of your cards):", name0ForTemplate())?.trim();
-    if (!name) return;
+    const tplName = window.prompt("Name this template (you can reuse it on any of your cards):", defaultTemplateName())?.trim();
+    if (!tplName) return;
     setSavingTpl(true);
     setError(null);
     try {
       const res = await fetch("/api/ar/templates", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, scene: { elements, lighting } }),
+        body: JSON.stringify({ name: tplName, scene: { elements, lighting } }),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) { setError(json.error || "Could not save the template."); return; }
@@ -631,7 +633,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       setSavingTpl(false);
     }
   }
-  function name0ForTemplate(): string {
+  function defaultTemplateName(): string {
     return (card.name ? `${card.name}'s layout` : "My layout").slice(0, 60);
   }
 
@@ -1411,6 +1413,27 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           </button>
                         ))}
                       </div>
+
+                      {/* Tap Action — open a link when the video is tapped in AR. */}
+                      <div className="ar-row ar-between" style={{ marginTop: 14, marginBottom: 4 }}>
+                        <label className="ar-label" style={{ margin: 0 }}>Tap Action (redirect link)</label>
+                        {selected.link && (
+                          <a href={selected.link} target="_blank" rel="noreferrer" className="ar-link-test"
+                            style={{ fontSize: "12px", color: "var(--ar-orange-deep)", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            Test link <IconExternal />
+                          </a>
+                        )}
+                      </div>
+                      <input
+                        className="ar-field"
+                        value={selected.link ?? ""}
+                        placeholder="https://…"
+                        onChange={(e) => update(selected.id, { link: e.target.value })}
+                        onBlur={(e) => update(selected.id, { link: e.target.value ? normalizeLink(e.target.value) : "" })}
+                      />
+                      <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
+                        Opens this link when someone taps the video in AR.
+                      </span>
                     </div>
                   ) : selected.type === "audio" ? (
                     <div>

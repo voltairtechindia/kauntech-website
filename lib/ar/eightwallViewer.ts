@@ -571,9 +571,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
               img.volume = vVol;
               if (node.__ktForceMute) img.muted = true;
               if (window.__KT_CARD_VISIBLE__){
-                // Loaded while the card is already on screen — start it now.
-                if (node.__ktWantSound){ try { img.muted = false; } catch(e){} }
-                try { var pp = img.play(); if (pp && pp.catch) pp.catch(function(){ try { img.muted = true; img.play(); } catch(e){} }); } catch(e){}
+                ktStartVideo(node, img); // loaded while the card is already shown
               } else {
                 // Hold until the card is found — a-frame may try to play on load.
                 try { img.pause(); img.currentTime = 0; } catch(e){}
@@ -786,6 +784,18 @@ export function eightwallViewerHtml(view: EightwallView): string {
       return null;
     }
 
+    // Start ONE video: apply speed, un-mute if the author wanted sound, then play
+    // (own function so the async play().catch closure binds THIS clip — a var in
+    // the caller's loop would all share the last element).
+    function ktStartVideo(n, v){
+      try { v.playbackRate = n.__ktRate; } catch(e){}
+      if (n.__ktWantSound){ try { v.muted = false; v.volume = n.__ktVol; } catch(e){} }
+      try {
+        var p = v.play();
+        if (p && p.catch) p.catch(function(){ try { v.muted = true; v.play(); } catch(e){} });
+      } catch(e){ try { v.muted = true; v.play(); } catch(e2){} }
+    }
+
     // Card came into view: start the clips. Videos un-mute if the author left
     // sound on (falling back to muted playback if the browser still blocks it);
     // autoplay audio clips start. Manually-tapped audio is left to the user.
@@ -795,12 +805,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
       var vs = scene.querySelectorAll('[data-kt-video]');
       for (var i = 0; i < vs.length; i++){
         var n = vs[i], v = ktVideoOf(n); if (!v) continue;
-        try { v.playbackRate = n.__ktRate; } catch(e){}
-        if (n.__ktWantSound){ try { v.muted = false; v.volume = n.__ktVol; } catch(e){} }
-        try {
-          var p = v.play();
-          if (p && p.catch) p.catch(function(){ try { v.muted = true; v.play(); } catch(e){} });
-        } catch(e){ try { v.muted = true; v.play(); } catch(e2){} }
+        ktStartVideo(n, v);
       }
       var as = scene.querySelectorAll('[data-kt-audio]');
       for (var j = 0; j < as.length; j++){
