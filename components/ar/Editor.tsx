@@ -8,7 +8,8 @@ import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import { formatBytes } from "@/lib/ar/format";
-import StorageMeter from "./StorageMeter";
+import { useStorageMeter } from "./StorageMeterContext";
+import type { ArTemplate } from "@/lib/ar/db";
 import {
   IconAudio, IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
   IconImage, IconLink, IconPlus, IconRoll, IconRotate, IconScale, IconSun, IconTarget, IconText,
@@ -116,6 +117,12 @@ function imageAspect(src: string): Promise<number> {
     im.onerror = () => resolve(1);
     im.src = src;
   });
+}
+// True for a file we host (uploaded to our own storage bucket) vs. a link the
+// owner pasted. We hide the raw bucket URL for hosted files — it's long, ugly,
+// and confusing to see; the Replace / Delete buttons cover any change they need.
+function isHostedAsset(url?: string | null): boolean {
+  return !!url && url.includes("/storage/v1/object/public/");
 }
 function videoAspect(src: string): Promise<number> {
   return new Promise((resolve) => {
@@ -273,6 +280,13 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   // owner can see what's left before picking another, bigger model.
   const [usedBytes, setUsedBytes] = useState(storageUsedBytes);
   const [capBytes, setCapBytes] = useState(storageCapBytes);
+  // Surface the live figure to the navbar (see StorageMeterContext) so the meter
+  // can live up there instead of taking room in the sidebar.
+  const publishStorage = useStorageMeter()?.publish;
+  const storageLabel = `${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim();
+  useEffect(() => {
+    publishStorage?.(usedBytes, capBytes, storageLabel);
+  }, [publishStorage, usedBytes, capBytes, storageLabel]);
   const refreshUsage = useCallback(async () => {
     try {
       const res = await fetch("/api/ar/usage", { cache: "no-store" });
@@ -553,6 +567,84 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     });
   }
 
+  // ── Templates ──────────────────────────────────────────────────────────────
+  // Reusable scene layouts: a "Default" set authored by admins (global) plus the
+  // owner's own, which work across all their cards. Applying one replaces the
+  // current AR content; saving snapshots the current layout for reuse.
+  const [templates, setTemplates] = useState<{ global: ArTemplate[]; own: ArTemplate[] }>({ global: [], own: [] });
+  const [tplLoading, setTplLoading] = useState(true);
+  const [savingTpl, setSavingTpl] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/ar/templates", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => { if (alive && j?.ok) setTemplates({ global: j.global ?? [], own: j.own ?? [] }); })
+      .catch(() => {})
+      .finally(() => { if (alive) setTplLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
+  function templateElementCount(t: ArTemplate): number {
+    const els = (t.scene as { elements?: unknown })?.elements;
+    return Array.isArray(els) ? els.length : 0;
+  }
+
+  function applyTemplate(t: ArTemplate) {
+    const scene = t.scene as { elements?: ArElement[]; lighting?: ArLighting } | null;
+    const els = Array.isArray(scene?.elements) ? scene!.elements : [];
+    if (els.length === 0) { setError("That template is empty."); return; }
+    // Chosen behaviour: replace. Confirm only if they'd lose existing work.
+    if (elements.length > 0 && !window.confirm(`Replace the ${elements.length} element${elements.length === 1 ? "" : "s"} on this card with "${t.name}"?`)) return;
+    // Fresh ids so a template can be applied repeatedly without id collisions.
+    const placed = els.map((e) => ({ ...e, id: uid() }));
+    setElements(placed);
+    if (scene?.lighting) setLighting(scene.lighting);
+    setSelectedId(null);
+    setSidebarTab("layers");
+    // Persist + publish right away when the card already has its photo. Without a
+    // target photo, save() would just error — so leave it placed and let the
+    // normal post-photo auto-save pick it up once they add one.
+    if (hasTarget) {
+      wantAutoSaveRef.current = true;
+      setAutoSaveTick((n) => n + 1);
+    }
+  }
+
+  async function saveAsTemplate() {
+    if (elements.length === 0) { setError("Add something to the card before saving a template."); return; }
+    const name = window.prompt("Name this template (you can reuse it on any of your cards):", name0ForTemplate())?.trim();
+    if (!name) return;
+    setSavingTpl(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/ar/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, scene: { elements, lighting } }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) { setError(json.error || "Could not save the template."); return; }
+      setTemplates((t) => ({ ...t, own: [json.template, ...t.own] }));
+    } catch {
+      setError("Could not save the template.");
+    } finally {
+      setSavingTpl(false);
+    }
+  }
+  function name0ForTemplate(): string {
+    return (card.name ? `${card.name}'s layout` : "My layout").slice(0, 60);
+  }
+
+  async function deleteTemplate(id: string) {
+    if (!window.confirm("Delete this template? Cards already using it keep their layout.")) return;
+    setTemplates((t) => ({ ...t, own: t.own.filter((x) => x.id !== id) }));
+    try {
+      await fetch(`/api/ar/templates/${id}`, { method: "DELETE" });
+    } catch {
+      /* optimistic; a failed delete just reappears on next load */
+    }
+  }
+
   async function uploadAsset(file: File, kind: "model" | "image" | "video" | "audio"): Promise<string | null> {
     setError(null);
     // Pre-check against the live budget so the owner gets an instant, specific
@@ -811,16 +903,6 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
         </div>
         <div className="ar-row">
           {prep ? <span className="ar-muted">{prep}</span> : ocrBusy ? <span className="ar-muted">Reading card text…</span> : null}
-          {capBytes > 0 && (
-            <div style={{ minWidth: 180, maxWidth: 240 }}>
-              <StorageMeter
-                usedBytes={usedBytes}
-                capBytes={capBytes}
-                label={`${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim()}
-                compact
-              />
-            </div>
-          )}
           <a className="ar-btn ar-btn-ghost ar-editor-back" href="/ar" title="All cards" aria-label="All cards">
             <span className="ar-editor-back-full">← All cards</span>
             <span className="ar-editor-back-mini" aria-hidden>←</span>
@@ -986,6 +1068,51 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
           {sidebarTab === "assets" && (
             <div className="ar-sidebar-tab-content fade-in">
+              {/* Templates — one-tap layouts (admin "Default" + the owner's own,
+                  reusable across all their cards). Sits above the Asset Library. */}
+              <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-sm)" }}>
+                <div className="ar-row ar-between">
+                  <span className="ar-label" style={{ margin: 0 }}>Templates</span>
+                  <button
+                    type="button"
+                    className="ar-tab ar-asset-add"
+                    style={{ padding: "5px 10px", fontSize: "12px" }}
+                    onClick={saveAsTemplate}
+                    disabled={savingTpl || elements.length === 0}
+                    title={elements.length === 0 ? "Add something to the card first" : "Save the current layout as a reusable template"}
+                  >
+                    {savingTpl ? "Saving…" : "Save current"}
+                  </button>
+                </div>
+                <span className="ar-muted" style={{ fontSize: "11px" }}>
+                  One tap drops a ready-made layout on your card. Your saved templates work across all your cards.
+                </span>
+                {templates.global.map((t) => (
+                  <button key={t.id} type="button" className="ar-template-row" onClick={() => applyTemplate(t)} title={`Apply "${t.name}"`}>
+                    <span className="ar-template-badge">Default</span>
+                    <span className="ar-template-name">{t.name}</span>
+                    <span className="ar-template-count">{templateElementCount(t)} item{templateElementCount(t) === 1 ? "" : "s"}</span>
+                  </button>
+                ))}
+                {templates.own.map((t) => (
+                  <div key={t.id} className="ar-template-row-wrap">
+                    <button type="button" className="ar-template-row" onClick={() => applyTemplate(t)} title={`Apply "${t.name}"`}>
+                      <span className="ar-template-name">{t.name}</span>
+                      <span className="ar-template-count">{templateElementCount(t)} item{templateElementCount(t) === 1 ? "" : "s"}</span>
+                    </button>
+                    <button type="button" className="ar-template-del" onClick={() => deleteTemplate(t.id)} title="Delete this template" aria-label="Delete template">
+                      <IconTrash />
+                    </button>
+                  </div>
+                ))}
+                {!tplLoading && templates.global.length === 0 && templates.own.length === 0 && (
+                  <span className="ar-muted" style={{ fontSize: "12px" }}>
+                    No templates yet. Arrange your card, then tap “Save current” to reuse it later.
+                  </span>
+                )}
+                {tplLoading && <span className="ar-muted" style={{ fontSize: "12px" }}>Loading templates…</span>}
+              </div>
+
               {/* Assets — add models, images, video, text or social, by category */}
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
                 <span className="ar-label" style={{ margin: 0 }}>Asset Library</span>
@@ -1208,32 +1335,40 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           <span className="ar-asset-upload-sub">MP4 / WebM — counts toward your cloud storage</span>
                         </span>
                       </button>
-                      <label className="ar-label">…or paste a direct video URL</label>
-                      <input
-                        className="ar-field"
-                        value={selected.url ?? ""}
-                        placeholder="https://…/clip.mp4"
-                        onChange={(e) => update(selected.id, { url: e.target.value })}
-                        onBlur={(e) => {
-                          const url = e.target.value.trim();
-                          update(selected.id, { url });
-                          // Read the clip's real aspect so its plane isn't forced to a
-                          // shape — keeps the preview and AR matching the actual video.
-                          if (url) videoAspect(url).then((a) => update(selected.id, { aspect: a }));
-                        }}
-                      />
-                      {selected.url && isStreamingPageUrl(selected.url) ? (
-                        <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
-                          YouTube / Vimeo links don’t play in AR — they’re web pages, not video files. Upload the clip above, or paste a direct .mp4/.webm file link.
-                        </span>
-                      ) : selected.url && !isDirectVideoUrl(selected.url) ? (
-                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block", color: "var(--ar-orange-deep)" }}>
-                          This doesn’t look like a direct video file (.mp4/.webm). If it doesn’t play, upload the file instead.
+                      {isHostedAsset(selected.url) ? (
+                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 2, display: "block" }}>
+                          Your uploaded clip plays its own sound and shows on both sides of the card.
                         </span>
                       ) : (
-                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
-                          The clip plays its own sound and shows on both sides of the card.
-                        </span>
+                        <>
+                          <label className="ar-label">…or paste a direct video URL</label>
+                          <input
+                            className="ar-field"
+                            value={selected.url ?? ""}
+                            placeholder="https://…/clip.mp4"
+                            onChange={(e) => update(selected.id, { url: e.target.value })}
+                            onBlur={(e) => {
+                              const url = e.target.value.trim();
+                              update(selected.id, { url });
+                              // Read the clip's real aspect so its plane isn't forced to a
+                              // shape — keeps the preview and AR matching the actual video.
+                              if (url) videoAspect(url).then((a) => update(selected.id, { aspect: a }));
+                            }}
+                          />
+                          {selected.url && isStreamingPageUrl(selected.url) ? (
+                            <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
+                              YouTube / Vimeo links don’t play in AR — they’re web pages, not video files. Upload the clip above, or paste a direct .mp4/.webm file link.
+                            </span>
+                          ) : selected.url && !isDirectVideoUrl(selected.url) ? (
+                            <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block", color: "var(--ar-orange-deep)" }}>
+                              This doesn’t look like a direct video file (.mp4/.webm). If it doesn’t play, upload the file instead.
+                            </span>
+                          ) : (
+                            <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
+                              The clip plays its own sound and shows on both sides of the card.
+                            </span>
+                          )}
+                        </>
                       )}
                       <label className="ar-row" style={{ gap: 8, cursor: "pointer", marginTop: 10 }}>
                         <input type="checkbox" checked={selected.loop ?? true}
@@ -1263,29 +1398,18 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span style={{ fontSize: "13px" }}>Playback speed</span>
                         <span className="ar-muted" style={{ fontSize: "12px" }}>{(selected.playbackRate ?? 1)}×</span>
                       </div>
-                      <div className="ar-row" style={{ gap: 6 }}>
-                        {[0.5, 0.75, 1, 1.5, 2].map((rate) => {
-                          const active = (selected.playbackRate ?? 1) === rate;
-                          return (
-                            <button
-                              key={rate}
-                              type="button"
-                              className="ar-tab"
-                              onClick={() => update(selected.id, { playbackRate: rate })}
-                              style={{
-                                flex: 1,
-                                fontSize: "12px",
-                                padding: "6px 0",
-                                fontWeight: active ? 700 : 500,
-                                background: active ? "var(--ar-orange)" : undefined,
-                                color: active ? "#fff" : undefined,
-                                borderColor: active ? "var(--ar-orange)" : undefined,
-                              }}
-                            >
-                              {rate}×
-                            </button>
-                          );
-                        })}
+                      <div className="ar-speed-group" role="group" aria-label="Playback speed">
+                        {[0.5, 0.75, 1, 1.5, 2].map((rate) => (
+                          <button
+                            key={rate}
+                            type="button"
+                            className={`ar-speed-btn ${(selected.playbackRate ?? 1) === rate ? "is-active" : ""}`}
+                            aria-pressed={(selected.playbackRate ?? 1) === rate}
+                            onClick={() => update(selected.id, { playbackRate: rate })}
+                          >
+                            {rate}×
+                          </button>
+                        ))}
                       </div>
                     </div>
                   ) : selected.type === "audio" ? (
@@ -1304,22 +1428,30 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           <span className="ar-asset-upload-sub">MP3 / WAV / M4A — counts toward your cloud storage</span>
                         </span>
                       </button>
-                      <label className="ar-label">…or paste a direct audio URL</label>
-                      <input
-                        className="ar-field"
-                        value={selected.url ?? ""}
-                        placeholder="https://…/track.mp3"
-                        onChange={(e) => update(selected.id, { url: e.target.value })}
-                        onBlur={(e) => update(selected.id, { url: e.target.value.trim() })}
-                      />
-                      {selected.url && isStreamingPageUrl(selected.url) ? (
-                        <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
-                          Streaming-page links (Spotify, YouTube…) don’t play in AR. Upload the audio file above, or paste a direct .mp3/.m4a link.
+                      {isHostedAsset(selected.url) ? (
+                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 2, display: "block" }}>
+                          Your uploaded clip plays when the card is scanned. Viewers see a small speaker on the card they can tap to mute or unmute.
                         </span>
                       ) : (
-                        <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
-                          Plays when the card is scanned. Viewers see a small speaker on the card they can tap to mute / unmute.
-                        </span>
+                        <>
+                          <label className="ar-label">…or paste a direct audio URL</label>
+                          <input
+                            className="ar-field"
+                            value={selected.url ?? ""}
+                            placeholder="https://…/track.mp3"
+                            onChange={(e) => update(selected.id, { url: e.target.value })}
+                            onBlur={(e) => update(selected.id, { url: e.target.value.trim() })}
+                          />
+                          {selected.url && isStreamingPageUrl(selected.url) ? (
+                            <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
+                              Streaming-page links (Spotify, YouTube…) don’t play in AR. Upload the audio file above, or paste a direct .mp3/.m4a link.
+                            </span>
+                          ) : (
+                            <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
+                              Plays when the card is scanned. Viewers see a small speaker on the card they can tap to mute or unmute.
+                            </span>
+                          )}
+                        </>
                       )}
                       <div className="ar-stack" style={{ gap: 8, marginTop: 10 }}>
                         <label className="ar-row" style={{ gap: 8, cursor: "pointer" }}>

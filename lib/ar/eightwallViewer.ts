@@ -546,9 +546,11 @@ export function eightwallViewerHtml(view: EightwallView): string {
       } else if (el.type === 'video' && el.url){
         node = document.createElement('a-video'); node.setAttribute('src', el.url);
         var vsz = flatSize(el.aspect, 0.5); node.setAttribute('width', vsz[0]); node.setAttribute('height', vsz[1]);
-        node.setAttribute('autoplay', 'true'); node.setAttribute('loop', el.loop === false ? 'false' : 'true');
-        // Always START muted — browsers block autoplay WITH sound until a gesture.
-        // If the author left sound on, unlockVideos() un-mutes on the first tap.
+        // NO autoplay: the clip must wait for the card, like the 3D content. It's
+        // started on xrextrasfound and paused on lost (see playFoundMedia below).
+        node.setAttribute('autoplay', 'false'); node.setAttribute('loop', el.loop === false ? 'false' : 'true');
+        // Start muted — browsers block sound-on play until a gesture; the Start-AR
+        // tap is that gesture, so playFoundMedia un-mutes when the card is found.
         node.setAttribute('playsinline', 'true'); node.setAttribute('muted', 'true');
         node.setAttribute('material', 'side', 'double'); // visible from behind the card
         // Sound settings, applied to the real <video> a-frame builds for the clip.
@@ -568,6 +570,14 @@ export function eightwallViewerHtml(view: EightwallView): string {
               try { img.playbackRate = vRate; } catch(e){}
               img.volume = vVol;
               if (node.__ktForceMute) img.muted = true;
+              if (window.__KT_CARD_VISIBLE__){
+                // Loaded while the card is already on screen — start it now.
+                if (node.__ktWantSound){ try { img.muted = false; } catch(e){} }
+                try { var pp = img.play(); if (pp && pp.catch) pp.catch(function(){ try { img.muted = true; img.play(); } catch(e){} }); } catch(e){}
+              } else {
+                // Hold until the card is found — a-frame may try to play on load.
+                try { img.pause(); img.currentTime = 0; } catch(e){}
+              }
             }
           } catch(e){}
         }
@@ -748,12 +758,13 @@ export function eightwallViewerHtml(view: EightwallView): string {
     anchor.appendChild(wrap);
     scene.appendChild(anchor);
 
-    // ── Audio playback control ──────────────────────────────────────────────
-    // Web Audio starts SUSPENDED until a user gesture, so an audio element can't
-    // legally autoplay on its own. The speaker chip's tap unlocks + toggles it;
-    // any first touch/click also unlocks the context; and once unlocked, autoplay
-    // clips start the next time the card is found. (resumeAudioCtx is a hoisted
-    // declaration so the chip click handlers above can call it.)
+    // ── Media playback (video + audio) ───────────────────────────────────────
+    // Media must behave like the 3D content: it plays ONLY while the card is on
+    // screen, and pauses when it leaves — never before the first detect. (Earlier
+    // the video autoplayed muted on load and un-muted on the Start-AR tap, so its
+    // sound was heard well before the card was ever shown.) Web Audio starts
+    // SUSPENDED until a gesture, so we resume the context on any tap; the Start-AR
+    // tap is sticky, so by first-found the browser also allows un-muted video.
     function resumeAudioCtx(){
       try {
         var THREE = AFRAME.THREE;
@@ -761,25 +772,10 @@ export function eightwallViewerHtml(view: EightwallView): string {
         if (ctx && ctx.state === 'suspended') ctx.resume();
       } catch(e){}
     }
-    function playAutoAudio(){
-      resumeAudioCtx();
-      var ns = scene.querySelectorAll('[data-kt-audio]');
-      for (var i = 0; i < ns.length; i++){
-        var n = ns[i];
-        if (n.getAttribute('data-kt-autoplay') !== '1' || n.__ktPlaying) continue;
-        var s = n.components && n.components.sound;
-        if (s){ try { s.playSound(); n.__ktPlaying = true; } catch(e){} }
-      }
-    }
-    anchor.addEventListener('xrextrasfound', playAutoAudio);
     window.addEventListener('touchstart', resumeAudioCtx, { passive: true });
     window.addEventListener('click', resumeAudioCtx);
 
-    // ── Video sound ──────────────────────────────────────────────────────────
-    // A video plays muted so it can autoplay the moment the card is found. The
-    // first tap/click anywhere un-mutes every clip whose author left sound on
-    // (and applies its volume + speed). A clip the author set to silent stays
-    // muted. Re-resolves the <video> each time in case the material loaded late.
+    // Resolve the real <video> a-frame built for an a-video element (loads late).
     function ktVideoOf(n){
       if (n.__ktVideo) return n.__ktVideo;
       try {
@@ -789,19 +785,50 @@ export function eightwallViewerHtml(view: EightwallView): string {
       } catch(e){}
       return null;
     }
-    function unlockVideos(){
-      var ns = scene.querySelectorAll('[data-kt-video]');
-      for (var i = 0; i < ns.length; i++){
-        var n = ns[i]; if (!n.__ktWantSound) continue;
-        var v = ktVideoOf(n); if (!v || !v.muted) continue;
-        try { v.muted = false; v.volume = n.__ktVol; v.playbackRate = n.__ktRate; var p = v.play(); if (p && p.catch) p.catch(function(){}); } catch(e){}
+
+    // Card came into view: start the clips. Videos un-mute if the author left
+    // sound on (falling back to muted playback if the browser still blocks it);
+    // autoplay audio clips start. Manually-tapped audio is left to the user.
+    function playFoundMedia(){
+      window.__KT_CARD_VISIBLE__ = true;
+      resumeAudioCtx();
+      var vs = scene.querySelectorAll('[data-kt-video]');
+      for (var i = 0; i < vs.length; i++){
+        var n = vs[i], v = ktVideoOf(n); if (!v) continue;
+        try { v.playbackRate = n.__ktRate; } catch(e){}
+        if (n.__ktWantSound){ try { v.muted = false; v.volume = n.__ktVol; } catch(e){} }
+        try {
+          var p = v.play();
+          if (p && p.catch) p.catch(function(){ try { v.muted = true; v.play(); } catch(e){} });
+        } catch(e){ try { v.muted = true; v.play(); } catch(e2){} }
+      }
+      var as = scene.querySelectorAll('[data-kt-audio]');
+      for (var j = 0; j < as.length; j++){
+        var an = as[j];
+        if (an.getAttribute('data-kt-autoplay') !== '1' || an.__ktPlaying) continue;
+        var s = an.components && an.components.sound;
+        if (s){ try { s.playSound(); an.__ktPlaying = true; } catch(e){} }
       }
     }
-    window.addEventListener('touchstart', unlockVideos, { passive: true });
-    window.addEventListener('click', unlockVideos);
-    // The "Start AR" tap is a sticky user gesture, so by the time a card is found
-    // the browser already allows unmuted playback — fire sound on first detect.
-    anchor.addEventListener('xrextrasfound', unlockVideos);
+
+    // Card left the view (in SLAM-persist the content — and its media — stays put,
+    // so this won't fire until it's actually hidden): pause every clip so nothing
+    // plays off-card. Autoplay clips re-arm so the next found restarts them.
+    function pauseLostMedia(){
+      window.__KT_CARD_VISIBLE__ = false;
+      var vs = scene.querySelectorAll('[data-kt-video]');
+      for (var i = 0; i < vs.length; i++){ var v = ktVideoOf(vs[i]); if (v){ try { v.pause(); } catch(e){} } }
+      var as = scene.querySelectorAll('[data-kt-audio]');
+      for (var j = 0; j < as.length; j++){
+        var an = as[j];
+        if (an.getAttribute('data-kt-autoplay') !== '1' || !an.__ktPlaying) continue;
+        var s = an.components && an.components.sound;
+        if (s){ try { s.pauseSound(); } catch(e){} an.__ktPlaying = false; }
+      }
+    }
+
+    anchor.addEventListener('xrextrasfound', playFoundMedia);
+    anchor.addEventListener('xrextraslost', pauseLostMedia);
 
     scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });

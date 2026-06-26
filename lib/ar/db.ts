@@ -207,3 +207,66 @@ export async function getCardForEditor(
     storageCapBytes: AR_STORAGE_CAPS[tier],
   };
 }
+
+// ── AR templates ────────────────────────────────────────────────────────────
+// A saved scene composition ({ elements, lighting }) the editor can drop onto
+// any card. Global templates (is_global, owner_id null) are admin-managed and
+// seen by everyone; personal ones are the owner's, reusable across their cards.
+// See migration 20260626120000_ar_templates.sql.
+export interface ArTemplate {
+  id: string;
+  name: string;
+  scene: Record<string, unknown>;
+  is_global: boolean;
+  updated_at: string;
+}
+
+const TEMPLATE_COLUMNS = "id, name, scene, is_global, sort, updated_at";
+
+/** Templates the signed-in owner can apply: every global one + their own. */
+export async function listArTemplates(): Promise<{ global: ArTemplate[]; own: ArTemplate[] }> {
+  const supabase = await createArServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { global: [], own: [] };
+
+  const { data } = await supabase
+    .from("ar_templates")
+    .select(TEMPLATE_COLUMNS)
+    .order("sort", { ascending: true })
+    .order("updated_at", { ascending: false });
+
+  const rows = (data as (ArTemplate & { sort: number })[] | null) ?? [];
+  return {
+    global: rows.filter((r) => r.is_global),
+    own: rows.filter((r) => !r.is_global),
+  };
+}
+
+/** Save the current composition as a personal template. RLS scopes ownership. */
+export async function saveArTemplate(
+  name: string,
+  scene: Record<string, unknown>,
+): Promise<{ ok: true; template: ArTemplate } | { ok: false; error: string }> {
+  const supabase = await createArServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Not signed in." };
+
+  const { data, error } = await supabase
+    .from("ar_templates")
+    .insert({ owner_id: user.id, name, scene, is_global: false })
+    .select(TEMPLATE_COLUMNS)
+    .single();
+  if (error || !data) return { ok: false, error: error?.message ?? "Could not save template." };
+  return { ok: true, template: data as ArTemplate };
+}
+
+/** Delete one of the owner's personal templates. RLS blocks global/other rows. */
+export async function deleteArTemplate(id: string): Promise<boolean> {
+  const supabase = await createArServerClient();
+  const { error } = await supabase.from("ar_templates").delete().eq("id", id).eq("is_global", false);
+  return !error;
+}
