@@ -12,7 +12,6 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createArServerClient } from "@/lib/ar/appAuth";
-import { optimizeGlb } from "@/lib/ar/glbOptimize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -101,6 +100,10 @@ export async function POST(req: Request) {
   // Shrink models the same way the curated gallery does: smaller stored file =
   // less of the owner's cloud_ar_bytes quota used and a faster load on phones.
   if (kind === "model") {
+    // Imported lazily so `next build`'s page-data pass never eagerly loads the
+    // native sharp / gltf-transform graph (that fails at build time). It only
+    // loads here, at request time, inside the Node function runtime.
+    const { optimizeGlb } = await import("@/lib/ar/glbOptimize");
     const opt = await optimizeGlb(bytes);
     bytes = opt.buffer;
     if (opt.after < opt.before) {
