@@ -159,7 +159,7 @@ export default function ImageCropper({
     <div className="ar-modal-overlay" onClick={onCancel}>
       <div className="ar-modal" onClick={(e) => e.stopPropagation()}>
         <span className="ar-label" style={{ margin: 0 }}>{title}</span>
-        <span className="ar-muted">Drag to position, zoom to fit. Crop tight to the card. For the steadiest AR, shoot the card flat and square to the camera, in even light with no glare. A busier, higher-contrast design tracks best.</span>
+        <span className="ar-muted">Drag to position, rotate to straighten, zoom to fit. If a corner gets clipped after rotating, zoom out to fit the whole card. Crop tight to the card. For the steadiest AR, shoot the card flat and square to the camera, in even light with no glare. A busier, higher-contrast design tracks best.</span>
 
         <div
           className="ar-crop-frame"
@@ -196,7 +196,7 @@ export default function ImageCropper({
 
         <div>
           <label className="ar-label">Zoom</label>
-           <input type="range" min={1} max={4} step={0.02} value={zoom}
+           <input type="range" min={0.4} max={4} step={0.02} value={zoom}
             onChange={(e) => {
               const nextZoom = Number(e.target.value);
               const scale = base * nextZoom;
