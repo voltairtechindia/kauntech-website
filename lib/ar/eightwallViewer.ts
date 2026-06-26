@@ -405,12 +405,15 @@ export function eightwallViewerHtml(view: EightwallView): string {
     if (AFRAME.registerComponent && !AFRAME.components['kt-image-anchor']){
       AFRAME.registerComponent('kt-image-anchor', {
         schema: {
-          name:     { default: 'card' },
-          persist:  { default: true },   // World Tracking on -> hold pose through loss
-          grace:    { default: 600 },    // image-only: ms to keep showing after loss
-          tauMove:  { default: 55 },     // ms low-pass time-constant while moving
-          tauStill: { default: 170 },    // ms low-pass while near-still (kills jitter)
-          snap:     { default: 0.18 }    // m jump that forces a re-snap (2-frame confirm)
+          name:      { default: 'card' },
+          persist:   { default: true },   // World Tracking on -> hold pose through loss
+          grace:     { default: 600 },    // image-only: ms to keep showing after loss
+          tauMove:   { default: 55 },     // ms low-pass time-constant while moving
+          tauStill:  { default: 170 },    // ms low-pass while near-still (kills jitter)
+          snap:      { default: 0.18 },   // m jump that forces a re-snap (2-frame confirm)
+          cardGrace: { default: 600 }     // ms after the IMAGE is lost before media is
+                                          // declared off-card (pause+hide), even when
+                                          // SLAM is persisting the 3D content
         },
         init: function(){
           var THREE = AFRAME.THREE;
@@ -422,6 +425,14 @@ export function eightwallViewerHtml(view: EightwallView): string {
           this.snapNext = false;   // copy (no lerp) on next applied pose
           this.outliers = 0;       // consecutive big-jump frames seen
           this.hideAt = 0;         // ts to hide at (image-only grace); 0 = none
+          // Raw card-in-view state, tracked SEPARATELY from the SLAM content
+          // persistence above. The 3D content stays glued through image loss (persist),
+          // but flat media (video / photo / audio) is card-bound: these signal when the
+          // printed card is genuinely on screen so the media can pause + hide when it
+          // leaves view even while the models stay put.
+          this.imgPresent = false;   // image tracked this frame
+          this.cardVisible = false;  // debounced "card on screen" (drives media)
+          this.cardHideAt = 0;       // ts to declare the card off-screen (cardGrace)
           this.el.object3D.visible = false; // hidden until first acquisition
           var self = this, sc = this.el.sceneEl;
           this.onPose = function(e){
@@ -438,12 +449,22 @@ export function eightwallViewerHtml(view: EightwallView): string {
             if (typeof d.scale === 'number') self.tScale = d.scale;
             self.hideAt = 0;
             window.__ARSTATE__ = 'TRACKING';
+            // Raw card presence (for media): cancel any pending off-card timer and
+            // signal "card visible" on the rising edge — even in SLAM-persist mode.
+            self.imgPresent = true; self.cardHideAt = 0;
+            if (!self.cardVisible){ self.cardVisible = true; self.el.emit('ktcardvisible', {}, false); }
             if (!self.shown){ self.shown = true; self.el.object3D.visible = true; self.snapNext = true; self.el.emit('xrextrasfound', {}, false); }
             self.has = true;
           };
           this.onLost = function(e){
             var d = e && e.detail; if (!d || d.name !== self.data.name) return;
-            if (self.data.persist){ window.__ARSTATE__ = 'PERSIST'; return; } // SLAM holds it
+            // Media is card-bound regardless of SLAM: arm the off-card timer so the
+            // video / photo / audio pause + hide shortly after the card actually
+            // leaves view (the short cardGrace rides out motion-blur / partial-frame
+            // losses so it doesn't flicker).
+            self.imgPresent = false;
+            if (self.cardVisible && !self.cardHideAt) self.cardHideAt = performance.now() + self.data.cardGrace;
+            if (self.data.persist){ window.__ARSTATE__ = 'PERSIST'; return; } // SLAM holds the 3D content
             if (self.shown && !self.hideAt) self.hideAt = performance.now() + self.data.grace;
           };
           sc.addEventListener('xrimagefound', this.onPose);
@@ -452,8 +473,15 @@ export function eightwallViewerHtml(view: EightwallView): string {
         },
         tick: function(t, dt){
           if (!this.has) return;
+          var now = performance.now();
+          // Off-card debounce for media — runs in EVERY mode, including while SLAM
+          // persists the 3D content, so a glued model never keeps its video / audio
+          // playing once the printed card itself has left the frame.
+          if (this.cardHideAt && now >= this.cardHideAt){
+            this.cardHideAt = 0; this.cardVisible = false; this.el.emit('ktcardhidden', {}, false);
+          }
           var o = this.el.object3D;
-          if (this.hideAt && performance.now() >= this.hideAt){
+          if (this.hideAt && now >= this.hideAt){
             this.hideAt = 0; this.shown = false; o.visible = false;
             window.__ARSTATE__ = 'LOST'; this.el.emit('xrextraslost', {}, false);
             return;
@@ -537,6 +565,9 @@ export function eightwallViewerHtml(view: EightwallView): string {
         node = document.createElement('a-image'); node.setAttribute('src', el.url);
         var isz = flatSize(el.aspect, 0.3); node.setAttribute('width', isz[0]); node.setAttribute('height', isz[1]);
         node.setAttribute('material', 'side', 'double'); // visible from behind the card
+        // Card-bound like video: the photo shows only while the card is on screen
+        // (starts hidden; ktSyncMediaVisible reveals it on the card-found event).
+        node.setAttribute('data-kt-cardbound', '1'); node.setAttribute('visible', 'false');
       } else if (el.type === 'social'){
         node = document.createElement('a-entity');
         var bg = document.createElement('a-plane'); bg.setAttribute('width', 0.26); bg.setAttribute('height', 0.26);
@@ -546,8 +577,12 @@ export function eightwallViewerHtml(view: EightwallView): string {
       } else if (el.type === 'video' && el.url){
         node = document.createElement('a-video'); node.setAttribute('src', el.url);
         var vsz = flatSize(el.aspect, 0.5); node.setAttribute('width', vsz[0]); node.setAttribute('height', vsz[1]);
-        // NO autoplay: the clip must wait for the card, like the 3D content. It's
-        // started on xrextrasfound and paused on lost (see playFoundMedia below).
+        // NO autoplay, and CARD-BOUND: the clip plays + shows only while the printed
+        // card is actually on screen and pauses + hides the moment it leaves — even in
+        // SLAM-persist mode (started/stopped from the kt-image-anchor card-presence
+        // events, see playFoundMedia / pauseLostMedia below). __ktPlayable stays false
+        // until the probe confirms the source is a real, decodable clip.
+        node.setAttribute('data-kt-cardbound', '1'); node.__ktPlayable = false;
         node.setAttribute('autoplay', 'false'); node.setAttribute('loop', el.loop === false ? 'false' : 'true');
         // Start muted — browsers block sound-on play until a gesture; the Start-AR
         // tap is that gesture, so playFoundMedia un-mutes when the card is found.
@@ -593,7 +628,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
           probe.muted = true; probe.preload = 'metadata'; probe.crossOrigin = 'anonymous';
           probe.setAttribute('playsinline', ''); probe.setAttribute('webkit-playsinline', '');
           var done = false;
-          function ok(){ if (done) return; done = true; n.setAttribute('visible', 'true'); log('video ok: ' + url); }
+          function ok(){ if (done) return; done = true; n.__ktPlayable = true; ktSyncMediaVisible(); log('video ok: ' + url); }
           function drop(){ if (done) return; done = true; try { if (n.parentNode) n.parentNode.removeChild(n); } catch(e){} log('video dropped (unplayable): ' + url); }
           probe.addEventListener('loadedmetadata', ok);
           probe.addEventListener('canplay', ok);
@@ -609,9 +644,17 @@ export function eightwallViewerHtml(view: EightwallView): string {
         node.setAttribute('data-kt-audio', '1');
         node.setAttribute('data-kt-autoplay', el.autoplay === false ? '0' : '1');
         node.setAttribute('sound', 'src: url(' + el.url + '); loop: ' + (el.loop === false ? 'false' : 'true') + '; positional: false; autoplay: false; volume: 1');
+        // Card-bound: the speaker chip shows + the sound plays only while the card is
+        // on screen. __ktWantPlay = the listener's INTENDED state (autoplay clips want
+        // to play; a manual clip starts silent and the tap toggles it), so leaving and
+        // re-finding the card pauses then resumes exactly what they had going.
+        node.setAttribute('data-kt-cardbound', '1'); node.__ktPlayable = false;
+        node.__ktWantPlay = el.autoplay !== false;
         var abg = document.createElement('a-plane');
         abg.setAttribute('width', 0.24); abg.setAttribute('height', 0.24);
-        abg.setAttribute('color', '#F59E0B'); abg.setAttribute('material', 'shader: flat; side: double');
+        // Chip starts orange (on) for an autoplay clip, grey (off) for a manual one,
+        // so its colour always reflects whether the sound is meant to be playing.
+        abg.setAttribute('color', el.autoplay !== false ? '#F59E0B' : '#6B7280'); abg.setAttribute('material', 'shader: flat; side: double');
         abg.classList.add('clickable');
         var atx = document.createElement('a-text');
         atx.setAttribute('value', 'AUDIO'); atx.setAttribute('align', 'center'); atx.setAttribute('color', '#ffffff');
@@ -621,8 +664,25 @@ export function eightwallViewerHtml(view: EightwallView): string {
           try {
             resumeAudioCtx();
             var s = node.components && node.components.sound; if (!s) return;
-            if (node.__ktPlaying){ s.pauseSound(); node.__ktPlaying = false; abg.setAttribute('color', '#6B7280'); }
-            else { s.playSound(); node.__ktPlaying = true; abg.setAttribute('color', '#F59E0B'); }
+            // Record the intended state too (__ktWantPlay) so a card leave/return
+            // pauses then resumes this exact choice instead of forgetting it.
+            if (node.__ktPlaying){ s.pauseSound(); node.__ktPlaying = false; node.__ktWantPlay = false; abg.setAttribute('color', '#6B7280'); }
+            else { s.playSound(); node.__ktPlaying = true; node.__ktWantPlay = true; abg.setAttribute('color', '#F59E0B'); }
+          } catch(e){}
+        });
+        // a-frame's playSound() is a NO-OP until the buffer finishes loading, so an
+        // autoplay clip whose buffer lands AFTER the card was first found would stay
+        // silent (playFoundMedia already ran). When the buffer is ready, mark it
+        // playable and start it if the card is up and it's meant to be playing — the
+        // audio mirror of the video's materialvideoloadeddata handler.
+        node.addEventListener('sound-loaded', function(){
+          try {
+            node.__ktPlayable = true; ktSyncMediaVisible();
+            if (node.__ktWantPlay && !node.__ktPlaying && window.__KT_CARD_VISIBLE__){
+              resumeAudioCtx();
+              var s = node.components && node.components.sound;
+              if (s){ s.playSound(); node.__ktPlaying = true; }
+            }
           } catch(e){}
         });
         // Same graceful-skip as video: only show the speaker chip if the audio is
@@ -633,7 +693,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
           var probe = document.createElement('audio');
           probe.muted = true; probe.preload = 'metadata'; probe.crossOrigin = 'anonymous';
           var done = false;
-          function ok(){ if (done) return; done = true; n.setAttribute('visible', 'true'); log('audio ok: ' + url); }
+          function ok(){ if (done) return; done = true; n.__ktPlayable = true; ktSyncMediaVisible(); log('audio ok: ' + url); }
           function drop(){ if (done) return; done = true; try { if (n.parentNode) n.parentNode.removeChild(n); } catch(e){} log('audio dropped (unplayable): ' + url); }
           probe.addEventListener('loadedmetadata', ok);
           probe.addEventListener('canplay', ok);
@@ -732,7 +792,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
     var pOv = qNum('persist');
     var anchorCfg = 'name: ' + ((D.target && D.target.name) || 'card') +
       '; persist: ' + ((pOv !== null ? pOv : (wt ? 1 : 0)) ? 'true' : 'false');
-    var ov = { grace: qNum('grace'), tauMove: qNum('taumove'), tauStill: qNum('taustill'), snap: qNum('snap') };
+    var ov = { grace: qNum('grace'), tauMove: qNum('taumove'), tauStill: qNum('taustill'), snap: qNum('snap'), cardGrace: qNum('cardgrace') };
     Object.keys(ov).forEach(function(k){ if (ov[k] !== null) anchorCfg += '; ' + k + ': ' + ov[k]; });
     var anchor = document.createElement('a-entity');
     anchor.setAttribute('kt-image-anchor', anchorCfg);
@@ -796,12 +856,29 @@ export function eightwallViewerHtml(view: EightwallView): string {
       } catch(e){ try { v.muted = true; v.play(); } catch(e2){} }
     }
 
-    // Card came into view: start the clips. Videos un-mute if the author left
-    // sound on (falling back to muted playback if the browser still blocks it);
-    // autoplay audio clips start. Manually-tapped audio is left to the user.
+    // Show/hide the card-bound flat media (video, photo, audio chip) to match the
+    // current card-in-view state. A video / audio chip only shows once its source is
+    // confirmed playable (__ktPlayable); a photo has no probe so it shows whenever
+    // the card is up. Called on every card found/lost AND when a probe confirms a
+    // clip (so a slow-loading clip pops in correctly if the card is already shown).
+    function ktSyncMediaVisible(){
+      var on = !!window.__KT_CARD_VISIBLE__;
+      var els = scene.querySelectorAll('[data-kt-cardbound]');
+      for (var i = 0; i < els.length; i++){
+        var n = els[i];
+        var playable = n.__ktPlayable !== false; // image: undefined -> playable
+        n.setAttribute('visible', (on && playable) ? 'true' : 'false');
+      }
+    }
+
+    // Card came into view: reveal + start the card-bound clips. Videos un-mute if
+    // the author left sound on (falling back to muted playback if the browser still
+    // blocks it); audio the listener wants playing (autoplay, or tapped on) starts.
+    // Manually-paused audio stays paused.
     function playFoundMedia(){
       window.__KT_CARD_VISIBLE__ = true;
       resumeAudioCtx();
+      ktSyncMediaVisible();
       var vs = scene.querySelectorAll('[data-kt-video]');
       for (var i = 0; i < vs.length; i++){
         var n = vs[i], v = ktVideoOf(n); if (!v) continue;
@@ -810,15 +887,18 @@ export function eightwallViewerHtml(view: EightwallView): string {
       var as = scene.querySelectorAll('[data-kt-audio]');
       for (var j = 0; j < as.length; j++){
         var an = as[j];
-        if (an.getAttribute('data-kt-autoplay') !== '1' || an.__ktPlaying) continue;
+        // Skip clips not meant to play, already playing, or not yet probe-confirmed
+        // playable (the sound-loaded handler starts those once their buffer lands).
+        if (!an.__ktWantPlay || an.__ktPlaying || an.__ktPlayable === false) continue;
         var s = an.components && an.components.sound;
         if (s){ try { s.playSound(); an.__ktPlaying = true; } catch(e){} }
       }
     }
 
-    // Card left the view (in SLAM-persist the content — and its media — stays put,
-    // so this won't fire until it's actually hidden): pause every clip so nothing
-    // plays off-card. Autoplay clips re-arm so the next found restarts them.
+    // Card left the view: pause + hide every card-bound clip so nothing plays or
+    // floats off-card — even in SLAM-persist mode, where the 3D models stay glued in
+    // place. Audio keeps its intended state (__ktWantPlay) so re-finding the card
+    // resumes exactly what the listener had going.
     function pauseLostMedia(){
       window.__KT_CARD_VISIBLE__ = false;
       var vs = scene.querySelectorAll('[data-kt-video]');
@@ -826,14 +906,19 @@ export function eightwallViewerHtml(view: EightwallView): string {
       var as = scene.querySelectorAll('[data-kt-audio]');
       for (var j = 0; j < as.length; j++){
         var an = as[j];
-        if (an.getAttribute('data-kt-autoplay') !== '1' || !an.__ktPlaying) continue;
+        if (!an.__ktPlaying) continue;
         var s = an.components && an.components.sound;
         if (s){ try { s.pauseSound(); } catch(e){} an.__ktPlaying = false; }
       }
+      ktSyncMediaVisible();
     }
 
-    anchor.addEventListener('xrextrasfound', playFoundMedia);
-    anchor.addEventListener('xrextraslost', pauseLostMedia);
+    // Media is wired to the RAW card-presence events (kt-image-anchor emits these
+    // whenever the printed card enters / leaves the frame), NOT the content show/hide
+    // events — so in SLAM-persist mode, where the 3D content deliberately never hides,
+    // the video / photo / audio still pause + hide the instant the card leaves view.
+    anchor.addEventListener('ktcardvisible', playFoundMedia);
+    anchor.addEventListener('ktcardhidden', pauseLostMedia);
 
     scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card'; });
     scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });
