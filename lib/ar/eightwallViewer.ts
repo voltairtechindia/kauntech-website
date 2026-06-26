@@ -509,6 +509,34 @@ export function eightwallViewerHtml(view: EightwallView): string {
       });
     }
 
+    // kt-occluder — makes the printed card read as a SOLID object. The real card is
+    // only camera-feed pixels, so nothing in the 3D scene stops content that
+    // overflows the card or dips below its surface from drawing straight OVER the
+    // print (you'd see a model's underside / a tilted video's back through the
+    // card). This is an invisible plane in the card's own surface that writes DEPTH
+    // ONLY (colorWrite:false) and draws BEFORE all content (renderOrder): any
+    // fragment behind the card plane then fails the depth test, leaving the camera
+    // feed — the real card — visible. It's the viewer's equivalent of the editor's
+    // solid card box (which already occludes there), so AR now matches the editor.
+    // Double-sided so it occludes whether the card faces us or we've orbited behind.
+    if (AFRAME.registerComponent && !AFRAME.components['kt-occluder']){
+      AFRAME.registerComponent('kt-occluder', {
+        schema: { width: { default: 1 }, height: { default: 0.5714 } },
+        init: function(){
+          var THREE = AFRAME.THREE;
+          var mat = new THREE.MeshBasicMaterial();
+          mat.colorWrite = false;        // depth only — leaves the camera feed visible
+          mat.depthWrite = true;
+          mat.depthTest = true;
+          mat.side = THREE.DoubleSide;    // occlude from the front AND the back
+          var mesh = new THREE.Mesh(new THREE.PlaneGeometry(this.data.width, this.data.height), mat);
+          mesh.renderOrder = -1000;       // draw FIRST so later content depth-tests against it
+          this.el.setObject3D('mesh', mesh);
+        },
+        remove: function(){ this.el.removeObject3D('mesh'); }
+      });
+    }
+
     var SHADOW_TEX = (function(){
       try {
         var c = document.createElement('canvas'); c.width = c.height = 128;
@@ -790,6 +818,19 @@ export function eightwallViewerHtml(view: EightwallView): string {
     var corrZ = targetCorrectionZ();
     if (corrZ) wrap.setAttribute('rotation', '0 0 ' + corrZ);
     log('orientation correction: ' + corrZ + '° (target ' + ((targetDims && targetDims.w) || '?') + 'x' + ((targetDims && targetDims.h) || '?') + ')');
+    // Solid-card occluder (see kt-occluder above). Sized to the real target's
+    // footprint — longer side normalised to 1, matching the editor's width=1 card —
+    // and parked a hair BEHIND the surface (z ≈ 0) so content resting flush on the
+    // card still shows while anything that sinks behind the card is hidden. Lives
+    // INSIDE the wrap so it inherits the orientation correction and stays glued to
+    // the card at every angle. ?occlude=0 disables it on-device without a redeploy.
+    if (!/[?&]occlude=0/i.test(location.search)){
+      var occA = (function(){ var d = targetDims || {}; var a = (d.w > 0 && d.h > 0) ? d.w / d.h : 1.75; return a > 0 ? a : 1.75; })();
+      var occ = document.createElement('a-entity');
+      occ.setAttribute('kt-occluder', 'width: ' + (occA >= 1 ? 1 : occA).toFixed(4) + '; height: ' + (occA >= 1 ? 1 / occA : 1).toFixed(4));
+      occ.setAttribute('position', '0 0 -0.0015');
+      wrap.appendChild(occ);
+    }
     (D.elements || []).forEach(function(el){ var sh = buildShadow(el); if (sh) wrap.appendChild(sh); var n = buildElement(el); if (n) wrap.appendChild(n); });
     anchor.appendChild(wrap);
     scene.appendChild(anchor);

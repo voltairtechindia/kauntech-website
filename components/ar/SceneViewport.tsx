@@ -169,7 +169,15 @@ function ElementNode({
   const nodeRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
   return (
-    <group ref={nodeRef} position={element.position} rotation={[(element.baseRotationX ?? 0) + (element.rotationX ?? 0), element.rotationY, element.rotationZ ?? 0]} scale={(element.baseScale ?? 1) * element.scale}>
+    // Tilt(X) / Turn(Y) / Roll(Z) MUST compose in the same Euler order as the
+    // published AR viewer, or multi-axis rotations diverge between the editor and
+    // AR (tilt/turn looked inverted). A-Frame applies rotation in 'YXZ' order, so
+    // the editor preview is given the explicit 'YXZ' order too (the array's 4th
+    // element). Single-axis rotations are identical in any order — which is why this
+    // only surfaced once a model used all three. (YXZ = the intuitive turn→tilt→roll
+    // order for the sliders anyway.) The viewer is unchanged, so no published card's
+    // AR look shifts; the editor just becomes WYSIWYG for AR.
+    <group ref={nodeRef} position={element.position} rotation={[(element.baseRotationX ?? 0) + (element.rotationX ?? 0), element.rotationY, element.rotationZ ?? 0, "YXZ"]} scale={(element.baseScale ?? 1) * element.scale}>
       <group ref={bodyRef}>
         <ElementBody element={element} onSelect={onSelect} selected={selected} />
       </group>
