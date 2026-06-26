@@ -98,6 +98,9 @@ const permissionsPolicy = (camera: "()" | "(self)") => ({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The /api/ar/asset model optimizer runs these native/WASM packages server-side;
+  // keep them out of the bundle so they load from node_modules at runtime.
+  serverExternalPackages: ["sharp", "meshoptimizer"],
   images: {
     formats: ["image/avif", "image/webp"],
   },

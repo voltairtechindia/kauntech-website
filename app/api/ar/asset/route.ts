@@ -12,9 +12,13 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createArServerClient } from "@/lib/ar/appAuth";
+import { optimizeGlb } from "@/lib/ar/glbOptimize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// Optimizing an uploaded .glb (sharp re-encodes textures, meshoptimizer decimates
+// geometry) can take a while — give it headroom so big models aren't killed mid-run.
+export const maxDuration = 60;
 
 const AR_BUCKET = "ar-models";
 const MAX_MODEL = 25 * 1024 * 1024;
@@ -93,7 +97,16 @@ export async function POST(req: Request) {
   }
 
   const path = `${user.id}/${cardId}/assets/${randomUUID()}.${ext}`;
-  const bytes = Buffer.from(await file.arrayBuffer());
+  let bytes: Uint8Array = Buffer.from(await file.arrayBuffer());
+  // Shrink models the same way the curated gallery does: smaller stored file =
+  // less of the owner's cloud_ar_bytes quota used and a faster load on phones.
+  if (kind === "model") {
+    const opt = await optimizeGlb(bytes);
+    bytes = opt.buffer;
+    if (opt.after < opt.before) {
+      console.log(`[ar/asset] model optimized ${(opt.before / 1024).toFixed(0)}KB → ${(opt.after / 1024).toFixed(0)}KB`);
+    }
+  }
   const { error } = await supabase.storage.from(AR_BUCKET).upload(path, bytes, { contentType, upsert: false });
   if (error) {
     const m = mapErr(error.message);
