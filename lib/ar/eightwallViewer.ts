@@ -637,47 +637,26 @@ export function eightwallViewerHtml(view: EightwallView): string {
           try { probe.src = url; } catch(e){ drop(); }
         })(node, el.url);
       } else if (el.type === 'audio' && el.url){
-        // Sound + a tappable speaker chip. Web Audio is unlocked / started by the
-        // chip tap (and any first touch); autoplay-on-found is attempted too but is
-        // blocked by the browser until a gesture, hence the always-tappable chip.
+        // Audio is an INVISIBLE, card-gated soundtrack — NO on-card chip or control
+        // (matches the editor, which draws nothing for it). It simply plays while the
+        // card is in view and pauses when it leaves, via playFoundMedia /
+        // pauseLostMedia (keyed off data-kt-audio). __ktWantPlay carries the editor's
+        // "play automatically" choice; a clip with autoplay off stays silent (there's
+        // no on-card control by design — preview/check is in the editor's right panel).
+        // Web Audio needs a gesture to make sound: the iOS Start-AR tap and the global
+        // tap-to-resume listener cover that.
         node = document.createElement('a-entity');
         node.setAttribute('data-kt-audio', '1');
-        node.setAttribute('data-kt-autoplay', el.autoplay === false ? '0' : '1');
         node.setAttribute('sound', 'src: url(' + el.url + '); loop: ' + (el.loop === false ? 'false' : 'true') + '; positional: false; autoplay: false; volume: 1');
-        // Card-bound: the speaker chip shows + the sound plays only while the card is
-        // on screen. __ktWantPlay = the listener's INTENDED state (autoplay clips want
-        // to play; a manual clip starts silent and the tap toggles it), so leaving and
-        // re-finding the card pauses then resumes exactly what they had going.
-        node.setAttribute('data-kt-cardbound', '1'); node.__ktPlayable = false;
+        node.__ktPlayable = false;
         node.__ktWantPlay = el.autoplay !== false;
-        var abg = document.createElement('a-plane');
-        abg.setAttribute('width', 0.24); abg.setAttribute('height', 0.24);
-        // Chip starts orange (on) for an autoplay clip, grey (off) for a manual one,
-        // so its colour always reflects whether the sound is meant to be playing.
-        abg.setAttribute('color', el.autoplay !== false ? '#F59E0B' : '#6B7280'); abg.setAttribute('material', 'shader: flat; side: double');
-        abg.classList.add('clickable');
-        var atx = document.createElement('a-text');
-        atx.setAttribute('value', 'AUDIO'); atx.setAttribute('align', 'center'); atx.setAttribute('color', '#ffffff');
-        atx.setAttribute('width', 1.2); atx.setAttribute('position', '0 0 0.01'); atx.setAttribute('side', 'double');
-        node.appendChild(abg); node.appendChild(atx);
-        abg.addEventListener('click', function(){
-          try {
-            resumeAudioCtx();
-            var s = node.components && node.components.sound; if (!s) return;
-            // Record the intended state too (__ktWantPlay) so a card leave/return
-            // pauses then resumes this exact choice instead of forgetting it.
-            if (node.__ktPlaying){ s.pauseSound(); node.__ktPlaying = false; node.__ktWantPlay = false; abg.setAttribute('color', '#6B7280'); }
-            else { s.playSound(); node.__ktPlaying = true; node.__ktWantPlay = true; abg.setAttribute('color', '#F59E0B'); }
-          } catch(e){}
-        });
         // a-frame's playSound() is a NO-OP until the buffer finishes loading, so an
         // autoplay clip whose buffer lands AFTER the card was first found would stay
-        // silent (playFoundMedia already ran). When the buffer is ready, mark it
-        // playable and start it if the card is up and it's meant to be playing — the
-        // audio mirror of the video's materialvideoloadeddata handler.
+        // silent (playFoundMedia already ran). Start it once the buffer is ready if
+        // the card is up — the audio mirror of the video's materialvideoloadeddata.
         node.addEventListener('sound-loaded', function(){
           try {
-            node.__ktPlayable = true; ktSyncMediaVisible();
+            node.__ktPlayable = true;
             if (node.__ktWantPlay && !node.__ktPlaying && window.__KT_CARD_VISIBLE__){
               resumeAudioCtx();
               var s = node.components && node.components.sound;
@@ -685,15 +664,14 @@ export function eightwallViewerHtml(view: EightwallView): string {
             }
           } catch(e){}
         });
-        // Same graceful-skip as video: only show the speaker chip if the audio is
-        // actually playable. A streaming-page link / 404 / CORS failure fires
-        // 'error', and we drop the whole element so there's no dead control.
-        node.setAttribute('visible', 'false');
+        // Graceful skip: drop the element if the URL isn't a real, playable file (a
+        // streaming-page link / 404 / CORS failure all fire 'error') so a dead URL
+        // doesn't sit silently in the scene. A clip that loads metadata stays + plays.
         (function(n, url){
           var probe = document.createElement('audio');
           probe.muted = true; probe.preload = 'metadata'; probe.crossOrigin = 'anonymous';
           var done = false;
-          function ok(){ if (done) return; done = true; n.__ktPlayable = true; ktSyncMediaVisible(); log('audio ok: ' + url); }
+          function ok(){ if (done) return; done = true; n.__ktPlayable = true; log('audio ok: ' + url); }
           function drop(){ if (done) return; done = true; try { if (n.parentNode) n.parentNode.removeChild(n); } catch(e){} log('audio dropped (unplayable): ' + url); }
           probe.addEventListener('loadedmetadata', ok);
           probe.addEventListener('canplay', ok);
@@ -856,11 +834,12 @@ export function eightwallViewerHtml(view: EightwallView): string {
       } catch(e){ try { v.muted = true; v.play(); } catch(e2){} }
     }
 
-    // Show/hide the card-bound flat media (video, photo, audio chip) to match the
-    // current card-in-view state. A video / audio chip only shows once its source is
-    // confirmed playable (__ktPlayable); a photo has no probe so it shows whenever
-    // the card is up. Called on every card found/lost AND when a probe confirms a
-    // clip (so a slow-loading clip pops in correctly if the card is already shown).
+    // Show/hide the card-bound flat media (video + photo) to match the current
+    // card-in-view state. A video only shows once its source is confirmed playable
+    // (__ktPlayable); a photo has no probe so it shows whenever the card is up.
+    // (Audio is NOT in this set — it's invisible, with no on-card element.) Called on
+    // every card found/lost AND when a probe confirms a clip (so a slow-loading clip
+    // pops in correctly if the card is already shown).
     function ktSyncMediaVisible(){
       var on = !!window.__KT_CARD_VISIBLE__;
       var els = scene.querySelectorAll('[data-kt-cardbound]');
@@ -873,8 +852,9 @@ export function eightwallViewerHtml(view: EightwallView): string {
 
     // Card came into view: reveal + start the card-bound clips. Videos un-mute if
     // the author left sound on (falling back to muted playback if the browser still
-    // blocks it); audio the listener wants playing (autoplay, or tapped on) starts.
-    // Manually-paused audio stays paused.
+    // blocks it); audio set to play automatically (the editor's autoplay choice,
+    // carried in __ktWantPlay) starts. Audio with autoplay off stays silent (there's
+    // no on-card control by design).
     function playFoundMedia(){
       window.__KT_CARD_VISIBLE__ = true;
       resumeAudioCtx();
@@ -916,7 +896,8 @@ export function eightwallViewerHtml(view: EightwallView): string {
     // Media is wired to the RAW card-presence events (kt-image-anchor emits these
     // whenever the printed card enters / leaves the frame), NOT the content show/hide
     // events — so in SLAM-persist mode, where the 3D content deliberately never hides,
-    // the video / photo / audio still pause + hide the instant the card leaves view.
+    // the video / photo still pause + hide and the audio still pauses the instant the
+    // card leaves view.
     anchor.addEventListener('ktcardvisible', playFoundMedia);
     anchor.addEventListener('ktcardhidden', pauseLostMedia);
 

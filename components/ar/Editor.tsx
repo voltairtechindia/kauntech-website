@@ -720,8 +720,9 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     }
   }
   function addAudio() {
-    // Audio is invisible sound + a small tappable speaker control in AR. Paste a
-    // direct audio URL or upload a file in its properties.
+    // Audio is an invisible, card-gated soundtrack — nothing shows on the card in
+    // AR; it just plays while the card is in view. Paste a direct audio URL or
+    // upload a file in its properties (which has an editor-only preview player).
     add({ type: "audio", url: "", loop: true, autoplay: true, scale: 1, rotationY: 0, position: [0, 0.3, 0.06] });
   }
   async function onPickAudioFile(file?: File) {
@@ -1190,7 +1191,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         Add audio by URL
                       </button>
-                      <span className="ar-muted ar-asset-hint">Plays when the card is scanned, with a tappable speaker so viewers can mute it. Upload a file or paste a direct audio link.</span>
+                      <span className="ar-muted ar-asset-hint">Plays automatically while the card is in view — nothing shows on the card. Upload a file or paste a direct audio link.</span>
                     </>
                   ) : (
                     <>
@@ -1372,6 +1373,23 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           )}
                         </>
                       )}
+                      {/* Editor-only preview player — scrub / fast-forward to check
+                          the clip while composing. Editor-only: it has nothing to do
+                          with the AR view and never ships there. */}
+                      {selected.url && !isStreamingPageUrl(selected.url) && (
+                        <>
+                          <label className="ar-label" style={{ marginTop: 12 }}>Preview</label>
+                          <video
+                            key={selected.url}
+                            controls
+                            playsInline
+                            src={selected.url}
+                            style={{ width: "100%", borderRadius: 8, background: "#000", maxHeight: 220 }}
+                          >
+                            Your browser can’t play this video.
+                          </video>
+                        </>
+                      )}
                       <label className="ar-row" style={{ gap: 8, cursor: "pointer", marginTop: 10 }}>
                         <input type="checkbox" checked={selected.loop ?? true}
                           onChange={(e) => update(selected.id, { loop: e.target.checked })}
@@ -1453,7 +1471,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                       </button>
                       {isHostedAsset(selected.url) ? (
                         <span className="ar-muted" style={{ fontSize: "11px", marginTop: 2, display: "block" }}>
-                          Your uploaded clip plays when the card is scanned. Viewers see a small speaker on the card they can tap to mute or unmute.
+                          Your clip plays automatically while the card is in view. Nothing shows on the card — use the player below to check it.
                         </span>
                       ) : (
                         <>
@@ -1471,9 +1489,25 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                             </span>
                           ) : (
                             <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block" }}>
-                              Plays when the card is scanned. Viewers see a small speaker on the card they can tap to mute or unmute.
+                              Plays automatically while the card is in view. Nothing shows on the card.
                             </span>
                           )}
+                        </>
+                      )}
+                      {/* Editor-only preview player — lets you check the clip here
+                          while composing. Has nothing to do with the AR view (where
+                          audio is invisible and just plays); it never ships to AR. */}
+                      {selected.url && !isStreamingPageUrl(selected.url) && (
+                        <>
+                          <label className="ar-label" style={{ marginTop: 12 }}>Preview</label>
+                          <audio
+                            key={selected.url}
+                            controls
+                            src={selected.url}
+                            style={{ width: "100%" }}
+                          >
+                            Your browser can’t play this audio.
+                          </audio>
                         </>
                       )}
                       <div className="ar-stack" style={{ gap: 8, marginTop: 10 }}>

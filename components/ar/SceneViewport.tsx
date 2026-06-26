@@ -318,14 +318,12 @@ function ElementBody({
     );
   }
 
-  // Audio has no inherent geometry — show a small speaker chip so it can be
-  // selected and placed. In AR this same chip is tappable to mute / unmute.
+  // Audio is an invisible, card-gated soundtrack — nothing is drawn on the card
+  // (matching the AR view, which shows no chip either). It's added, selected,
+  // previewed and edited entirely from the side panels (Layers list + Audio
+  // Properties), never as an on-card element.
   if (element.type === "audio") {
-    return (
-      <group onClick={click}>
-        <AudioChip ready={!!element.url} />
-      </group>
-    );
+    return null;
   }
 
   // Video: render the REAL clip (aspect-correct, double-sided) so the editor is
@@ -381,31 +379,6 @@ function VideoPlane({ url, w, h, rate }: { url: string; w: number; h: number; ra
       <planeGeometry args={[w, h]} />
       <meshBasicMaterial map={tex} side={THREE.DoubleSide} toneMapped={false} />
     </mesh>
-  );
-}
-
-// A speaker "chip" standing in for an audio element (no geometry of its own). A
-// rounded dark tile with a simple speaker glyph drawn from meshes — mirrors the
-// tappable mute control the AR viewer shows.
-function AudioChip({ ready }: { ready: boolean }) {
-  return (
-    <group>
-      <RoundedBox args={[0.24, 0.24, 0.03]} radius={0.05} smoothness={4}>
-        <meshStandardMaterial color={ready ? "#F59E0B" : "#6B7280"} metalness={0.1} roughness={0.5} />
-      </RoundedBox>
-      {/* Speaker body + cone */}
-      <mesh position={[-0.03, 0, 0.02]}>
-        <boxGeometry args={[0.05, 0.06, 0.01]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0.005, 0, 0.02]} rotation={[0, 0, Math.PI / 2]}>
-        <coneGeometry args={[0.06, 0.08, 16]} />
-        <meshStandardMaterial color="#ffffff" />
-      </mesh>
-      <Text position={[0, -0.085, 0.02]} fontSize={0.035} color="#ffffff" anchorX="center" anchorY="middle">
-        {ready ? "AUDIO" : "no file"}
-      </Text>
-    </group>
   );
 }
 
