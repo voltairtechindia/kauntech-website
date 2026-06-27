@@ -11,6 +11,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createArServerClient } from "@/lib/ar/appAuth";
+import { AR_COST, chargeArTokens, refundArTokens, chargeErrorResponse } from "@/lib/ar/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -212,11 +213,26 @@ export async function POST(req: Request) {
     is_published: publish,
   };
 
+  // Token charge: building a NEW AR card costs AR_COST.build tokens (Pro+). Edits
+  // to an existing card are free — only the create event is billed, which also
+  // sidesteps the editor's auto-save firing many updates per session. Charge just
+  // before the insert; refund if the insert is rejected (cap / storage trigger).
+  let buildCharge: { amount: number; source: string } | null = null;
+  if (!existing) {
+    const charge = await chargeArTokens(userId, AR_COST.build);
+    if (!charge.ok) {
+      const m = chargeErrorResponse(charge);
+      return bad(m.error, m.status);
+    }
+    buildCharge = { amount: AR_COST.build, source: charge.source };
+  }
+
   const { data: saved, error: saveErr } = existing
     ? await supabase.from("ar_models").update(row).eq("id", modelId).select().single()
     : await supabase.from("ar_models").insert(row).select().single();
 
   if (saveErr) {
+    if (buildCharge) await refundArTokens(userId, buildCharge.amount, buildCharge.source);
     const m = mapDbError(saveErr.message);
     return bad(m.error, m.status);
   }

@@ -1150,7 +1150,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "model" ? "Uploading…" : "Upload your own .glb"}</span>
-                          <span className="ar-asset-upload-sub">Bring a custom model from your device</span>
+                          <span className="ar-asset-upload-sub">Bring a custom model · 15 tokens</span>
                         </span>
                       </button>
                       <span className="ar-muted ar-asset-hint">Models float above the card and can play their animation.</span>
@@ -1169,7 +1169,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "video" ? "Uploading…" : "Upload a video file"}</span>
-                          <span className="ar-asset-upload-sub">MP4 / WebM — counts toward your cloud storage</span>
+                          <span className="ar-asset-upload-sub">MP4 / WebM · 10 tokens</span>
                         </span>
                       </button>
                       <button className="ar-tab ar-asset-add" title="Add a video plane, then paste a direct .mp4 link in its properties" onClick={addVideo}>

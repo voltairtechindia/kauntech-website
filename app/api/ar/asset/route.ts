@@ -12,6 +12,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createArServerClient } from "@/lib/ar/appAuth";
+import { AR_COST, chargeArTokens, refundArTokens, chargeErrorResponse } from "@/lib/ar/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,8 +111,25 @@ export async function POST(req: Request) {
       console.log(`[ar/asset] model optimized ${(opt.before / 1024).toFixed(0)}KB → ${(opt.after / 1024).toFixed(0)}KB`);
     }
   }
+
+  // Token charge for heavy elements: 3D models and videos cost tokens (Pro+);
+  // images and audio are free (small, negligible owner cost). Charge only once the
+  // file is validated + optimized (so a failed optimize never bills), right before
+  // the upload; refund if the upload is rejected (e.g. the storage byte-cap trigger).
+  const assetCost = kind === "model" ? AR_COST.model : kind === "video" ? AR_COST.video : 0;
+  let assetCharge: { amount: number; source: string } | null = null;
+  if (assetCost > 0) {
+    const charge = await chargeArTokens(user.id, assetCost);
+    if (!charge.ok) {
+      const m = chargeErrorResponse(charge);
+      return bad(m.error, m.status);
+    }
+    assetCharge = { amount: assetCost, source: charge.source };
+  }
+
   const { error } = await supabase.storage.from(AR_BUCKET).upload(path, bytes, { contentType, upsert: false });
   if (error) {
+    if (assetCharge) await refundArTokens(user.id, assetCharge.amount, assetCharge.source);
     const m = mapErr(error.message);
     return bad(m.error, m.status);
   }
