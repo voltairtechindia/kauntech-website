@@ -23,6 +23,13 @@ const MODEL_VIEWER_CDN = "https://cdn.jsdelivr.net";
 // Vercel Web Analytics debug script (dev); prod serves it same-origin.
 const VERCEL_ANALYTICS = "https://va.vercel-scripts.com";
 
+// Google Analytics 4 (gtag.js). The loader script is served by googletagmanager;
+// GA4 beacons go to *.google-analytics.com (incl. region1.*) and
+// *.analytics.google.com via fetch/sendBeacon (connect-src) and image pixels
+// (img-src). Applied to every page so analytics works site-wide.
+const GTM_ORIGIN = "https://www.googletagmanager.com";
+const GA_ENDPOINTS = "https://*.google-analytics.com https://*.analytics.google.com";
+
 /**
  * Content-Security-Policy.
  *
@@ -44,10 +51,10 @@ const buildCsp = (allowEval: boolean) =>
     // 'wasm-unsafe-eval' + blob: are required by the /ar/view WebAR viewer (MindAR
     // runs image tracking in WebAssembly + workers). MODEL_VIEWER_CDN (jsDelivr)
     // also serves MindAR + A-Frame.
-    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS}${allowEval || !isProd ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} ${GTM_ORIGIN}${allowEval || !isProd ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
-    `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com`,
+    `img-src 'self' data: blob: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} https://api.producthunt.com ${GTM_ORIGIN} ${GA_ENDPOINTS}`,
     // media-src governs <video>/<audio> sources. Uploaded AR clips live on the
     // Supabase origins; the /ar studio + viewer ALSO let owners paste a direct
     // external video/audio file URL, so those pages allow any https: media source.
@@ -55,7 +62,7 @@ const buildCsp = (allowEval: boolean) =>
     // SUPABASE_ORIGIN is the site project, home of the public `ar-gallery` bucket
     // (curated 3D models). three.js / a-gltf-model fetch those .glb files here, so
     // it must be in connect-src for both the editor previews and the WebAR viewer.
-    `connect-src 'self' blob: data: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} https://script.google.com https://script.googleusercontent.com`,
+    `connect-src 'self' blob: data: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} ${GTM_ORIGIN} ${GA_ENDPOINTS} https://script.google.com https://script.googleusercontent.com`,
     "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
     // jsDelivr added for the 8th Wall engine binary: it spins up camera/CV/SLAM
     // workers loaded from the same CDN as its xr.js, so they must be allowed here
