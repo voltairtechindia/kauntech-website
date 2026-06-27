@@ -106,6 +106,11 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
       };
     });
 
+  // A published-but-EMPTY scene tracks the card but renders nothing on top, which
+  // looks identical to "AR is broken". Serve a clear message instead of a blank
+  // camera. (The viewer only renders scene.elements, so 0 elements = no content.)
+  if (elements.length === 0) return fallback("This card doesn’t have an AR experience yet.");
+
   const li = (m.scene && typeof m.scene === "object" ? (m.scene as any).lighting : null) ?? {};
   const lighting = { intensity: typeof li.intensity === "number" && li.intensity > 0 ? Math.min(3, li.intensity) : 1.2 };
 

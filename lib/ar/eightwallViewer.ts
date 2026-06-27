@@ -197,6 +197,43 @@ export function eightwallViewerHtml(view: EightwallView): string {
   }
   if (retryBtn) retryBtn.addEventListener('click', function(){ location.reload(); });
 
+  // ── Audio unlock (Android has no start-tap gesture) ─────────────────────────
+  // Mobile browsers create THREE's AudioContext SUSPENDED until a user gesture.
+  // iOS gets that gesture from the "Tap to start AR" button; ANDROID auto-starts
+  // with NO gesture, so card-bound audio's playSound() runs while the context is
+  // suspended and stays silent forever. Prime the context on the FIRST gesture
+  // ANYWHERE (capture phase, so nothing swallows it) and RE-FIRE any card-visible
+  // audio whose playSound() already failed. Respects __ktWantPlay/__ktPlayable so
+  // it never forces on audio the author muted. Idempotent + no-op once unlocked.
+  function ktUnlockAudio(){
+    try {
+      var AF = window.AFRAME, THREE = AF && AF.THREE;
+      var ctx = THREE && THREE.AudioContext && THREE.AudioContext.getContext ? THREE.AudioContext.getContext() : null;
+      if (ctx){
+        if (ctx.state === 'suspended') ctx.resume();
+        try { var b = ctx.createBuffer(1, 1, 22050), src = ctx.createBufferSource(); src.buffer = b; src.connect(ctx.destination); (src.start ? src.start(0) : (src.noteOn && src.noteOn(0))); } catch(e){}
+      }
+      if (window.__KT_CARD_VISIBLE__){
+        var as = document.querySelectorAll('[data-kt-audio]');
+        for (var i = 0; i < as.length; i++){
+          var an = as[i];
+          if (!an.__ktWantPlay || an.__ktPlaying || an.__ktPlayable === false) continue;
+          var s = an.components && an.components.sound;
+          if (s){ try { s.playSound(); an.__ktPlaying = true; } catch(e){} }
+        }
+      }
+    } catch(e){}
+  }
+  document.addEventListener('touchstart', ktUnlockAudio, { capture: true, passive: true });
+  document.addEventListener('pointerdown', ktUnlockAudio, { capture: true, passive: true });
+  document.addEventListener('click', ktUnlockAudio, { capture: true });
+
+  // ── Diagnostics bridge: surface uncaught init errors to the app log (does NOT
+  // fail AR, so a benign post-ready error never blanks the experience). Genuine
+  // "never started" is already caught by the app-side 22s watchdog. ──
+  window.addEventListener('error', function(e){ try { log('window error: ' + (e && e.message ? e.message : e)); } catch(x){} });
+  window.addEventListener('unhandledrejection', function(e){ try { var r = e && e.reason; log('unhandledrejection: ' + (r && r.message ? r.message : r)); } catch(x){} });
+
   // ── Mobile-only gate ────────────────────────────────────────────────────────
   // AR needs the rear camera (+ motion) — pointless on a desktop PC/Mac. Detect
   // CLIENT-SIDE (not via the UA header) so a phone/tablet in "Request Desktop Site"
@@ -335,6 +372,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
     }
   }
   function onStartTap(){
+    ktUnlockAudio(); // prime audio on the same gesture iOS already has
     awaiting = false;
     startBox.classList.remove('show'); loadBox.classList.remove('hide');
     setProg(66);
