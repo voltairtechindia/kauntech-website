@@ -143,7 +143,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Pro plan: ₹499 per month, or ₹399 per month on annual billing (₹4,788 billed annually). For active sales " +
       "professionals who want AI enrichment and CRM automations. Includes 500 scans per month, 1,000 K-Tokens per month, " +
-      "AI Intel (2 tokens per scan), AI Fix (1 token per fix), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
+      "AI Intel (50 tokens per scan), AI Fix (1 token per fix), AR template cards (60 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
       "sync, Telegram bot integration, Webhook & WhatsApp automation, and the ability to unlock more VCard/Product/Template " +
       "slots with tokens.",
     metadata: {
@@ -164,8 +164,8 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Ultra plan (₹1,299 / month, ₹999 / month annual)",
     content:
       "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The top tier, with " +
-      "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (6 tokens per scan, Ultra " +
-      "only), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
+      "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (100 tokens per scan, Ultra " +
+      "only), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 400 MB of cloud " +
       "storage, Multi-User Team Collaboration (team group access), and Dedicated VIP Support.",
     metadata: {
       name: "Ultra",
@@ -177,7 +177,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       vcards: 5,
       products: 8,
       templates: 6,
-      cloud_storage: "250 MB",
+      cloud_storage: "400 MB",
     },
   },
   {
@@ -211,13 +211,13 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features and are only consumed when you actively " +
       "use an AI feature. When a plan's scan limit is exhausted, additional scans can also consume tokens flexibly. " +
       "The three AI features and their costs are: AI Fix — 1 token per use (Pro tier; automated contact-formatting fixes); " +
-      "AI Intel — 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 6 tokens per scan " +
+      "AI Intel — 50 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 100 tokens per scan " +
       "(Ultra tier; comprehensive sales strategies and icebreakers). Example balances: 1,000 K-Tokens can run up to 1,000 " +
-      "AI Fixes or enrich up to 500 cards with AI Intel; 3,000 K-Tokens can generate up to 500 AI Strategy outputs.",
+      "AI Fixes or enrich up to 20 cards with AI Intel; 3,000 K-Tokens can generate up to 30 AI Strategy outputs.",
     metadata: {
       ai_fix: "1 token/use",
-      ai_intel: "2 tokens/scan",
-      ai_strategy: "6 tokens/scan",
+      ai_intel: "50 tokens/scan",
+      ai_strategy: "100 tokens/scan",
     },
   },
   {

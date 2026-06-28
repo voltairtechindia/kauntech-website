@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createArServerClient } from "@/lib/ar/appAuth";
 import { AR_COST, chargeArTokens, refundArTokens, chargeErrorResponse } from "@/lib/ar/billing";
+import { effectiveTier } from "@/lib/ar/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,6 +96,39 @@ export async function POST(req: Request) {
     .maybeSingle();
 
   const modelId = existing?.id ?? randomUUID();
+
+  // Effective tier (reused for the scene-content gate below AND the build charge).
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("subscription_tier, trial_ends_at")
+    .eq("id", userId)
+    .single();
+  const tier = effectiveTier(prof?.subscription_tier ?? null, prof?.trial_ends_at ?? null);
+
+  // Tier gate on scene CONTENT: custom 3D model / video elements are an Ultra
+  // feature (Pro AR is template-only). A non-Ultra owner may only save model/video
+  // elements that are KaunTech-hosted (template / gallery assets on our Supabase
+  // storage) or that were ALREADY on this card (grandfathered) — never a new,
+  // externally-hosted .glb/.mp4. Mirrors the /api/ar/asset upload gate and closes
+  // the "self-host the file, reference its URL in the scene" bypass.
+  if (tier !== "ultra") {
+    const HOSTED = "/storage/v1/object/public/"; // our Supabase buckets (ar-models, ar-gallery)
+    const priorUrls = new Set(
+      ((((existing?.scene as { elements?: Array<{ url?: unknown }> } | null)?.elements) ?? [])
+        .map((el) => (typeof el?.url === "string" ? el.url : null))
+        .filter((u): u is string => !!u)),
+    );
+    const hasCustomHeavy = (scene.elements as Array<{ type?: unknown; url?: unknown }>).some((el) => {
+      if (el?.type !== "model" && el?.type !== "video") return false;
+      const url = typeof el?.url === "string" ? el.url : "";
+      if (!url) return false;                // blank placeholder (e.g. video-by-URL not yet filled)
+      if (priorUrls.has(url)) return false;  // unchanged / grandfathered element
+      return !url.includes(HOSTED);          // new + externally hosted => the bypass we block
+    });
+    if (hasCustomHeavy) {
+      return bad("Custom 3D models and video are an Ultra feature. On Pro, use a template or upgrade to add your own.", 403);
+    }
+  }
 
   // Resolve one card side to a public URL: upload a freshly-cropped file (to a
   // deterministic path so re-uploads overwrite, never orphaning bytes), or keep
@@ -213,18 +247,20 @@ export async function POST(req: Request) {
     is_published: publish,
   };
 
-  // Token charge: building a NEW AR card costs AR_COST.build tokens (Pro+). Edits
-  // to an existing card are free — only the create event is billed, which also
-  // sidesteps the editor's auto-save firing many updates per session. Charge just
-  // before the insert; refund if the insert is rejected (cap / storage trigger).
+  // Token charge: building a NEW AR card is billed by tier — Pro publishes a
+  // pre-made template card (buildPro), Ultra builds a custom card (buildUltra).
+  // Edits to an existing card are free — only the create event is billed, which
+  // also sidesteps the editor's auto-save firing many updates per session. Charge
+  // just before the insert; refund if the insert is rejected (cap / storage trigger).
   let buildCharge: { amount: number; source: string } | null = null;
   if (!existing) {
-    const charge = await chargeArTokens(userId, AR_COST.build);
+    const buildCost = tier === "ultra" ? AR_COST.buildUltra : AR_COST.buildPro;
+    const charge = await chargeArTokens(userId, buildCost);
     if (!charge.ok) {
       const m = chargeErrorResponse(charge);
       return bad(m.error, m.status);
     }
-    buildCharge = { amount: AR_COST.build, source: charge.source };
+    buildCharge = { amount: buildCost, source: charge.source };
   }
 
   const { data: saved, error: saveErr } = existing

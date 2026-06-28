@@ -13,6 +13,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createArServerClient } from "@/lib/ar/appAuth";
 import { AR_COST, chargeArTokens, refundArTokens, chargeErrorResponse } from "@/lib/ar/billing";
+import { effectiveTier } from "@/lib/ar/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,6 +66,22 @@ export async function POST(req: Request) {
     .eq("user_id", user.id)
     .single();
   if (!card) return bad("Card not found.", 404);
+
+  // Tier gate: custom element uploads (3D model / image / video / audio) are an
+  // ULTRA feature. Pro AR is template-only — Pro composes by applying a pre-made
+  // template (whose assets are shared/hosted, not uploaded here). Reject BEFORE
+  // any validation/optimization/charge so a Pro upload never bills or stores.
+  {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("subscription_tier, trial_ends_at")
+      .eq("id", user.id)
+      .single();
+    const tier = effectiveTier(prof?.subscription_tier ?? null, prof?.trial_ends_at ?? null);
+    if (tier !== "ultra") {
+      return bad("Custom 3D models, video and uploads are an Ultra feature. Apply a pre-made template, or upgrade to build a full AR scene.", 403);
+    }
+  }
 
   let ext: string;
   let contentType: string;

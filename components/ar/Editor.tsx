@@ -284,6 +284,10 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   // can live up there instead of taking room in the sidebar.
   const publishStorage = useStorageMeter()?.publish;
   const storageLabel = `${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim();
+  // AR is tiered: Pro = pre-made templates only; Ultra = the full studio (custom
+  // model/video/image uploads + build from scratch). The custom-asset library is
+  // hidden for non-Ultra here, and the upload routes reject it server-side too.
+  const isUltra = tier === "ultra";
   useEffect(() => {
     publishStorage?.(usedBytes, capBytes, storageLabel);
   }, [publishStorage, usedBytes, capBytes, storageLabel]);
@@ -1076,19 +1080,23 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-sm)" }}>
                 <div className="ar-row ar-between">
                   <span className="ar-label" style={{ margin: 0 }}>Templates</span>
-                  <button
-                    type="button"
-                    className="ar-tab ar-asset-add"
-                    style={{ padding: "5px 10px", fontSize: "12px" }}
-                    onClick={saveAsTemplate}
-                    disabled={savingTpl || elements.length === 0}
-                    title={elements.length === 0 ? "Add something to the card first" : "Save the current layout as a reusable template"}
-                  >
-                    {savingTpl ? "Saving…" : "Save current"}
-                  </button>
+                  {isUltra && (
+                    <button
+                      type="button"
+                      className="ar-tab ar-asset-add"
+                      style={{ padding: "5px 10px", fontSize: "12px" }}
+                      onClick={saveAsTemplate}
+                      disabled={savingTpl || elements.length === 0}
+                      title={elements.length === 0 ? "Add something to the card first" : "Save the current layout as a reusable template"}
+                    >
+                      {savingTpl ? "Saving…" : "Save current"}
+                    </button>
+                  )}
                 </div>
                 <span className="ar-muted" style={{ fontSize: "11px" }}>
-                  One tap drops a ready-made layout on your card. Your saved templates work across all your cards.
+                  {isUltra
+                    ? "One tap drops a ready-made layout on your card. Your saved templates work across all your cards."
+                    : "One tap drops a ready-made layout on your card. Edit the text and your card photo, then publish."}
                 </span>
                 {templates.global.map((t) => (
                   <button key={t.id} type="button" className="ar-template-row" onClick={() => applyTemplate(t)} title={`Apply "${t.name}"`}>
@@ -1117,6 +1125,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
               </div>
 
               {/* Assets — add models, images, video, text or social, by category */}
+              {isUltra ? (
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
                 <span className="ar-label" style={{ margin: 0 }}>Asset Library</span>
                 <div className="ar-asset-tabs" role="tablist">
@@ -1150,7 +1159,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "model" ? "Uploading…" : "Upload your own .glb"}</span>
-                          <span className="ar-asset-upload-sub">Bring a custom model · 15 tokens</span>
+                          <span className="ar-asset-upload-sub">Bring a custom model · 40 tokens</span>
                         </span>
                       </button>
                       <span className="ar-muted ar-asset-hint">Models float above the card and can play their animation.</span>
@@ -1169,7 +1178,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "video" ? "Uploading…" : "Upload a video file"}</span>
-                          <span className="ar-asset-upload-sub">MP4 / WebM · 10 tokens</span>
+                          <span className="ar-asset-upload-sub">MP4 / WebM · 100 tokens</span>
                         </span>
                       </button>
                       <button className="ar-tab ar-asset-add" title="Add a video plane, then paste a direct .mp4 link in its properties" onClick={addVideo}>
@@ -1204,6 +1213,14 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                   )}
                 </div>
               </div>
+              ) : (
+                <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-sm)" }}>
+                  <span className="ar-label" style={{ margin: 0 }}>Custom assets</span>
+                  <span className="ar-muted" style={{ fontSize: "12px", lineHeight: 1.5 }}>
+                    Your own 3D models, video, images and audio — and building a scene from scratch — are the Ultra studio. On Pro you can apply any template above, edit its text, set your card photo, and publish. Upgrade to Ultra in the app to unlock the full AR studio.
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -1212,7 +1229,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
               <div className="ar-card ar-stack">
                 <span className="ar-label" style={{ margin: 0 }}>Scene Layers ({elements.length})</span>
                 {elements.length === 0 ? (
-                  <span className="ar-muted">Nothing yet. Add a 3D model, image, text, or video from the Add asset tab.</span>
+                  <span className="ar-muted">{isUltra ? "Nothing yet. Add a 3D model, image, text, or video from the Assets tab." : "Nothing yet. Apply a template from the Assets tab to get started."}</span>
                 ) : (
                   <div className="ar-stack" style={{ gap: 6 }}>
                     {elements.map((el) => (

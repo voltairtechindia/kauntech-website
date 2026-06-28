@@ -5,20 +5,25 @@
  * charge through the service-role app client (getAppSupabase) so the spend is
  * server-authoritative; the AR routes themselves use the RLS user client.
  *
+ * AR is TIERED: Pro = pre-made templates only; Ultra = the full studio.
  * Token costs (kept in lock-step with the app's plan.tsx AR cost copy):
- *   - Build / publish an AR card .......... AR_COST.build  (40)
- *   - Upload a 3D model element (.glb) .... AR_COST.model  (15)
- *   - Upload a video element .............. AR_COST.video  (10)
- *   - Image / audio elements .............. free (small, negligible owner cost)
- * Extra AR card slots beyond the plan cap are bought via the app's purchase_bypass
- * RPC ('ar_card', 80 tokens), not here.
+ *   - Publish a TEMPLATE AR card (Pro) .... AR_COST.buildPro    (60)
+ *   - Build a CUSTOM AR card (Ultra) ...... AR_COST.buildUltra  (80)
+ *   - Upload a 3D model element (.glb) .... AR_COST.model       (40)  Ultra only
+ *   - Upload a video element .............. AR_COST.video      (100)  Ultra only
+ *   - Image / audio (custom uploads) ...... Ultra only (gated in /api/ar/asset)
+ *   - Text / social / template apply ...... free
+ * Custom element uploads are gated to Ultra in /api/ar/asset. Extra AR card slots
+ * beyond the plan cap are bought via the app's purchase_bypass RPC ('ar_card',
+ * 160 tokens, Ultra only), not here.
  */
 import { getAppSupabase } from "@/lib/appSupabase";
 
 export const AR_COST = {
-  build: 40,
-  model: 15,
-  video: 10,
+  buildPro: 60,    // Pro: publish a pre-made template card
+  buildUltra: 80,  // Ultra: build / publish a custom card
+  model: 40,       // Ultra: custom .glb upload
+  video: 100,      // Ultra: custom video upload (the only recurring-egress element)
 } as const;
 
 export type ArChargeResult =
