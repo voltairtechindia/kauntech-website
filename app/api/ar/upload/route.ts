@@ -112,7 +112,14 @@ export async function POST(req: Request) {
   // externally-hosted .glb/.mp4. Mirrors the /api/ar/asset upload gate and closes
   // the "self-host the file, reference its URL in the scene" bypass.
   if (tier !== "ultra") {
-    const HOSTED = "/storage/v1/object/public/"; // our Supabase buckets (ar-models, ar-gallery)
+    // Allow-list OUR storage prefixes only: the app project's ar-models bucket
+    // (custom + template assets; derived from the live client so no env guessing)
+    // and the site project's ar-gallery bucket (curated models). A bare
+    // "/storage/v1/object/public/" substring would ALSO match the user's own
+    // Supabase project, so pin host+bucket to actually close the self-host bypass.
+    const arModelsBase = supabase.storage.from(AR_BUCKET).getPublicUrl("_").data.publicUrl.replace(/_$/, "");
+    const galleryBase = `${new URL(process.env.SUPABASE_URL ?? "https://ujzchcirgmveryjavfzk.supabase.co").origin}/storage/v1/object/public/ar-gallery/`;
+    const HOSTED_PREFIXES = [arModelsBase, galleryBase];
     const priorUrls = new Set(
       ((((existing?.scene as { elements?: Array<{ url?: unknown }> } | null)?.elements) ?? [])
         .map((el) => (typeof el?.url === "string" ? el.url : null))
@@ -123,7 +130,7 @@ export async function POST(req: Request) {
       const url = typeof el?.url === "string" ? el.url : "";
       if (!url) return false;                // blank placeholder (e.g. video-by-URL not yet filled)
       if (priorUrls.has(url)) return false;  // unchanged / grandfathered element
-      return !url.includes(HOSTED);          // new + externally hosted => the bypass we block
+      return !HOSTED_PREFIXES.some((p) => url.startsWith(p)); // new + foreign host/bucket => block
     });
     if (hasCustomHeavy) {
       return bad("Custom 3D models and video are an Ultra feature. On Pro, use a template or upgrade to add your own.", 403);

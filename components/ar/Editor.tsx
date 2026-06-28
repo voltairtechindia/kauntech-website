@@ -272,7 +272,7 @@ function TransformSlider({
   );
 }
 
-export default function Editor({ card, model, galleryAssets = [], tier, storageUsedBytes = 0, storageCapBytes = 0 }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; storageUsedBytes?: number; storageCapBytes?: number; templates?: unknown }) {
+export default function Editor({ card, model, galleryAssets = [], tier, storageUsedBytes = 0, storageCapBytes = 0 }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; storageUsedBytes?: number; storageCapBytes?: number }) {
   const router = useRouter();
   // Live AR storage budget. Seeded from the server and kept fresh: it ticks up
   // optimistically the moment a model/image uploads, then reconciles against the
@@ -1342,6 +1342,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                   ) : selected.type === "video" ? (
                     <div>
                       <label className="ar-label">Video file</label>
+                      {isUltra && (
                       <button
                         type="button"
                         className="ar-asset-upload"
@@ -1355,6 +1356,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           <span className="ar-asset-upload-sub">MP4 / WebM — counts toward your cloud storage</span>
                         </span>
                       </button>
+                      )}
                       {isHostedAsset(selected.url) ? (
                         <span className="ar-muted" style={{ fontSize: "11px", marginTop: 2, display: "block" }}>
                           Your uploaded clip plays its own sound and shows on both sides of the card.
@@ -1473,6 +1475,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                   ) : selected.type === "audio" ? (
                     <div>
                       <label className="ar-label">Audio file</label>
+                      {isUltra && (
                       <button
                         type="button"
                         className="ar-asset-upload"
@@ -1486,6 +1489,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           <span className="ar-asset-upload-sub">MP3 / WAV / M4A — counts toward your cloud storage</span>
                         </span>
                       </button>
+                      )}
                       {isHostedAsset(selected.url) ? (
                         <span className="ar-muted" style={{ fontSize: "11px", marginTop: 2, display: "block" }}>
                           Your clip plays automatically while the card is in view. Nothing shows on the card — use the player below to check it.
