@@ -54,14 +54,14 @@ export const AR_MODEL_CAPS: Record<EffectiveTier, number> = {
 };
 
 // Cloud-storage budget per tier, in bytes. Mirrors _cloud_storage_cap_bytes()
-// (Free 0 / Pro 50 MB / Ultra 400 MB) — ONE budget shared by card photos
+// (Free 0 / Pro 50 MB / Ultra 250 MB) — ONE budget shared by card photos
 // (cloud_image_bytes) + AR models (cloud_ar_bytes), enforced by the DB triggers
 // in 20260625120000_unify_cloud_storage_bytes. These values only drive the UI
 // meters; keep in sync with the SQL.
 export const AR_STORAGE_CAPS: Record<EffectiveTier, number> = {
   free: 0,
   pro: 50 * 1024 * 1024,
-  ultra: 400 * 1024 * 1024,
+  ultra: 250 * 1024 * 1024,
 };
 
 // Total cloud-storage bytes used = card photos + AR models (they share one cap).

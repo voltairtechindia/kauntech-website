@@ -165,7 +165,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The top tier, with " +
       "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (100 tokens per scan, Ultra " +
-      "only), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 400 MB of cloud " +
+      "only), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
       "storage, Multi-User Team Collaboration (team group access), and Dedicated VIP Support.",
     metadata: {
       name: "Ultra",
@@ -177,7 +177,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       vcards: 5,
       products: 8,
       templates: 6,
-      cloud_storage: "400 MB",
+      cloud_storage: "250 MB",
     },
   },
   {

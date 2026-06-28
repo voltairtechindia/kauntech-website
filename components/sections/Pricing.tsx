@@ -163,7 +163,7 @@ export default function Pricing() {
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Full AR Studio · custom 3D, video, build from scratch</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 5 VCards · 8 Products · 6 Templates</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Company Logo on QR · Custom QR Link</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 400 MB Cloud Storage</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 250 MB Cloud Storage</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Multi-User Team Collaboration</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Everything in Pro · Dedicated VIP Support</li>
             </ul>
