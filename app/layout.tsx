@@ -12,7 +12,7 @@ const SITE_URL = "https://www.kauntech.com";
 
 // Google Analytics 4 measurement ID. CSP allowances for gtag.js + GA4 beacons
 // live in next.config.ts (script/img/connect-src).
-const GA_MEASUREMENT_ID = "G-HPQ6VRLTFL";
+const GA_MEASUREMENT_ID = "G-128KNMQQRX";
 
 const firaSans = Fira_Sans({
   subsets: ["latin"],
