@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         <div className="legal-card">
           <h1 className="grad-text">Privacy Policy</h1>
           <span className="last-updated">
-            <i className="fa-solid fa-calendar-days" /> Last Updated: May 28, 2026
+            <i className="fa-solid fa-calendar-days" /> Last Updated: June 30, 2026
           </span>
 
           <div className="legal-body">
@@ -208,8 +208,11 @@ export default function PrivacyPage() {
                     <td><strong>Gmail Send</strong></td>
                     <td><code>.../auth/gmail.send</code></td>
                     <td>
-                      Enables professionals to send personalized follow-up emails and AI-enriched
-                      cold templates directly via their own Gmail account upon scanning a card.
+                      Lets you send follow-up emails and outreach templates to leads you scanned,
+                      from your own Gmail account. This is a send-only permission: the App cannot
+                      read, search, or open your inbox or any existing email. Where a draft is
+                      AI-assisted, that text is generated from the business card you scanned, never
+                      from any content in your Gmail.
                     </td>
                     <td>
                       <strong>Direct Dispatch:</strong> Drafts are created and sent directly via
