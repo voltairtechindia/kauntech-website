@@ -134,7 +134,7 @@ export default function Pricing() {
             <ul className="price-features">
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 500 Scans / month</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1,000 K-Tokens / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Intel (50 tokens/scan)</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Intel (2 tokens/scan)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Fix included (1 token/fix)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AR template cards (60 tokens/card)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3 VCards · 4 Products · 4 Templates</li>
@@ -159,7 +159,7 @@ export default function Pricing() {
             <ul className="price-features">
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Unlimited Scans</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3,000 K-Tokens / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Strategy (100 tokens/scan)</li>
+              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Strategy (6 tokens/scan)</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Full AR Studio · custom 3D, video, build from scratch</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 5 VCards · 8 Products · 6 Templates</li>
               <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Company Logo on QR · Custom QR Link</li>

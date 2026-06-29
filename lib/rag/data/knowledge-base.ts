@@ -43,8 +43,8 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "Kauntech turns a physical card into a synced, enriched contact in about 30 seconds in three steps. " +
       "Step 1 CAPTURE: scan a physical card via OCR, scan a QR code, tap NFC, or type manually — works 100% offline " +
       "with zero lag. Step 2 ENRICH: Kauntech AI adds company intelligence, lead scoring and personalised icebreakers " +
-      "on-device. Step 3 AUTOMATE: instantly route the enriched contact to WhatsApp, an email draft, Google Sheets or a " +
-      "webhook automatically.",
+      "on-device. Step 3 AUTOMATE: instantly route the enriched contact to WhatsApp, an email draft, Google Sheets, " +
+      "Telegram or a webhook automatically.",
     metadata: { steps: ["capture", "enrich", "automate"] },
   },
 
@@ -116,6 +116,36 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "WhatsApp in English or reply in the original language). Treat language/translation as upcoming, not available today.",
     metadata: { status: "coming_soon", tags: ["translation", "languages"] },
   },
+  {
+    doc_type: "feature",
+    external_id: "FEAT-AR",
+    title: "Augmented reality (AR) business cards — the Kauntech AR studio",
+    content:
+      "Kauntech includes an AR studio for creating immersive augmented-reality business cards that can display 3D models, " +
+      "custom text, buttons, images, audio and video. How it works in 3 steps: (1) upload a card target image, (2) design " +
+      "your AR scene in the editor, (3) scan & experience — viewers point the Kauntech scanner (or a QR code) at the card to " +
+      "launch the AR experience. AR is a PAID, TIERED feature: the Free plan has no AR (0 AR cards); Pro is pre-made " +
+      "templates only; Ultra is the full studio. On Pro you can apply any pre-made template, edit its text, set your card " +
+      "photo and publish (60 K-Tokens to publish a template AR card). Ultra adds building a scene from scratch (80 tokens to " +
+      "build/publish a custom card), plus custom 3D model / .glb uploads (40 tokens, Ultra only), video uploads (100 tokens, " +
+      "Ultra only) and custom image/audio elements (Ultra only); applying a template and adding text or social links is " +
+      "free. AR card limits per plan: Free 0, Pro 1, Ultra 3 — Ultra can buy extra AR card slots for 160 tokens each. Cloud " +
+      "storage for AR content is shared with your saved card photos as one per-plan budget: Free 0, Pro 50 MB, Ultra 250 MB. " +
+      "AR cards are experienced through the Kauntech scanner or a QR code.",
+    metadata: {
+      tags: ["ar", "augmented reality", "3d", "ar studio", "ar cards", "ar business card"],
+      tiering: "Free: none; Pro: templates only; Ultra: full studio",
+      token_costs: {
+        publish_template_pro: 60,
+        build_custom_ultra: 80,
+        upload_3d_model_ultra: 40,
+        upload_video_ultra: 100,
+        extra_ar_card_slot_ultra: 160,
+      },
+      ar_card_caps: { free: 0, pro: 1, ultra: 3 },
+      cloud_storage: { free: "0", pro: "50 MB", ultra: "250 MB" },
+    },
+  },
 
   // --- Pricing / plans ----------------------------------------------------
   {
@@ -143,9 +173,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Pro plan: ₹499 per month, or ₹399 per month on annual billing (₹4,788 billed annually). For active sales " +
       "professionals who want AI enrichment and CRM automations. Includes 500 scans per month, 1,000 K-Tokens per month, " +
-      "AI Intel (50 tokens per scan), AI Fix (1 token per fix), AR template cards (60 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
-      "sync, Telegram bot integration, Webhook & WhatsApp automation, and the ability to unlock more VCard/Product/Template " +
-      "slots with tokens.",
+      "AI Intel (2 tokens per scan), AI Fix (1 token per fix), AR template cards (60 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
+      "sync, Telegram bot integration, Webhook & WhatsApp automation, the ability to unlock more VCard/Product/Template " +
+      "slots with tokens, and 50 MB of cloud storage (one budget shared by your card photos and AR content).",
     metadata: {
       name: "Pro",
       price_monthly: "₹499",
@@ -164,7 +194,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Ultra plan (₹1,299 / month, ₹999 / month annual)",
     content:
       "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The top tier, with " +
-      "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (100 tokens per scan, Ultra " +
+      "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (6 tokens per scan, Ultra " +
       "only), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
       "storage, Multi-User Team Collaboration (team group access), and Dedicated VIP Support.",
     metadata: {
@@ -211,13 +241,13 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features and are only consumed when you actively " +
       "use an AI feature. When a plan's scan limit is exhausted, additional scans can also consume tokens flexibly. " +
       "The three AI features and their costs are: AI Fix — 1 token per use (Pro tier; automated contact-formatting fixes); " +
-      "AI Intel — 50 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 100 tokens per scan " +
+      "AI Intel — 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 6 tokens per scan " +
       "(Ultra tier; comprehensive sales strategies and icebreakers). Example balances: 1,000 K-Tokens can run up to 1,000 " +
-      "AI Fixes or enrich up to 20 cards with AI Intel; 3,000 K-Tokens can generate up to 30 AI Strategy outputs.",
+      "AI Fixes or enrich up to 500 cards with AI Intel; 3,000 K-Tokens can generate up to 500 AI Strategy outputs.",
     metadata: {
       ai_fix: "1 token/use",
-      ai_intel: "50 tokens/scan",
-      ai_strategy: "100 tokens/scan",
+      ai_intel: "2 tokens/scan",
+      ai_strategy: "6 tokens/scan",
     },
   },
   {
@@ -248,12 +278,17 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "DPDP-01",
     title: "DPDP Act 2023 compliance",
     content:
-      "Kauntech is engineered to fully adhere to India's Digital Personal Data Protection (DPDP) Act 2023. Card processing " +
-      "happens on your device and your scanned contacts are never uploaded to Kauntech's servers, satisfying the DPDP " +
-      "principle of data minimisation by design. Key guarantees: Informed Consent Architecture (data is never captured or " +
-      "synced without explicit, recorded user consent), Local On-Device Processing (OCR and initial AI enrichment run on " +
-      "your smartphone), Enterprise-Grade Encryption (data at rest and in transit secured with AES-256), and Complete User " +
-      "Ownership (users and leads can request data deletion or export at any time).",
+      "Kauntech is engineered to fully adhere to India's Digital Personal Data Protection (DPDP) Act 2023. Business card " +
+      "images are read and parsed on your device, satisfying the DPDP principle of data minimisation by design. By default " +
+      "your scanned contacts stay on your device; cloud backup is OPTIONAL (on paid plans) and lets you sync across devices " +
+      "— you choose exactly which categories (contacts, notes and tags, AI intelligence, images, and so on) are backed up to " +
+      "your Kauntech account, and anything you don't select never leaves your device. You can turn cloud backup off, wipe " +
+      "your cloud data, or delete your account at any time. Key guarantees: Informed Consent Architecture (data is never " +
+      "captured or synced without explicit, recorded user consent), On-Device Processing (OCR and card parsing run on your " +
+      "smartphone), Enterprise-Grade Encryption (data at rest and in transit secured with AES-256), and Complete User " +
+      "Ownership — Kauntech never sells your data or uses it for advertising, and you can request data deletion or export at " +
+      "any time. Right to erasure: permanently delete your account in-app at any time (a 30-day grace period applies, after " +
+      "which all your data is purged), or use the Data Deletion Request portal on kauntech.com if you no longer have the app.",
     metadata: { tags: ["dpdp", "privacy", "consent", "aes-256", "compliance"] },
   },
   {
@@ -264,8 +299,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "For regulatory compliance, trial-session management and informed consent, Kauntech records a minimal audit ledger: " +
       "Name (user/lead identification), Company name (B2B context & enrichment), Phone number (WhatsApp automation routing), " +
       "Email (email follow-up & account ID), Scans (usage tracking & quota), Device Details (anti-tamper tracking to detect " +
-      "jailbreaks & unauthorised hacks), and Plan (Free, Pro, Ultra or Custom). Scanned card images and full contact details " +
-      "are NOT stored on Kauntech's servers — they stay encrypted on your device.",
+      "jailbreaks & unauthorised hacks), and Plan (Free, Pro, Ultra or Custom). By default, scanned card images and full " +
+      "contact details stay encrypted on your device; if you switch on optional cloud backup (paid plans), the card image " +
+      "and the categories you choose are synced to your Kauntech account, while categories you turn off are never uploaded.",
     metadata: { tags: ["audit ledger", "data schema", "dpdp"] },
   },
   {
@@ -273,9 +309,11 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "DATA-STORAGE",
     title: "Where scanned data is stored",
     content:
-      "Your scanned contact data is stored on your device only, in AES-256 encrypted local storage. Kauntech does not save " +
-      "or store your scanned images or contact details on its servers. Your data belongs to you and stays on your device " +
-      "until you choose to sync it to your own CRM, Google Sheets or other channel.",
+      "By default your scanned contact data is stored on your device only, in AES-256 encrypted local storage. On paid plans " +
+      "you can switch on optional cloud backup, which syncs the categories you choose (and card images) to your Kauntech " +
+      "account so you can reach them across devices; categories you don't select never leave your device. You stay in " +
+      "control — turn backup off, wipe your cloud data, or delete your account at any time. You can also sync contacts to " +
+      "your own CRM, Google Sheets or other channels.",
     metadata: { tags: ["storage", "encryption", "privacy", "on-device"] },
   },
 
