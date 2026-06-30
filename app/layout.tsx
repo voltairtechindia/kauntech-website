@@ -3,16 +3,12 @@ import { Fira_Sans, Fira_Code } from "next/font/google";
 import "./globals.css";
 import "./extra.css";
 import "./fa-subset.css";
-import Script from "next/script";
 import ScrollReveal from "@/components/ScrollReveal";
 import SiteChrome from "@/components/SiteChrome";
+import GtagScripts from "@/components/GtagScripts";
 import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = "https://www.kauntech.com";
-
-// Google Analytics 4 measurement ID. CSP allowances for gtag.js + GA4 beacons
-// live in next.config.ts (script/img/connect-src).
-const GA_MEASUREMENT_ID = "G-128KNMQQRX";
 
 const firaSans = Fira_Sans({
   subsets: ["latin"],
@@ -175,19 +171,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ScrollReveal />
         <SiteChrome>{children}</SiteChrome>
         <Analytics />
-        {/* Google Analytics 4 (gtag.js) */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-init" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${GA_MEASUREMENT_ID}');
-          `}
-        </Script>
+        <GtagScripts />
       </body>
     </html>
   );

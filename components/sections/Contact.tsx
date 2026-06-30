@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { contactForm } from "@/lib/gtag";
 
 const SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbztbMN_DrSEfxk7F6gljRxpYBp7qhkybE0on_Jfc5JvtIAg7ymdZCDVHVd3Szm3pPj0/exec";
@@ -54,6 +55,8 @@ export default function Contact() {
     }
 
     if (ok) {
+      // Google Ads / GA4 lead conversion — only on a real, accepted submission.
+      contactForm();
       setStatus({
         kind: "success",
         text: "Thank you! Your message has been received — our team will revert as soon as possible.",
