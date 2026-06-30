@@ -21,12 +21,16 @@ export default function TokenMeter({
   breakdown,
   resetAt,
   compact = false,
+  hideHint = false,
 }: {
   used: number;
   limit: number;
   breakdown: TokenBreakdown;
   resetAt: string | null;
   compact?: boolean;
+  /** Suppress the "you've spent N…" cost hint (the dashboard moves it into a
+   *  shared collapsible note below the meters). Foot line is kept. */
+  hideHint?: boolean;
 }) {
   const u = Math.max(0, used);
   const cap = Math.max(0, limit);
@@ -67,7 +71,7 @@ export default function TokenMeter({
         </span>
       )}
 
-      {!compact && (
+      {!compact && !hideHint && (
         <span className="ar-storage-hint">
           {arSpent > 0
             ? `You've spent ${fmt(arSpent)} on AR cards this cycle. Building uses 60–80, a 3D model 40, a video 100.`

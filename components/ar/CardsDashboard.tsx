@@ -116,8 +116,9 @@ export default function CardsDashboard({
 
   return (
     <div className="ar-dash">
-      {/* Usage meter — cards are created in the app, so there's no "Add card". */}
-      <div className="ar-dash-bar">
+      {/* Usage / storage / tokens combined into one card. Cards are created in
+          the app, so there's no "Add card". */}
+      <div className="ar-dash-combined">
         <div className="ar-usage">
           <div className="ar-usage-head">
             <span className="ar-usage-count">
@@ -129,19 +130,36 @@ export default function CardsDashboard({
           <div className="ar-meter" role="progressbar" aria-valuenow={usedCount} aria-valuemin={0} aria-valuemax={arCap}>
             <div className="ar-meter-fill" style={{ width: `${pct}%` }} />
           </div>
-          <span className="ar-muted" style={{ fontSize: "12px", marginTop: "6px", display: "block" }}>
-            Each card with published 3D or media models counts toward your {TIER_LABEL[tier]} plan cap.
-          </span>
+          <span className="ar-storage-foot">{atCap ? "Plan cap reached" : `${Math.max(0, arCap - usedCount)} left`}</span>
         </div>
 
         <StorageMeter
           usedBytes={storageUsedBytes}
           capBytes={storageCapBytes}
           label={`${TIER_LABEL[tier]} cloud storage`}
-          hint="One budget shared by your card photos and AR content (3D models, images, video, audio). Bigger or more detailed assets use more."
         />
 
-        <TokenMeter used={tokensUsed} limit={tokensLimit} breakdown={tokenBreakdown} resetAt={tokensResetAt} />
+        <TokenMeter used={tokensUsed} limit={tokensLimit} breakdown={tokenBreakdown} resetAt={tokensResetAt} hideHint />
+
+        {/* The longer "what counts / what uses space" copy lives here, tucked
+            into one collapsible note so the three meters stay scannable. */}
+        <details className="ar-dash-notes">
+          <summary>How these limits work</summary>
+          <ul>
+            <li>
+              Each card with published 3D or media models counts toward your {TIER_LABEL[tier]} plan
+              cap.
+            </li>
+            <li>
+              Cloud storage is one budget shared by your card photos and AR content (3D models,
+              images, video, audio). Bigger or more detailed assets use more.
+            </li>
+            <li>
+              AR building spends from your monthly token pool, shared with the app&apos;s AI
+              features: a build uses 60–80 tokens, a 3D model 40, a video 100.
+            </li>
+          </ul>
+        </details>
       </div>
 
       {error ? <p className="ar-error">{error}</p> : null}
