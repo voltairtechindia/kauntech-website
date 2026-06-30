@@ -108,6 +108,17 @@ const nextConfig: NextConfig = {
   // The /api/ar/asset model optimizer runs these native/WASM packages server-side;
   // keep them out of the bundle so they load from node_modules at runtime.
   serverExternalPackages: ["sharp", "meshoptimizer"],
+  // sharp loads its native binary via a COMPUTED require (`@img/sharp-<platform>`),
+  // which the file tracer can't follow — so the linux-x64 binary never gets bundled
+  // into the function and sharp throws "Could not load the sharp module using the
+  // linux-x64 runtime" at runtime. Force-include the Linux (glibc) binaries for the
+  // one route that optimizes uploaded .glb textures.
+  outputFileTracingIncludes: {
+    "/api/ar/asset": [
+      "./node_modules/@img/sharp-linux-x64/**/*",
+      "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+    ],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
   },

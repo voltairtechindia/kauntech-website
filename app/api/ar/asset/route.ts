@@ -118,12 +118,20 @@ export async function POST(req: Request) {
     // Imported lazily so `next build`'s page-data pass never eagerly loads the
     // native sharp / gltf-transform graph (that fails at build time). It only
     // loads here, at request time, inside the Node function runtime.
-    const { optimizeGlb } = await import("@/lib/ar/glbOptimize");
-    const opt = await optimizeGlb(bytes);
-    if (opt.after < opt.before) {
-      bytes = opt.buffer;
-      needsReplace = true;
-      console.log(`[ar/asset] model optimized ${(opt.before / 1024).toFixed(0)}KB → ${(opt.after / 1024).toFixed(0)}KB`);
+    //
+    // Wrapped: if the native optimizer (sharp/meshopt) can't load in this runtime,
+    // DON'T fail the upload — keep the raw .glb that's already in Storage. The
+    // model just isn't shrunk; far better than 500-ing the whole upload.
+    try {
+      const { optimizeGlb } = await import("@/lib/ar/glbOptimize");
+      const opt = await optimizeGlb(bytes);
+      if (opt.after < opt.before) {
+        bytes = opt.buffer;
+        needsReplace = true;
+        console.log(`[ar/asset] model optimized ${(opt.before / 1024).toFixed(0)}KB → ${(opt.after / 1024).toFixed(0)}KB`);
+      }
+    } catch (e) {
+      console.error("[ar/asset] glb optimize unavailable — storing original:", e instanceof Error ? e.message : e);
     }
   }
 
