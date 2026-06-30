@@ -8,6 +8,8 @@ import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
 import { formatBytes } from "@/lib/ar/format";
+import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
+import { AR_ASSET_LIMITS, AR_BUCKET } from "@/lib/ar/assetLimits";
 import { useStorageMeter } from "./StorageMeterContext";
 import type { ArTemplate } from "@/lib/ar/db";
 import {
@@ -59,6 +61,18 @@ function trackTier(score: number | null): { label: string; color: string } | nul
 
 let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
+
+// Parse a response body as JSON without ever throwing on a non-JSON payload —
+// e.g. a platform-level "Request Entity Too Large" plain-text 413. Returns a
+// friendly { ok:false } shape so callers surface a clean message instead of an
+// "Unexpected token … is not valid JSON" crash.
+async function readJson(res: Response): Promise<{ ok?: boolean; error?: string; url?: string; path?: string; token?: string }> {
+  try {
+    return await res.json();
+  } catch {
+    return { ok: false, error: res.status === 413 ? "That file is too large to upload." : `Upload failed (HTTP ${res.status}).` };
+  }
+}
 
 // 3D models are authored Y-up to stand on flat ground. The printed card, laid
 // down to be scanned, IS that ground — so a model dropped in with no tilt has its
@@ -667,6 +681,13 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
   async function uploadAsset(file: File, kind: "model" | "image" | "video" | "audio"): Promise<string | null> {
     setError(null);
+    // Fast client-side size gate so an over-limit pick is caught before any
+    // upload starts (the finalize route re-checks the real bytes authoritatively).
+    const maxBytes = AR_ASSET_LIMITS[kind];
+    if (file.size > maxBytes) {
+      setError(`That ${kind} is ${formatBytes(file.size)}. The limit is ${formatBytes(maxBytes)} — compress or trim it first.`);
+      return null;
+    }
     // Pre-check against the live budget so the owner gets an instant, specific
     // message ("needs X, only Y left") instead of a generic server rejection —
     // and we don't waste a multi-MB upload the trigger will refuse anyway.
@@ -680,17 +701,39 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     }
     setUploading(kind);
     try {
-      const fd = new FormData();
-      fd.set("card_id", card.id);
-      fd.set("kind", kind);
-      fd.set("file", file);
-      const res = await fetch("/api/ar/asset", { method: "POST", body: fd });
-      const json = await res.json();
-      if (!res.ok || !json.ok) throw new Error(json.error || "Upload failed.");
+      // 1) Authorize + sign a direct-to-Storage upload. The file never passes
+      //    through our Function, so Vercel's 4.5 MB request-body limit (which used
+      //    to reject big .glb models with a 413 the client mis-parsed as JSON) no
+      //    longer applies — these per-kind maxima are the only ceiling.
+      const signRes = await fetch("/api/ar/asset/sign", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ card_id: card.id, kind, filename: file.name, content_type: file.type, size: file.size }),
+      });
+      const sign = await readJson(signRes);
+      if (!signRes.ok || !sign.ok || !sign.path || !sign.token) throw new Error(sign.error || "Could not start the upload.");
+
+      // 2) PUT the bytes straight to Supabase Storage with the signed token.
+      const supabase = createArBrowserClient();
+      const { error: upErr } = await supabase.storage
+        .from(AR_BUCKET)
+        .uploadToSignedUrl(sign.path, sign.token, file, { contentType: file.type || undefined });
+      if (upErr) {
+        throw new Error(/ar_storage_limit_reached/.test(upErr.message) ? "This would exceed your cloud storage limit." : "Upload failed. Please retry.");
+      }
+
+      // 3) Finalize: server validates the stored bytes, optimizes models, charges.
+      const finRes = await fetch("/api/ar/asset", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ card_id: card.id, kind, path: sign.path }),
+      });
+      const fin = await readJson(finRes);
+      if (!finRes.ok || !fin.ok || !fin.url) throw new Error(fin.error || "Upload failed.");
       // Reflect the new bytes right away, then reconcile with the DB total.
       setUsedBytes((b) => b + file.size);
       void refreshUsage();
-      return json.url as string;
+      return fin.url;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed.");
       return null;
@@ -1173,7 +1216,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "model" ? "Uploading…" : "Upload your own .glb"}</span>
-                          <span className="ar-asset-upload-sub">Bring a custom model · 40 tokens</span>
+                          <span className="ar-asset-upload-sub">Bring a custom model · up to 15 MB · 40 tokens</span>
                         </span>
                       </button>
                       <span className="ar-muted ar-asset-hint">Models float above the card and can play their animation.</span>
@@ -1184,7 +1227,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         {uploading === "image" ? "Uploading…" : "Add image"}
                       </button>
-                      <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card.</span>
+                      <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card — up to 8 MB.</span>
                     </>
                   ) : assetTab === "video" ? (
                     <>
@@ -1192,7 +1235,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "video" ? "Uploading…" : "Upload a video file"}</span>
-                          <span className="ar-asset-upload-sub">MP4 / WebM · 100 tokens</span>
+                          <span className="ar-asset-upload-sub">MP4 / WebM · up to 40 MB · 100 tokens</span>
                         </span>
                       </button>
                       <button className="ar-tab ar-asset-add" title="Add a video plane, then paste a direct .mp4 link in its properties" onClick={addVideo}>
@@ -1207,7 +1250,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "audio" ? "Uploading…" : "Upload an audio file"}</span>
-                          <span className="ar-asset-upload-sub">MP3 / WAV / M4A — counts toward your cloud storage</span>
+                          <span className="ar-asset-upload-sub">MP3 / WAV / M4A · up to 12 MB</span>
                         </span>
                       </button>
                       <button className="ar-tab ar-asset-add" title="Add an audio clip, then paste a direct audio link in its properties" onClick={addAudio}>
@@ -1367,7 +1410,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "video" ? "Uploading…" : selected.url ? "Replace with an upload" : "Upload a video file"}</span>
-                          <span className="ar-asset-upload-sub">MP4 / WebM — counts toward your cloud storage</span>
+                          <span className="ar-asset-upload-sub">MP4 / WebM · up to 40 MB</span>
                         </span>
                       </button>
                       )}
@@ -1500,7 +1543,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-upload-ico" aria-hidden><IconUpload /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-upload-title">{uploading === "audio" ? "Uploading…" : selected.url ? "Replace with an upload" : "Upload an audio file"}</span>
-                          <span className="ar-asset-upload-sub">MP3 / WAV / M4A — counts toward your cloud storage</span>
+                          <span className="ar-asset-upload-sub">MP3 / WAV / M4A · up to 12 MB</span>
                         </span>
                       </button>
                       )}
