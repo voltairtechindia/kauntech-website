@@ -18,14 +18,17 @@
  * never blinks out. It listens to the same low-level engine events
  * (xrimagefound/updated/lost), so it needs no extra library.
  *
- * Engine pieces (all allowed by the /ar CSP):
- *  - 8frame 1.5.0 — 8th Wall's A-Frame build (vendored to /ar8; bundles the xrweb
- *    integration vanilla A-Frame lacks).
- *  - @8thwall/engine-binary — camera + SLAM ("data-preload-chunks=slam"), and the
- *    source of the xrimagefound/updated/lost scene events kt-image-anchor consumes.
- *  - @8thwall/xrextras — still loaded for its scene plumbing, but we no longer use
- *    its named-image-target or its off-theme loading / landing-page / runtime-error
- *    UI: this page draws its own KaunTech-themed loader + permission gate instead.
+ * Engine pieces — ALL SELF-HOSTED from /ar8 (no external CDN) so nothing breaks
+ * when 8th Wall's hosted platform + cdn.8thwall.com go dark (platform retired Feb
+ * 2026; hosted experiences end Feb 2027). We vendored the MIT open-source engine
+ * (8thwall.org / Niantic Spatial) and patched every cdn.8thwall.com + gstatic
+ * Draco URL to /ar8/engine/resources/. See public/ar8/EIGHTWALL_SELFHOST.md.
+ *  - 8frame 1.5.0 — 8th Wall's A-Frame build (vendored to /ar8).
+ *  - /ar8/engine/xr.js — camera + SLAM ("data-preload-chunks=slam") + the
+ *    xrimagefound/updated/lost scene events kt-image-anchor consumes (loads its
+ *    SLAM chunk + resources/ + vendored Draco relative to itself).
+ *  - /ar8/engine/xrextras.js — scene plumbing; we draw our own KaunTech-themed
+ *    loader / permission gate instead of its UI. No app key needed.
  *
  * CROSS-DEVICE START: World Tracking needs the device IMU. Android Chrome grants
  * DeviceMotion silently, but iOS (incl. in WKWebView) requires a USER GESTURE to
@@ -39,8 +42,8 @@
  * (a grayscale luminance when the editor precompiled one, else the card photo).
  */
 
-const ENGINE = "https://cdn.jsdelivr.net/npm/@8thwall/engine-binary@1/dist/xr.js";
-const XREXTRAS = "https://cdn.jsdelivr.net/npm/@8thwall/xrextras@1/dist/xrextras.js";
+const ENGINE = "/ar8/engine/xr.js";
+const XREXTRAS = "/ar8/engine/xrextras.js";
 // 8th Wall's A-Frame 1.5.0 build — no CDN/npm exists, vendored, served same-origin.
 const EIGHTFRAME = "/ar8/8frame-1.5.0.min.js";
 
@@ -107,6 +110,10 @@ export function eightwallViewerHtml(view: EightwallView): string {
   #dbg{position:fixed;top:8px;left:8px;z-index:40;display:none;font:600 12px/1.45 ui-monospace,Menlo,monospace;
     color:#7CFFB2;background:rgba(0,0,0,.62);padding:7px 9px;border-radius:8px;white-space:pre;pointer-events:none}
 </style>
+<!-- Self-host A-Frame's CDN assets (the default text/button font lives at
+     AFRAME_CDN_ROOT + fonts/Roboto-msdf.json). Set BEFORE 8frame loads so text
+     elements never fetch cdn.aframe.io — the viewer is fully self-contained. -->
+<script>window.AFRAME_CDN_ROOT="/ar8/aframe/";</script>
 <script crossorigin="anonymous" src="${EIGHTFRAME}"></script>
 <script src="${ENGINE}" async crossorigin="anonymous" data-preload-chunks="slam"></script>
 <script src="${XREXTRAS}" crossorigin="anonymous"></script>
@@ -271,7 +278,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
       // qrcode-generator (jsDelivr — already allowed by the /ar script-src) renders
       // to a data-URI <img> (allowed by img-src data:), so no CSP change is needed.
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+      s.src = '/ar8/qrcode.js';
       s.crossOrigin = 'anonymous';
       s.onload = function(){
         // Encode the CLEAN card URL (no internal ?worldtracking/?debug/etc.) so the
