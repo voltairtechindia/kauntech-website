@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
 import StorageMeter from "./StorageMeter";
+import TokenMeter from "./TokenMeter";
 import { useStorageMeter } from "./StorageMeterContext";
 
 /** Brand bar for the /ar section. Shows a sign-out button when authed, or — in
@@ -11,7 +12,9 @@ import { useStorageMeter } from "./StorageMeterContext";
 export default function ArHeader({ email }: { email?: string | null }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const meter = useStorageMeter()?.meter;
+  const storageCtx = useStorageMeter();
+  const meter = storageCtx?.meter;
+  const tokens = storageCtx?.tokens;
 
   async function signOut() {
     setBusy(true);
@@ -31,8 +34,15 @@ export default function ArHeader({ email }: { email?: string | null }) {
         KaunTech <span className="ar-mono" style={{ color: "var(--ar-orange-deep)" }}>AR</span>
       </div>
       {meter && meter.cap > 0 ? (
-        <div className="ar-header-storage">
-          <StorageMeter usedBytes={meter.used} capBytes={meter.cap} label={meter.label} compact />
+        <div className="ar-header-meters">
+          {tokens && tokens.limit > 0 ? (
+            <div className="ar-header-storage">
+              <TokenMeter used={tokens.used} limit={tokens.limit} breakdown={tokens.breakdown} resetAt={tokens.resetAt} compact />
+            </div>
+          ) : null}
+          <div className="ar-header-storage">
+            <StorageMeter usedBytes={meter.used} capBytes={meter.cap} label={meter.label} compact />
+          </div>
         </div>
       ) : email ? (
         <div className="ar-row">

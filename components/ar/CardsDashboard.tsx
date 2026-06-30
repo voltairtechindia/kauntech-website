@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import type { EffectiveTier } from "@/lib/ar/db";
-import { IconExternal, IconGlobe, IconLock, IconMail, IconPencil, IconPhone, IconPlus, IconTrash } from "./icons";
+import type { EffectiveTier, TokenBreakdown } from "@/lib/ar/db";
+import { IconCheck, IconExternal, IconGlobe, IconLock, IconMail, IconPencil, IconPhone, IconPlus, IconTrash } from "./icons";
 import StorageMeter from "./StorageMeter";
+import TokenMeter from "./TokenMeter";
 
 export type CardStatus = "published" | "draft" | "none";
 
@@ -41,12 +42,20 @@ export default function CardsDashboard({
   items,
   storageUsedBytes,
   storageCapBytes,
+  tokensUsed,
+  tokensLimit,
+  tokenBreakdown,
+  tokensResetAt,
 }: {
   tier: EffectiveTier;
   arCap: number;
   items: DashItem[];
   storageUsedBytes: number;
   storageCapBytes: number;
+  tokensUsed: number;
+  tokensLimit: number;
+  tokenBreakdown: TokenBreakdown;
+  tokensResetAt: string | null;
 }) {
   const router = useRouter();
   const [confirmId, setConfirmId] = useState<string | null>(null);
@@ -131,6 +140,8 @@ export default function CardsDashboard({
           label={`${TIER_LABEL[tier]} cloud storage`}
           hint="One budget shared by your card photos and AR content (3D models, images, video, audio). Bigger or more detailed assets use more."
         />
+
+        <TokenMeter used={tokensUsed} limit={tokensLimit} breakdown={tokenBreakdown} resetAt={tokensResetAt} />
       </div>
 
       {error ? <p className="ar-error">{error}</p> : null}
@@ -166,11 +177,17 @@ export default function CardsDashboard({
                     QR hero, identity, contact rows and the KAUNTECH wordmark. */}
                 <div className="ar-cardface">
                   {active ? (
-                    <span className={`ar-badge ${item.status === "published" ? "ar-badge-published" : "ar-badge-draft"} ar-cardface-badge`}>
-                      {item.status === "published" ? "Live" : "Draft"}
+                    <span
+                      className={`ar-status-chip ar-cardface-badge ${item.status === "published" ? "ar-status-published" : "ar-status-draft"}`}
+                      title={item.status === "published" ? "Published" : "Draft"}
+                      aria-label={item.status === "published" ? "Published" : "Draft"}
+                    >
+                      {item.status === "published" ? <IconCheck viewBox="3 3 18 18" /> : <IconPencil />}
                     </span>
                   ) : (
-                    <span className="ar-badge ar-badge-locked ar-cardface-badge">No AR</span>
+                    <span className="ar-status-chip ar-status-none ar-cardface-badge" title="No AR yet" aria-label="No AR yet">
+                      <IconPlus />
+                    </span>
                   )}
 
                   {/* QR hero */}

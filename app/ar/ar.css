@@ -321,6 +321,43 @@
   border: 1px solid #e4e4e7;
 }
 
+/* Icon-only status chip on the AR card face (published / draft / no AR). A
+   small round token reads cleaner on the card than a text pill. */
+.ar-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  backdrop-filter: blur(4px);
+}
+.ar-status-chip svg {
+  width: 15px;
+  height: 15px;
+}
+.ar-status-published {
+  background: var(--ar-success-soft);
+  color: var(--ar-success);
+  border-color: rgba(22, 163, 74, 0.25);
+}
+.ar-status-published svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 3;
+}
+.ar-status-draft {
+  background: var(--ar-orange-soft);
+  color: var(--ar-orange-deep);
+  border-color: var(--ar-orange-border);
+}
+.ar-status-none {
+  background: #f4f4f5;
+  color: var(--ar-text-muted);
+  border-color: #e4e4e7;
+}
+
 /* Layout helpers */
 .ar-row {
   display: flex;
@@ -1199,7 +1236,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-dash-bar {
   display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   gap: var(--ar-sp-lg);
+}
+/* Each meter keeps a readable minimum and shares the row; they wrap to the next
+   line before getting cramped (usage · storage · tokens). */
+.ar-dash-bar > .ar-usage,
+.ar-dash-bar > .ar-storage {
+  flex: 1 1 240px;
+  min-width: 240px;
 }
 .ar-dash-add {
   flex: none;
@@ -1374,9 +1419,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
 }
 
-/* The live storage meter sitting in the editor navbar (right side). */
+/* The live token + storage meters sitting in the editor navbar (right side). */
+.ar-header-meters {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
 .ar-header-storage {
   width: clamp(200px, 24vw, 280px);
+}
+.ar-header-meters .ar-header-storage {
+  width: clamp(150px, 17vw, 200px);
 }
 .ar-header-storage .ar-storage {
   padding: 9px 14px;
@@ -1437,6 +1490,31 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin-top: 4px;
   font-size: 11.5px;
   color: var(--ar-text-muted);
+}
+
+/* ── Collapsible "How it works" (HowItWorks.tsx) ─────────────────────────── */
+.ar-context-toggle {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.ar-context-collapsible:not(.is-open) .ar-context-card-header {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.ar-context-chevron {
+  margin-left: auto;
+  color: var(--ar-text-muted);
+  transition: transform 0.2s ease;
+  flex: none;
+}
+.ar-context-collapsible.is-open .ar-context-chevron {
+  transform: rotate(180deg);
 }
 
 /* Card layout redesign */
@@ -1550,6 +1628,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-cardtile .ar-tile-actions {
   padding: 0;
 }
+/* Light "warm ivory" card face, matching the app's BusinessCardItem in LIGHT
+   mode: ivory body (#FFFDF9), dark ink text, accent gradient border with a
+   metallic highlight, floating on the page like a credit card. */
 .ar-cardface {
   position: relative;
   display: flex;
@@ -1559,14 +1640,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: 20px;
   border: 1.5px solid transparent;
   background:
-    linear-gradient(#0d0f14, #0d0f14) padding-box,
-    linear-gradient(135deg, var(--tile-accent), rgba(255, 255, 255, 0.5), var(--tile-accent)) border-box;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+    linear-gradient(135deg, #fffdf9, #faf8f4 55%, #faf4eb) padding-box,
+    linear-gradient(135deg, var(--tile-accent), rgba(0, 0, 0, 0.25), var(--tile-accent)) border-box;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ar-cardtile:hover .ar-cardface {
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
 }
 .ar-cardtile.ar-tile-idle .ar-cardface {
   opacity: 0.9;
@@ -1578,7 +1659,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   z-index: 2;
   font-size: 10px;
   padding: 3px 9px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 /* QR hero — white tile with accent corner brackets and the K logo centered,
    echoing the app's BusinessCardItem QR block. */
@@ -1607,6 +1688,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   justify-content: center;
   aspect-ratio: 1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 .ar-cardface-qrimg {
   width: 100%;
@@ -1651,8 +1733,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 800;
   font-size: 15px;
   color: var(--tile-accent);
-  background: #11141e;
-  border: 1px solid color-mix(in srgb, var(--tile-accent) 35%, transparent);
+  background: #fffdf9;
+  border: 1px solid color-mix(in srgb, var(--tile-accent) 40%, transparent);
   overflow: hidden;
 }
 .ar-cardface-avatar img {
@@ -1671,14 +1753,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-size: 15px;
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: #e6edf3;
+  color: #2d2926;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ar-cardface-role {
   font-size: 12px;
-  color: #7d8590;
+  color: #8b8680;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1699,7 +1781,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .ar-cardface-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.06);
 }
 .ar-cardface-contacts {
   display: flex;
@@ -1711,7 +1793,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   gap: 9px;
   font-size: 11.5px;
-  color: #cdd6e0;
+  color: #2d2926;
   min-width: 0;
 }
 .ar-cardface-contact > svg {
@@ -1734,13 +1816,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-cardface-footline {
   flex: 1;
   height: 1px;
-  background: color-mix(in srgb, var(--tile-accent) 25%, transparent);
+  background: color-mix(in srgb, var(--tile-accent) 18%, transparent);
 }
 .ar-cardface-wordmark {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.4em;
-  color: #e6edf3;
+  color: #2d2926;
   opacity: 0.8;
 }
 

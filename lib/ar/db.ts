@@ -71,6 +71,17 @@ function usedStorageBytes(
   return Number(profile?.cloud_image_bytes ?? 0) + Number(profile?.cloud_ar_bytes ?? 0);
 }
 
+/** Per-feature breakdown of where the owner's monthly tokens went. Mirrors the
+ *  app's profiles.token_breakdown JSON (hooks/useProfile.ts). All optional —
+ *  buckets only appear once the owner spends on them. */
+export interface TokenBreakdown {
+  ocr?: number;
+  intel?: number;
+  strategy?: number;
+  bypass?: number;
+  ar?: number;
+}
+
 export interface DashboardData {
   email: string | null;
   tier: EffectiveTier;
@@ -79,6 +90,14 @@ export interface DashboardData {
   storageUsedBytes: number;
   /** AR storage budget for the owner's tier, in bytes (AR_STORAGE_CAPS). */
   storageCapBytes: number;
+  /** Monthly AI tokens spent this billing cycle (profiles.tokens_used_this_month). */
+  tokensUsed: number;
+  /** Monthly AI token allowance for the owner's plan (profiles.tokens_limit). */
+  tokensLimit: number;
+  /** Where this month's tokens went, by feature (profiles.token_breakdown). */
+  tokenBreakdown: TokenBreakdown;
+  /** ISO timestamp the monthly token allowance resets, or null (free/no cycle). */
+  tokensResetAt: string | null;
   cards: OwnerCard[];
   models: Record<string, ArModel>; // keyed by card_id
   /** True when the cards read failed (auth/transient) — distinct from an owner
@@ -103,7 +122,13 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   if (!user) return null;
 
   const [{ data: profile }, { data: cards, error: cardsError }, { data: models }] = await Promise.all([
-    supabase.from("profiles").select("subscription_tier, trial_ends_at, cloud_ar_bytes").eq("id", user.id).single(),
+    supabase
+      .from("profiles")
+      .select(
+        "subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes, tokens_used_this_month, tokens_limit, token_breakdown, billing_cycle_reset_at",
+      )
+      .eq("id", user.id)
+      .single(),
     supabase
       .from("cards")
       .select(CARD_COLUMNS)
@@ -128,15 +153,28 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     arCap: AR_MODEL_CAPS[tier],
     storageUsedBytes: usedStorageBytes(profile),
     storageCapBytes: AR_STORAGE_CAPS[tier],
+    tokensUsed: Number(profile?.tokens_used_this_month ?? 0),
+    tokensLimit: Number(profile?.tokens_limit ?? 0),
+    tokenBreakdown: (profile?.token_breakdown ?? {}) as TokenBreakdown,
+    tokensResetAt: profile?.billing_cycle_reset_at ?? null,
     cards: (cards ?? []) as OwnerCard[],
     models: byCard,
     loadError: !!cardsError,
   };
 }
 
-/** Owner's live AR storage usage + their tier cap, both in bytes. Used by the
- *  /api/ar/usage route so the editor can refresh the meter after each upload. */
-export async function getArUsage(): Promise<{ usedBytes: number; capBytes: number; tier: EffectiveTier } | null> {
+/** Owner's live AR storage + token usage and their tier caps. Used by the
+ *  /api/ar/usage route so the editor can refresh both meters after each upload
+ *  or build (which spends storage bytes and/or tokens). */
+export async function getArUsage(): Promise<{
+  usedBytes: number;
+  capBytes: number;
+  tier: EffectiveTier;
+  tokensUsed: number;
+  tokensLimit: number;
+  tokenBreakdown: TokenBreakdown;
+  tokensResetAt: string | null;
+} | null> {
   const supabase = await createArServerClient();
   const {
     data: { user },
@@ -145,7 +183,9 @@ export async function getArUsage(): Promise<{ usedBytes: number; capBytes: numbe
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes")
+    .select(
+      "subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes, tokens_used_this_month, tokens_limit, token_breakdown, billing_cycle_reset_at",
+    )
     .eq("id", user.id)
     .single();
 
@@ -154,6 +194,10 @@ export async function getArUsage(): Promise<{ usedBytes: number; capBytes: numbe
     usedBytes: usedStorageBytes(profile),
     capBytes: AR_STORAGE_CAPS[tier],
     tier,
+    tokensUsed: Number(profile?.tokens_used_this_month ?? 0),
+    tokensLimit: Number(profile?.tokens_limit ?? 0),
+    tokenBreakdown: (profile?.token_breakdown ?? {}) as TokenBreakdown,
+    tokensResetAt: profile?.billing_cycle_reset_at ?? null,
   };
 }
 
@@ -167,6 +211,10 @@ export async function getCardForEditor(
   model: ArModel | null;
   storageUsedBytes: number;
   storageCapBytes: number;
+  tokensUsed: number;
+  tokensLimit: number;
+  tokenBreakdown: TokenBreakdown;
+  tokensResetAt: string | null;
 } | null> {
   const supabase = await createArServerClient();
   const {
@@ -184,7 +232,9 @@ export async function getCardForEditor(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes")
+    .select(
+      "subscription_tier, trial_ends_at, cloud_ar_bytes, cloud_image_bytes, tokens_used_this_month, tokens_limit, token_breakdown, billing_cycle_reset_at",
+    )
     .eq("id", user.id)
     .single();
 
@@ -205,6 +255,10 @@ export async function getCardForEditor(
     model: (model as ArModel) ?? null,
     storageUsedBytes: usedStorageBytes(profile),
     storageCapBytes: AR_STORAGE_CAPS[tier],
+    tokensUsed: Number(profile?.tokens_used_this_month ?? 0),
+    tokensLimit: Number(profile?.tokens_limit ?? 0),
+    tokenBreakdown: (profile?.token_breakdown ?? {}) as TokenBreakdown,
+    tokensResetAt: profile?.billing_cycle_reset_at ?? null,
   };
 }
 

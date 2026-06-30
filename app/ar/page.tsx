@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import ArHeader from "@/components/ar/ArHeader";
 import CardsDashboard, { type CardStatus, type DashItem } from "@/components/ar/CardsDashboard";
+import HowItWorks from "@/components/ar/HowItWorks";
 import { getDashboardData, type OwnerCard } from "@/lib/ar/db";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +61,7 @@ export default async function ArDashboard() {
   const data = await getDashboardData();
   if (!data) redirect("/ar/login");
 
-  const { email, tier, arCap, storageUsedBytes, storageCapBytes, cards, models, loadError } = data;
+  const { email, tier, arCap, storageUsedBytes, storageCapBytes, tokensUsed, tokensLimit, tokenBreakdown, tokensResetAt, cards, models, loadError } = data;
   const canAuthor = arCap > 0;
 
   const items: DashItem[] = await Promise.all(
@@ -107,42 +108,7 @@ export default async function ArDashboard() {
           </p>
         </div>
 
-        <div className="ar-context-card">
-          <div className="ar-context-card-header">
-            <span className="ar-context-title">
-              <svg width="1.2em" height="1.2em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ display: "block" }}>
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 16v-4" />
-                <path d="M12 8h.01" />
-              </svg>
-              How AR business cards work
-            </span>
-            <span className="ar-muted" style={{ fontSize: "13.5px" }}>Attach 3D assets or media overlays to your physical card in three quick steps:</span>
-          </div>
-          <div className="ar-context-steps">
-            <div className="ar-context-step">
-              <div className="ar-step-number">1</div>
-              <div className="ar-step-content">
-                <strong>Upload Card Target</strong>
-                <p>Upload a glare-free photo of your printed card to serve as the AR tracking reference target.</p>
-              </div>
-            </div>
-            <div className="ar-context-step">
-              <div className="ar-step-number">2</div>
-              <div className="ar-step-content">
-                <strong>Design your AR Scene</strong>
-                <p>Position 3D models, active link buttons, videos, or floating text labels directly floating on top of your card layout.</p>
-              </div>
-            </div>
-            <div className="ar-context-step">
-              <div className="ar-step-number">3</div>
-              <div className="ar-step-content">
-                <strong>Scan & Experience</strong>
-                <p>When someone scans your physical card via the KaunTech scanner or QR code, your virtual layout comes alive in 3D space.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <HowItWorks />
 
         {!canAuthor ? (
           <div className="ar-card">
@@ -171,6 +137,10 @@ export default async function ArDashboard() {
             items={items}
             storageUsedBytes={storageUsedBytes}
             storageCapBytes={storageCapBytes}
+            tokensUsed={tokensUsed}
+            tokensLimit={tokensLimit}
+            tokenBreakdown={tokenBreakdown}
+            tokensResetAt={tokensResetAt}
           />
         )}
       </div>

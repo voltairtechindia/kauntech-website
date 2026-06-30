@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ArModel, OwnerCard, EffectiveTier } from "@/lib/ar/db";
+import type { ArModel, OwnerCard, EffectiveTier, TokenBreakdown } from "@/lib/ar/db";
 import { type ArElement, type ArElementType, type ArLighting, DEFAULT_TEXT_COLOR, isDirectVideoUrl, isStreamingPageUrl, normalizeLink, readLighting, socialPreset } from "@/lib/ar/scene";
 import type { GalleryAsset } from "@/lib/ar/gallery";
 import { compileEightwallTarget, scoreTargetTrackability } from "@/lib/ar/compileTarget";
@@ -272,7 +272,7 @@ function TransformSlider({
   );
 }
 
-export default function Editor({ card, model, galleryAssets = [], tier, storageUsedBytes = 0, storageCapBytes = 0 }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; storageUsedBytes?: number; storageCapBytes?: number }) {
+export default function Editor({ card, model, galleryAssets = [], tier, storageUsedBytes = 0, storageCapBytes = 0, tokensUsed = 0, tokensLimit = 0, tokenBreakdown = {}, tokensResetAt = null }: { card: OwnerCard; model: ArModel | null; galleryAssets?: GalleryAsset[]; tier?: EffectiveTier; storageUsedBytes?: number; storageCapBytes?: number; tokensUsed?: number; tokensLimit?: number; tokenBreakdown?: TokenBreakdown; tokensResetAt?: string | null }) {
   const router = useRouter();
   // Live AR storage budget. Seeded from the server and kept fresh: it ticks up
   // optimistically the moment a model/image uploads, then reconciles against the
@@ -280,9 +280,17 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   // owner can see what's left before picking another, bigger model.
   const [usedBytes, setUsedBytes] = useState(storageUsedBytes);
   const [capBytes, setCapBytes] = useState(storageCapBytes);
-  // Surface the live figure to the navbar (see StorageMeterContext) so the meter
-  // can live up there instead of taking room in the sidebar.
-  const publishStorage = useStorageMeter()?.publish;
+  // Live AR token pool — seeded from the server and refreshed alongside storage,
+  // since building/uploading spends tokens too. Shown next to the storage meter
+  // in the navbar so the owner sees what's left before another build.
+  const [tokUsed, setTokUsed] = useState(tokensUsed);
+  const [tokLimit, setTokLimit] = useState(tokensLimit);
+  const [tokBreakdown, setTokBreakdown] = useState<TokenBreakdown>(tokenBreakdown);
+  // Surface the live figures to the navbar (see StorageMeterContext) so the
+  // meters can live up there instead of taking room in the sidebar.
+  const storageCtx = useStorageMeter();
+  const publishStorage = storageCtx?.publish;
+  const publishTokens = storageCtx?.publishTokens;
   const storageLabel = `${tier ? tier[0].toUpperCase() + tier.slice(1) : ""} cloud storage`.trim();
   // AR is tiered: Pro = pre-made templates only; Ultra = the full studio (custom
   // model/video/image uploads + build from scratch). The custom-asset library is
@@ -291,6 +299,9 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   useEffect(() => {
     publishStorage?.(usedBytes, capBytes, storageLabel);
   }, [publishStorage, usedBytes, capBytes, storageLabel]);
+  useEffect(() => {
+    publishTokens?.(tokUsed, tokLimit, tokBreakdown, tokensResetAt);
+  }, [publishTokens, tokUsed, tokLimit, tokBreakdown, tokensResetAt]);
   const refreshUsage = useCallback(async () => {
     try {
       const res = await fetch("/api/ar/usage", { cache: "no-store" });
@@ -298,6 +309,9 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       if (res.ok && json.ok) {
         setUsedBytes(Number(json.usedBytes) || 0);
         setCapBytes(Number(json.capBytes) || 0);
+        setTokUsed(Number(json.tokensUsed) || 0);
+        setTokLimit(Number(json.tokensLimit) || 0);
+        setTokBreakdown((json.tokenBreakdown ?? {}) as TokenBreakdown);
       }
     } catch {
       /* keep the optimistic value if the refresh fails */

@@ -33,6 +33,10 @@ export default async function ArEditorPage({
           tier={data.tier}
           storageUsedBytes={data.storageUsedBytes}
           storageCapBytes={data.storageCapBytes}
+          tokensUsed={data.tokensUsed}
+          tokensLimit={data.tokensLimit}
+          tokenBreakdown={data.tokenBreakdown}
+          tokensResetAt={data.tokensResetAt}
         />
       </StorageMeterProvider>
     </div>
