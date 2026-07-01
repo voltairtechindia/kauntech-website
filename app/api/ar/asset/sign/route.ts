@@ -84,5 +84,11 @@ export async function POST(req: Request) {
   const { data, error } = await supabase.storage.from(AR_BUCKET).createSignedUploadUrl(path);
   if (error || !data) return bad("Could not start the upload. Please retry.", 500);
 
-  return NextResponse.json({ ok: true, path: data.path, token: data.token });
+  // Hand back the resolved content-type so the client can stamp it onto the
+  // uploaded Blob — supabase-js's uploadToSignedUrl derives the STORED type from
+  // the Blob's own .type (it ignores the contentType option), and browsers report
+  // a .glb with an empty / application/octet-stream type. Stamping the correct
+  // type keeps the stored object well-typed and safe against a future
+  // allowed_mime_types lockdown (the curated ar-gallery bucket already has one).
+  return NextResponse.json({ ok: true, path: data.path, token: data.token, content_type: resolved.contentType });
 }

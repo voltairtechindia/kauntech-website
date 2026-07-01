@@ -66,7 +66,7 @@ const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
 // e.g. a platform-level "Request Entity Too Large" plain-text 413. Returns a
 // friendly { ok:false } shape so callers surface a clean message instead of an
 // "Unexpected token … is not valid JSON" crash.
-async function readJson(res: Response): Promise<{ ok?: boolean; error?: string; url?: string; path?: string; token?: string }> {
+async function readJson(res: Response): Promise<{ ok?: boolean; error?: string; url?: string; path?: string; token?: string; content_type?: string }> {
   try {
     return await res.json();
   } catch {
@@ -714,12 +714,22 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       if (!signRes.ok || !sign.ok || !sign.path || !sign.token) throw new Error(sign.error || "Could not start the upload.");
 
       // 2) PUT the bytes straight to Supabase Storage with the signed token.
+      //    supabase-js derives the STORED content-type from the Blob's own .type
+      //    (it ignores the contentType option), and browsers hand a .glb over with
+      //    an empty / application/octet-stream type. Re-wrap the bytes with the
+      //    type the server resolved so the object is always correctly typed — and
+      //    won't 400 if this bucket is ever locked to allowed_mime_types the way
+      //    the curated ar-gallery bucket is.
+      const storedType = typeof sign.content_type === "string" && sign.content_type ? sign.content_type : file.type;
+      const body = file.type === storedType ? file : new Blob([file], { type: storedType || "application/octet-stream" });
       const supabase = createArBrowserClient();
       const { error: upErr } = await supabase.storage
         .from(AR_BUCKET)
-        .uploadToSignedUrl(sign.path, sign.token, file, { contentType: file.type || undefined });
+        .uploadToSignedUrl(sign.path, sign.token, body, { contentType: storedType || undefined });
       if (upErr) {
-        throw new Error(/ar_storage_limit_reached/.test(upErr.message) ? "This would exceed your cloud storage limit." : "Upload failed. Please retry.");
+        if (/ar_storage_limit_reached/.test(upErr.message)) throw new Error("This would exceed your cloud storage limit.");
+        console.error("[ar] uploadToSignedUrl failed:", upErr.message);
+        throw new Error("Upload failed. Please retry.");
       }
 
       // 3) Finalize: server validates the stored bytes, optimizes models, charges.

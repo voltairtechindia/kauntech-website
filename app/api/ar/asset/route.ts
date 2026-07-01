@@ -108,6 +108,14 @@ export async function POST(req: Request) {
     return bad(`${kind[0].toUpperCase()}${kind.slice(1)} is larger than ${maxLabel(kind)}.`, 413);
   }
 
+  // Reject a mislabeled model before we optimize or charge tokens: a real binary
+  // glTF starts with the ASCII magic "glTF". Without this a renamed/corrupt file
+  // would be stored, billed, and then silently fail to render in the AR scene.
+  if (kind === "model" && (bytes.length < 4 || Buffer.from(bytes.subarray(0, 4)).toString("ascii") !== "glTF")) {
+    await removeSilently();
+    return bad("That file isn't a valid .glb 3D model. Re-export it as binary glTF (.glb) and try again.");
+  }
+
   const ext = path.split(".").pop()?.toLowerCase() || "";
   const contentType = contentTypeForExt(ext);
 
