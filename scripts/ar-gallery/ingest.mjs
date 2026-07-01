@@ -31,7 +31,7 @@ import sharp from "sharp";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "../..");
 const BUCKET = "ar-gallery";
-const MAX_BYTES = 10 * 1024 * 1024; // 10 MB — matches the bucket's file_size_limit
+const MAX_BYTES = 50 * 1024 * 1024; // 50 MB — matches the bucket's file_size_limit
 const CATEGORIES = ["social", "arrows", "avatars", "objects"];
 const SOCIAL_KEYS = ["instagram", "linkedin", "x", "facebook", "youtube", "whatsapp", "website", "email"];
 
