@@ -260,17 +260,25 @@ function ElementBody({
   };
 
   if (element.type === "model" && element.url) {
+    const placeholder = <ModelPlaceholder />;
     return (
       <group onClick={click}>
-        <Suspense fallback={null}>
-          <GlbModel
-            url={element.url}
-            brightness={element.brightness ?? 1.2}
-            animated={element.animated ?? false}
-            spin={element.spin ?? false}
-            animationSpeed={element.animationSpeed ?? 1}
-          />
-        </Suspense>
+        {/* A model that fails to load or decode — a huge file, a per-GPU texture/
+            material/shadow limit, a corrupt .glb — falls back to a neutral stand-in
+            instead of throwing and taking the WHOLE canvas down with it. Images and
+            video already had this net; models were the one type left without it, so
+            one bad gallery model could blank the entire editor. */}
+        <MediaErrorBoundary key={element.url} fallback={placeholder}>
+          <Suspense fallback={placeholder}>
+            <GlbModel
+              url={element.url}
+              brightness={element.brightness ?? 1.2}
+              animated={element.animated ?? false}
+              spin={element.spin ?? false}
+              animationSpeed={element.animationSpeed ?? 1}
+            />
+          </Suspense>
+        </MediaErrorBoundary>
       </group>
     );
   }
@@ -410,6 +418,22 @@ function VideoPlaceholder({ w, h }: { w: number; h: number }) {
       </mesh>
       <Text position={[0, 0, 0.01]} fontSize={Math.min(w, h) * 0.22} color="#9ca3af" anchorX="center" anchorY="middle">
         video
+      </Text>
+    </group>
+  );
+}
+
+// Neutral 3D stand-in for a model that's still loading or failed to load (a huge
+// file, a per-GPU material/texture/shadow limit, a bad .glb). Sized in the model's
+// own local space; the element's baseScale/scale still apply on top.
+function ModelPlaceholder() {
+  return (
+    <group>
+      <RoundedBox args={[0.4, 0.4, 0.4]} radius={0.04} smoothness={4}>
+        <meshStandardMaterial color="#d4d0c8" metalness={0} roughness={0.9} />
+      </RoundedBox>
+      <Text position={[0, 0, 0.21]} fontSize={0.09} color="#6b7280" anchorX="center" anchorY="middle">
+        model
       </Text>
     </group>
   );
