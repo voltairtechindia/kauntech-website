@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Bounds, Center, OrbitControls, useGLTF } from "@react-three/drei";
 import type { GalleryAsset } from "@/lib/ar/gallery";
@@ -9,13 +9,88 @@ import { IconSearch, IconX } from "./icons";
 /**
  * Modal picker for the curated AR gallery — a flat, searchable grid (no
  * categories). Each cell renders the actual .glb in a tiny auto-fitted, slowly
- * orbiting canvas, so what you see is what lands on the card. One WebGL context
- * per visible cell, so the search keeps the rendered count down.
+ * orbiting canvas, so what you see is what lands on the card.
+ *
+ * Each live canvas is its OWN WebGL context, and a browser allows only ~16 at
+ * once — so a full gallery (plus the editor's own canvas underneath) would blow
+ * that cap and the browser silently kills the OLDEST context (the editor's),
+ * taking the whole scene down with a "context lost". `LazyPreview` therefore
+ * only mounts a cell's canvas while it's actually scrolled into view and unmounts
+ * it (freeing the context) when it scrolls away, so the live count stays bounded
+ * no matter how many models the gallery holds.
  */
 function PreviewModel({ url }: { url: string }) {
   const { scene } = useGLTF(url);
   // Clone so the same asset can preview here and live on the card at once.
   return <primitive object={scene.clone()} />;
+}
+
+// Hard cap on simultaneously-live preview contexts, kept well under the browser's
+// ~16 WebGL limit — the editor's own canvas counts too, and scrolling can briefly
+// overlap an outgoing and incoming row. In-view cells over the cap wait for a slot.
+const MAX_LIVE_PREVIEWS = 8;
+let livePreviews = 0;
+const previewWaiters = new Set<() => void>();
+function acquirePreviewSlot(): boolean {
+  if (livePreviews < MAX_LIVE_PREVIEWS) {
+    livePreviews++;
+    return true;
+  }
+  return false;
+}
+function releasePreviewSlot() {
+  livePreviews = Math.max(0, livePreviews - 1);
+  const next = previewWaiters.values().next().value;
+  if (next) {
+    previewWaiters.delete(next);
+    next();
+  }
+}
+
+// Mount the (context-owning) <Preview> only while the cell is on screen AND a
+// render slot is free — so the live-context count can never exceed the cap.
+function LazyPreview({ asset }: { asset: GalleryAsset }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [inView, setInView] = useState(false);
+  const [hasSlot, setHasSlot] = useState(false);
+  const holding = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // IntersectionObserver accounts for the grid's own scroll-clipping, so a cell
+    // scrolled out of the modal reports not-intersecting and releases its slot.
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: "0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
+    let active = true;
+    const grant = () => {
+      if (!active) return;
+      holding.current = true;
+      setHasSlot(true);
+    };
+    if (acquirePreviewSlot()) grant();
+    else previewWaiters.add(grant);
+    return () => {
+      active = false;
+      previewWaiters.delete(grant);
+      if (holding.current) {
+        holding.current = false;
+        releasePreviewSlot();
+      }
+      setHasSlot(false);
+    };
+  }, [inView]);
+
+  return (
+    <span className="ar-gallery-canvas" ref={ref}>
+      {hasSlot ? <Preview asset={asset} /> : null}
+    </span>
+  );
 }
 
 function Preview({ asset }: { asset: GalleryAsset }) {
@@ -106,9 +181,7 @@ export default function GalleryPicker({
                 onClick={() => { onPick(a); onClose(); }}
                 title={a.name}
               >
-                <span className="ar-gallery-canvas">
-                  <Preview asset={a} />
-                </span>
+                <LazyPreview asset={a} />
                 <span className="ar-gallery-name">{a.name}</span>
               </button>
             ))
