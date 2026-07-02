@@ -725,7 +725,11 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       const supabase = createArBrowserClient();
       const { error: upErr } = await supabase.storage
         .from(AR_BUCKET)
-        .uploadToSignedUrl(sign.path, sign.token, body, { contentType: storedType || undefined });
+        // cacheControl: paths embed a per-upload randomUUID (never reused), so the
+        // bytes at a URL can't change — cache for a year. Without this Supabase
+        // defaults to max-age=3600 and the AR viewer re-fetches big videos/models
+        // every hour.
+        .uploadToSignedUrl(sign.path, sign.token, body, { contentType: storedType || undefined, cacheControl: "31536000" });
       if (upErr) {
         if (/ar_storage_limit_reached/.test(upErr.message)) throw new Error("This would exceed your cloud storage limit.");
         console.error("[ar] uploadToSignedUrl failed:", upErr.message);

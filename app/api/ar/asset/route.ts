@@ -164,7 +164,9 @@ export async function POST(req: Request) {
   // smaller than the raw one (which already passed the cap), so this never re-trips it.
   if (needsReplace) {
     await bucket.remove([path]);
-    const { error: upErr } = await bucket.upload(path, bytes, { contentType, upsert: false });
+    // Long-lived cache: asset paths embed a randomUUID per upload (never reused),
+    // so the bytes at a URL can never change — safe to cache for a year.
+    const { error: upErr } = await bucket.upload(path, bytes, { contentType, upsert: false, cacheControl: "31536000" });
     if (upErr) {
       if (assetCharge) await refundArTokens(user.id, assetCharge.amount, assetCharge.source);
       const m = mapErr(upErr.message);

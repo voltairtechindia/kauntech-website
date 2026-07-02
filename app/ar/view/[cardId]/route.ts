@@ -61,6 +61,14 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
   const imageUrl =
     [ew.lumUrl, chosenPhoto, sceneCard.frontUrl, sceneCard.backUrl, m.reference_image_path].find(isHttp) ?? null;
   if (!imageUrl) return fallback("This card isn’t set up for AR tracking yet.");
+  // The editor stored the luminance target's pixel size at save time — inline it
+  // so the viewer doesn't have to download the image just to measure it. Only
+  // valid when the target IS the luminance image; other fallbacks are measured
+  // client-side as before.
+  const targetDims =
+    imageUrl === ew.lumUrl && Number(ew.w) > 0 && Number(ew.h) > 0
+      ? { w: Number(ew.w), h: Number(ew.h) }
+      : null;
 
   const rawEls = Array.isArray(m.scene?.elements) ? m.scene.elements : [];
   const elements = rawEls
@@ -117,5 +125,5 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
   // World Tracking (SLAM) on by default; ?worldtracking=0 = image-only (no IMU).
   const worldTracking = new URL(req.url).searchParams.get("worldtracking") !== "0";
 
-  return page(eightwallViewerHtml({ elements, lighting, target: { imageUrl, name: cardId }, worldTracking }));
+  return page(eightwallViewerHtml({ elements, lighting, target: { imageUrl, name: cardId, ...targetDims }, worldTracking }));
 }

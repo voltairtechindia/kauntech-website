@@ -50,15 +50,41 @@ const EIGHTFRAME = "/ar8/8frame-1.5.0.min.js";
 export interface EightwallView {
   elements: unknown[];
   lighting: { intensity: number };
-  /** The card's image target. The viewer reads its real pixel dimensions. */
-  target: { imageUrl: string; name: string };
+  /** The card's image target. w/h = its stored pixel dimensions (from the editor
+   *  save); when present the viewer skips downloading the image just to measure
+   *  it — otherwise it reads the real dimensions client-side as before. */
+  target: { imageUrl: string; name: string; w?: number; h?: number };
   /** World Tracking (SLAM) on = glued at all angles + survives the card leaving
    *  frame; needs the IMU. Off = pure image tracking (no motion permission). */
   worldTracking: boolean;
 }
 
+/** Minimal HTML-attribute escape for URLs we emit into <link> tags. */
+function escAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
 export function eightwallViewerHtml(view: EightwallView): string {
   const json = JSON.stringify(view).replace(/</g, "\\u003c");
+  // Warm the connections the scene will need: the storage origin(s) hosting the
+  // target image + every scene asset (GLB/video/image/audio) get a preconnect so
+  // the first fetch skips DNS+TLS, and the target image itself is preloaded — the
+  // engine needs it to acquire tracking, so it should download alongside the
+  // engine JS instead of after it.
+  const origins = new Set<string>();
+  const addOrigin = (u: unknown) => {
+    try {
+      if (typeof u === "string" && /^https?:\/\//i.test(u)) origins.add(new URL(u).origin);
+    } catch {
+      /* ignore malformed URLs */
+    }
+  };
+  addOrigin(view.target.imageUrl);
+  for (const el of view.elements as Array<Record<string, unknown>>) addOrigin(el?.url);
+  const hints = [
+    ...[...origins].slice(0, 4).map((o) => `<link rel="preconnect" href="${escAttr(o)}" crossorigin>`),
+    `<link rel="preload" as="image" href="${escAttr(view.target.imageUrl)}" crossorigin="anonymous">`,
+  ].join("\n");
   return `<!doctype html>
 <html>
 <head>
@@ -66,6 +92,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>AR Card</title>
+${hints}
 <style>
   html,body{margin:0;height:100%;background:#0B0D12;overflow:hidden;font-family:-apple-system,system-ui,"Segoe UI",sans-serif;color:#fff}
   /* KaunTech-themed loader / start gate — matches the in-app loader (dark base,
@@ -114,9 +141,14 @@ export function eightwallViewerHtml(view: EightwallView): string {
      AFRAME_CDN_ROOT + fonts/Roboto-msdf.json). Set BEFORE 8frame loads so text
      elements never fetch cdn.aframe.io — the viewer is fully self-contained. -->
 <script>window.AFRAME_CDN_ROOT="/ar8/aframe/";</script>
-<script crossorigin="anonymous" src="${EIGHTFRAME}"></script>
+<!-- defer (not blocking): the body bootstrap only touches AFRAME/XRExtras through
+     whenAframe()/whenXR8() polling, so nothing needs these parsed before the page
+     renders — deferring lets the loader UI + target preload start immediately
+     instead of behind ~1.5 MB of engine JS. The inline AFRAME_CDN_ROOT above still
+     runs first (inline executes at parse; defer executes after). -->
+<script defer crossorigin="anonymous" src="${EIGHTFRAME}"></script>
 <script src="${ENGINE}" async crossorigin="anonymous" data-preload-chunks="slam"></script>
-<script src="${XREXTRAS}" crossorigin="anonymous"></script>
+<script defer src="${XREXTRAS}" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="status"><div class="ld">
@@ -167,6 +199,16 @@ export function eightwallViewerHtml(view: EightwallView): string {
   // drop to false (image-only) if motion is denied or SLAM doesn't come up, so AR
   // still works on every device.
   var wt = !!D.worldTracking;
+  // SLAM failed on this device recently → start image-only IMMEDIATELY instead of
+  // paying the 16s watchdog + a full cold reload again. Written by
+  // reloadImageOnly(), cleared on the next successful SLAM start, and expires
+  // after 7 days so a transient failure can't downgrade the device forever.
+  var WT_FAIL_KEY = 'kt_ar_wt_fail';
+  try {
+    var wtFailAt = parseInt(localStorage.getItem(WT_FAIL_KEY) || '0', 10) || 0;
+    if (wtFailAt && Date.now() - wtFailAt > 7 * 864e5){ localStorage.removeItem(WT_FAIL_KEY); wtFailAt = 0; }
+    if (wt && wtFailAt) wt = false;
+  } catch(e){}
 
   // The loaded target image's real pixel size (set once dims resolve). Used to
   // decide the orientation correction below.
@@ -292,7 +334,7 @@ export function eightwallViewerHtml(view: EightwallView): string {
   if (!isMobileDevice()){ showDesktopGate(); return; }
 
   setProg(6);
-  log('engine: 8th Wall; worldTracking=' + (D.worldTracking ? 'on' : 'off'));
+  log('engine: 8th Wall; worldTracking=' + (wt ? 'on' : 'off') + (D.worldTracking && !wt ? ' (device remembered a SLAM failure)' : ''));
 
   // Diagnostic HUD (?debug=1).
   (function(){
@@ -353,11 +395,22 @@ export function eightwallViewerHtml(view: EightwallView): string {
   // serves D.worldTracking=false, so this is terminal — image-only never reloads
   // again, it just errors if even that fails.
   function reloadImageOnly(){
+    // Remember the failure so the NEXT open on this device starts image-only
+    // straight away instead of waiting out the watchdog again.
+    try { localStorage.setItem(WT_FAIL_KEY, String(Date.now())); } catch(e){}
     try { var u = new URL(location.href); u.searchParams.set('worldtracking', '0'); location.replace(u.toString()); }
     catch(e){ showError('Couldn’t start AR. Please try again.'); }
   }
 
-  var dimsP = loadDims((D.target || {}).imageUrl || '').then(function(d){ setProg(28); return d; });
+  // The editor stores the target's pixel size at save time; when the route inlined
+  // it we skip downloading the image just to measure it (the preload in <head> is
+  // already warming it for the engine). Cards saved before dims were stored fall
+  // back to the client-side read.
+  var tgt = D.target || {};
+  var dimsP = (Number(tgt.w) > 0 && Number(tgt.h) > 0
+    ? Promise.resolve({ w: Number(tgt.w), h: Number(tgt.h) })
+    : loadDims(tgt.imageUrl || '')
+  ).then(function(d){ setProg(28); return d; });
   var xr8P = new Promise(function(res){ whenXR8(function(){ setProg(46); res(); }); });
 
   Promise.all([dimsP, xr8P]).then(function(r){
@@ -987,7 +1040,12 @@ export function eightwallViewerHtml(view: EightwallView): string {
     anchor.addEventListener('ktcardvisible', playFoundMedia);
     anchor.addEventListener('ktcardhidden', pauseLostMedia);
 
-    scene.addEventListener('realityready', function(){ log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card'; });
+    scene.addEventListener('realityready', function(){
+      log('realityready'); window.__ARSTATE__ = 'READY'; ready(); applyEnv(); hintEl.textContent = 'Point at the card';
+      // SLAM came up fine — forget any remembered failure so the device gets the
+      // full experience on future opens.
+      if (wt){ try { localStorage.removeItem(WT_FAIL_KEY); } catch(e){} }
+    });
     scene.addEventListener('camerastatuschange', function(e){ var s = e && e.detail && e.detail.status; log('camera status: ' + s); if (s === 'failed' || s === 'blocked') showError('Camera access is blocked. Allow the camera and reopen AR.'); });
 
     document.body.appendChild(scene);

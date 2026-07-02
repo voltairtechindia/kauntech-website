@@ -143,6 +143,17 @@ const nextConfig: NextConfig = {
     return [
       // Non-CSP security headers (HSTS, etc.) on everything — no camera, no CSP.
       { source: "/:path*", headers: securityHeaders },
+      // Vendored 8th Wall engine (~8 MB of JS/wasm/fonts under /ar8). The files
+      // are frozen (the upstream platform is retired) and 8frame is version-named,
+      // so serve them immutable — otherwise every AR open re-validates the whole
+      // engine, which dwarfs all other viewer startup costs on repeat visits.
+      // IF an engine file is ever changed in place, rename the directory
+      // (ar8 → ar9) instead of editing under /ar8, or clients keep the old build
+      // for up to a year.
+      {
+        source: "/ar8/:path*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
       // AR pages: same-origin camera + the eval-permitting CSP (A-Frame/MindAR).
       { source: "/ar/:path*", headers: [permissionsPolicy("(self)"), cspHeader(cspAr)] },
       // Everywhere else (not /ar or /ar/*): deny the camera + the strict CSP.

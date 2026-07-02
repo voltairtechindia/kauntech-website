@@ -153,7 +153,9 @@ export async function POST(req: Request) {
       if (file.size > 6 * 1024 * 1024) throw new Error("Card image is larger than 6 MB.");
       const path = `${userId}/${cardId}/${modelId}-${side}.jpg`;
       const bytes = Buffer.from(await file.arrayBuffer());
-      const { error: upErr } = await bucket.upload(path, bytes, { contentType: file.type || "image/jpeg", upsert: true });
+      // Long-lived cache: the path is deterministic but every re-upload gets a
+      // fresh ?v= on its public URL (below), so stale bytes are never served.
+      const { error: upErr } = await bucket.upload(path, bytes, { contentType: file.type || "image/jpeg", upsert: true, cacheControl: "31536000" });
       if (upErr) throw new Error(upErr.message);
       // Deterministic path means re-uploads overwrite (no orphaned bytes), but
       // the public URL is unchanged — bust the CDN/browser cache so a replaced
@@ -190,7 +192,8 @@ export async function POST(req: Request) {
     try {
       const path = `${userId}/${cardId}/${modelId}.lum.jpg`;
       const bytes = Buffer.from(await ewFile.arrayBuffer());
-      const { error: eErr } = await bucket.upload(path, bytes, { contentType: "image/jpeg", upsert: true });
+      // Long-lived cache — same ?v= cache-bust story as the card photos above.
+      const { error: eErr } = await bucket.upload(path, bytes, { contentType: "image/jpeg", upsert: true, cacheControl: "31536000" });
       if (!eErr) {
         const lumUrl = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
         const w = parseInt(str(form.get("eightwall_w")), 10);
