@@ -2,7 +2,7 @@
 
 import { Component, type ReactNode, type RefObject, Suspense, useRef, useMemo, useEffect } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
   Environment,
   Image as DreiImage,
@@ -50,6 +50,14 @@ export default function SceneViewport({
   cardColor,
   onSelect,
 }: Props) {
+  const stageRef = useRef<THREE.Group>(null);
+  // Re-frame the camera only when the *set* of visible content changes (a model
+  // added / removed / swapped / un-hidden) — NOT on every slider tweak, so tuning
+  // position or scale never yanks the view you've set up.
+  const framingKey = useMemo(
+    () => elements.filter((e) => !e.hidden).map((e) => `${e.id}:${e.url ?? ""}`).join("|"),
+    [elements],
+  );
   return (
     <Canvas camera={{ position: [0, 1.25, 1.85], fov: 40 }} dpr={[1, 2]} shadows>
       <color attach="background" args={["#f1f0ee"]} />
@@ -70,12 +78,18 @@ export default function SceneViewport({
 
       {/* The "land": a horizontal floor the card sits on. A faint ground plane
           (receives shadows) under a grid, so the card reads as resting on a real
-          surface you look ACROSS — not a poster you orbit. World XZ plane, y≈0. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.014, 0]} receiveShadow>
+          surface you look ACROSS — not a poster you orbit. World XZ plane, y≈0.
+
+          The ground + grid are a REFERENCE surface, NOT a wall: they render first and
+          DON'T write depth, so a model placed below the card (e.g. a stand "holding"
+          the card, whose base sits under the surface) is never hidden by the floor —
+          you can see it from the top, or any angle. Before this, the opaque plane
+          sliced through and occluded anything below y≈0. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.014, 0]} receiveShadow renderOrder={-2}>
         <planeGeometry args={[8, 8]} />
-        <meshStandardMaterial color="#eceae6" roughness={1} metalness={0} />
+        <meshStandardMaterial color="#eceae6" roughness={1} metalness={0} depthWrite={false} />
       </mesh>
-      <gridHelper args={[3, 24, "#cfccc5", "#e4e1dc"]} position={[0, -0.012, 0]} />
+      <gridHelper args={[3, 24, "#cfccc5", "#e4e1dc"]} position={[0, -0.012, 0]} renderOrder={-1} material-depthWrite={false} />
 
       {/* Ground stage. The stored scene is card-relative — the card lives in its own
           XY plane with content floating out along +Z. Rotating the whole stage -90°
@@ -84,7 +98,7 @@ export default function SceneViewport({
           the land, exactly like the real scan of a card lying on a table. card +X
           stays world +X (left/right) and card +Y becomes world -Z (forward/back on
           the ground). Stored coordinates are untouched — only how we view them. */}
-      <group rotation={[-Math.PI / 2, 0, 0]}>
+      <group ref={stageRef} rotation={[-Math.PI / 2, 0, 0]}>
         {/* The card (tracking target) */}
         <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
 
@@ -97,11 +111,20 @@ export default function SceneViewport({
         </Suspense>
       </group>
 
-      {/* Orbit/pan/zoom around the land, Kivicube-style. Left-drag circles the card
-          on its floor (full 360° around), right-drag (or two-finger) pans across the
-          ground, wheel zooms. enableDamping keeps it smooth. Polar range runs from
-          near top-down to just under the card so you can inspect every face (incl.
-          the underside) without flipping fully beneath the floor. */}
+      {/* Keeps the orbit pivot on the CENTRE of whatever you've placed and fits the
+          camera to it, so a big model (e.g. one "holding" the card) stays centred and
+          easy to circle instead of pivoting around the card at the floor — which swung
+          tall models out of frame and left no way to zoom out far enough. It only acts
+          on load / when the content set changes, and bails the instant you touch the
+          camera, so it never fights a manual orbit. target + min/max distance are
+          driven here, so they're intentionally omitted from OrbitControls below. */}
+      <AutoFrame stageRef={stageRef} resetKey={framingKey} />
+
+      {/* Orbit/pan/zoom around the land, Kivicube-style. Left-drag circles the
+          content (full 360° horizontally), right-drag (or two-finger) pans across the
+          ground, wheel zooms. enableDamping keeps it smooth. The vertical range is now
+          almost the whole sphere, so you can inspect the model from ANY direction —
+          top-down, level, or from underneath — not just down to the card. */}
       <OrbitControls
         makeDefault
         enablePan
@@ -110,14 +133,118 @@ export default function SceneViewport({
         rotateSpeed={0.85}
         zoomSpeed={0.8}
         panSpeed={0.7}
-        target={[0, 0.15, 0]}
-        minDistance={0.4}
-        maxDistance={8}
-        minPolarAngle={0.05}
-        maxPolarAngle={Math.PI * 0.88}
+        minPolarAngle={0.02}
+        maxPolarAngle={Math.PI - 0.02}
       />
     </Canvas>
   );
+}
+
+// The subset of OrbitControls we drive imperatively (drei doesn't re-apply props we
+// don't pass, so these imperative writes stick across re-renders).
+type FrameControls = {
+  target: THREE.Vector3;
+  minDistance: number;
+  maxDistance: number;
+  update: () => void;
+  addEventListener: (type: "start", cb: () => void) => void;
+  removeEventListener: (type: "start", cb: () => void) => void;
+};
+
+// ~1.6s of settling frames after a content change — long enough to catch an async
+// .glb that pops into the scene a beat after the element is added, so the model (not
+// just the empty card) is what gets framed.
+const SETTLE_FRAMES = 100;
+
+/**
+ * Auto-frame: parks the OrbitControls pivot on the centre of the placed content and
+ * pulls the camera back to fit it. Without this the pivot sat at the card on the
+ * floor, so a large model — e.g. one "holding" the card — swung out of frame the
+ * moment you orbited, couldn't be zoomed out far enough (old maxDistance was 8, but
+ * scale goes to 40×), and couldn't be seen from every side. This measures the live
+ * scene each frame for a short window after the content set changes (catching async
+ * model loads), recentres the pivot, and widens the zoom range to whatever the model
+ * needs. It runs ONLY in that window and stops instantly when the user grabs the
+ * camera, so it never fights a manual orbit / pan / zoom.
+ */
+function AutoFrame({
+  stageRef,
+  resetKey,
+}: {
+  stageRef: RefObject<THREE.Group | null>;
+  resetKey: string;
+}) {
+  const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
+  const controls = useThree((s) => s.controls) as unknown as FrameControls | null;
+  const viewport = useThree((s) => s.size);
+  const box = useMemo(() => new THREE.Box3(), []);
+  const center = useMemo(() => new THREE.Vector3(), []);
+  const dim = useMemo(() => new THREE.Vector3(), []);
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  const pending = useRef(0);
+  const framedMax = useRef(0);
+
+  // (Re)frame on mount and whenever the visible content set changes.
+  useEffect(() => {
+    pending.current = SETTLE_FRAMES;
+    framedMax.current = 0;
+  }, [resetKey]);
+
+  // The instant the user starts to orbit / pan / zoom, stop auto-framing so we never
+  // pull the camera out from under them mid-drag.
+  useEffect(() => {
+    if (!controls) return;
+    const stop = () => {
+      pending.current = 0;
+    };
+    controls.addEventListener("start", stop);
+    return () => controls.removeEventListener("start", stop);
+  }, [controls]);
+
+  useFrame(() => {
+    if (pending.current <= 0 || !controls) return;
+    const stage = stageRef.current;
+    if (!stage) return;
+    stage.updateWorldMatrix(true, true);
+    box.setFromObject(stage);
+    if (box.isEmpty()) {
+      pending.current -= 1;
+      return;
+    }
+    box.getCenter(center);
+    box.getSize(dim);
+    const maxDim = Math.max(dim.x, dim.y, dim.z);
+    if (!(maxDim > 0)) {
+      pending.current -= 1;
+      return;
+    }
+
+    // Pivot around the content's centre so any-size model stays framed as you orbit.
+    controls.target.copy(center);
+    controls.minDistance = 0.2;
+
+    // Distance that frames the whole box for this fov AND viewport aspect, + margin.
+    const fov = (camera.fov * Math.PI) / 180;
+    const aspect = viewport.width / Math.max(1, viewport.height);
+    const half = maxDim / 2;
+    const tan = Math.tan(fov / 2);
+    const fitDist = Math.max(half / tan, half / (tan * Math.max(0.0001, aspect))) * 1.4 + half * 0.2;
+    controls.maxDistance = Math.max(8, fitDist * 4);
+
+    // Reposition the camera on the first solid measure, and again if the box grows
+    // (an async model just streamed in) — always keeping the current view angle.
+    if (maxDim > framedMax.current * 1.02) {
+      dir.copy(camera.position).sub(center);
+      if (dir.lengthSq() < 1e-6) dir.set(0, 1.1, 1.85);
+      dir.normalize();
+      camera.position.copy(center).addScaledVector(dir, fitDist);
+      framedMax.current = maxDim;
+    }
+    controls.update();
+    pending.current -= 1;
+  });
+
+  return null;
 }
 
 function CardBase({
