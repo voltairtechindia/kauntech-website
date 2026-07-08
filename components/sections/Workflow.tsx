@@ -7,7 +7,7 @@ export default function Workflow() {
       <div className="container">
         <div className="section-header reveal">
           <span className="section-label">Seamless Process</span>
-          <h2>3 Steps to Contact Mastery in 30 Seconds</h2>
+          <h1>3 Steps to Contact Mastery in 30 Seconds</h1>
           <p>From physical card to CRM sync while you are still shaking hands with your prospect.</p>
         </div>
 

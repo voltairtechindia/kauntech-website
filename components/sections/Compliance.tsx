@@ -12,7 +12,7 @@ export default function Compliance() {
       <div className="container">
         <div className="section-header reveal">
           <span className="section-label">India DPDP Act 2023 Compliant</span>
-          <h2>Enterprise Privacy &amp; Data Transparency Portal</h2>
+          <h1>Enterprise Privacy &amp; Data Transparency Portal</h1>
           <p>
             Kauntech is engineered from the ground up to respect user privacy and fully adhere to
             India&apos;s Digital Personal Data Protection (DPDP) Act 2023.
@@ -72,7 +72,7 @@ export default function Compliance() {
               }}
             >
               <i className="fa-solid fa-file-contract badge-icon" />
-              <h4 style={{ fontSize: "1.3rem", color: "var(--gold)" }}>DPDP Act 2023 Audit Ledger</h4>
+              <h3 style={{ fontSize: "1.3rem", color: "var(--gold)" }}>DPDP Act 2023 Audit Ledger</h3>
               <p style={{ fontSize: "0.95rem", marginTop: 8 }}>
                 Below is the exact data schema Kauntech records to maintain regulatory compliance,
                 manage trial sessions, and guarantee informed user consent:

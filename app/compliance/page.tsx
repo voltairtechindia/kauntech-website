@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Compliance from "@/components/sections/Compliance";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function CompliancePage() {
   return (
     <main style={{ paddingTop: 80 }}>
+      <Breadcrumbs trail={[{ name: "Compliance", path: "/compliance" }]} />
       <Compliance />
     </main>
   );

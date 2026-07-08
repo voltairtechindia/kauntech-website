@@ -11,7 +11,7 @@ export default function Features() {
       <div className="container">
         <div className="section-header reveal">
           <span className="section-label">Powerful Capabilities</span>
-          <h2>Engineered for Offline Speed &amp; Privacy</h2>
+          <h1>Engineered for Offline Speed &amp; Privacy</h1>
           <p>
             Explore the ultimate toolset designed for sales professionals, event organizers, and
             enterprise teams who demand reliability without internet dependence.

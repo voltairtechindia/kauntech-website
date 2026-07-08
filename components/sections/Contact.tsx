@@ -102,7 +102,7 @@ export default function Contact() {
               className="fa-solid fa-envelope-open-text"
               style={{ fontSize: "2rem", color: "var(--gold)" }}
             />
-            <h2 className="contact-heading">Get in Touch / Request Demo</h2>
+            <h1 className="contact-heading">Get in Touch / Request Demo</h1>
           </div>
           <p
             style={{

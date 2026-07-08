@@ -11,7 +11,7 @@ export default function Pricing() {
       <div className="container">
         <div className="section-header reveal" style={{ marginBottom: 24 }}>
           <span className="section-label">Flexible Investment</span>
-          <h2>Choose Your Kauntech Plan</h2>
+          <h1>Choose Your Kauntech Plan</h1>
           <p>
             Unlock absolute offline scanning power, AI enrichment, and multi-channel automations
             tailored to your scale.
@@ -102,7 +102,7 @@ export default function Pricing() {
 
         <div className="pricing-grid reveal reveal-delay-1">
           <div className="price-card">
-            <div className="price-name">Free</div>
+            <h2 className="price-name">Free</h2>
             <div className="price-amount">
               <span className="currency">₹</span>0<span className="period">/ forever</span>
             </div>
@@ -121,7 +121,7 @@ export default function Pricing() {
           </div>
 
           <div className="price-card featured">
-            <div className="price-name" style={{ color: "var(--gold)" }}>Pro</div>
+            <h2 className="price-name" style={{ color: "var(--gold)" }}>Pro</h2>
             <div className="price-amount">
               <span className="currency">₹</span>
               {annual ? "399" : "499"}
@@ -146,7 +146,7 @@ export default function Pricing() {
           </div>
 
           <div className="price-card ultra">
-            <div className="price-name" style={{ color: "var(--indigo)" }}>Ultra</div>
+            <h2 className="price-name" style={{ color: "var(--indigo)" }}>Ultra</h2>
             <div className="price-amount">
               <span className="currency">₹</span>
               {annual ? "999" : "1,299"}
@@ -170,7 +170,7 @@ export default function Pricing() {
           </div>
 
           <div className="price-card">
-            <div className="price-name">Custom</div>
+            <h2 className="price-name">Custom</h2>
             <div className="price-amount">
               <span style={{ fontSize: "2rem", fontWeight: 800, color: "var(--text)" }}>
                 Let&apos;s Talk

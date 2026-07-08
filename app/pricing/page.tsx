@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Pricing from "@/components/sections/Pricing";
 
 export const metadata: Metadata = {
@@ -76,6 +77,7 @@ const pricingLd = {
 export default function PricingPage() {
   return (
     <main style={{ paddingTop: 80 }}>
+      <Breadcrumbs trail={[{ name: "Pricing", path: "/pricing" }]} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingLd) }}

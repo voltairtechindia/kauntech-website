@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Contact from "@/components/sections/Contact";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <main style={{ paddingTop: 80 }}>
+      <Breadcrumbs trail={[{ name: "Contact", path: "/contact" }]} />
       <Contact />
     </main>
   );

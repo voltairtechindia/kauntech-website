@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import Breadcrumbs from "@/components/Breadcrumbs";
 import { listPublishedPosts } from "@/lib/blog/db";
 import { formatDate } from "@/lib/blog/util";
 
@@ -42,6 +43,7 @@ export default async function BlogIndexPage() {
 
   return (
     <main className="blog-main" style={{ paddingTop: 80 }}>
+      <Breadcrumbs trail={[{ name: "Blog", path: "/blog" }]} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(listLd) }}

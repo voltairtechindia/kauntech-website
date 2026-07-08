@@ -12,6 +12,7 @@ const productLinks = [
   { href: "/how-it-works", label: "How It Works", icon: "fa-circle-nodes", desc: "Capture, enrich & automate in 30s" },
   { href: "/compare", label: "Compare", icon: "fa-scale-balanced", desc: "Kauntech vs. other scanners" },
   { href: "/compliance", label: "DPDP Compliance", icon: "fa-shield-halved", desc: "Built for India's DPDP Act 2023" },
+  { href: "/faq", label: "FAQ", icon: "fa-circle-question", desc: "Offline, DPDP, K-Tokens & pricing answered" },
 ];
 
 const mainLinks = [

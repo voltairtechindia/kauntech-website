@@ -841,12 +841,13 @@ section {
   border: 1px solid rgba(249, 115, 22, 0.2);
 }
 
+.section-header h1,
 .section-header h2 {
   font-size: clamp(1.9rem, 5.2vw, 3rem);
-  font-weight: 800; 
-  letter-spacing: -1px; 
-  margin-bottom: 20px; 
-  line-height: 1.18; 
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 20px;
+  line-height: 1.18;
 }
 
 .section-header p { 
@@ -1772,11 +1773,42 @@ section {
   transition: max-height 0.4s ease; 
 }
 
-.faq-answer-inner { 
-  padding: 0 28px 24px; 
-  font-size: 0.95rem; 
-  color: var(--text-dim); 
-  line-height: 1.75; 
+.faq-answer-inner {
+  padding: 0 28px 24px;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  line-height: 1.75;
+}
+
+/* Question is an <h3> for hierarchy but must look like the button label. */
+.faq-question .faq-q {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: inherit;
+  margin: 0;
+}
+
+/* "See all FAQs" link under the homepage teaser. */
+.faq-see-all {
+  text-align: center;
+  margin-top: 36px;
+}
+.faq-see-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gold);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 12px 24px;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  border-radius: 50px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.faq-see-all-link:hover {
+  background: var(--gold-dim);
+  transform: translateY(-2px);
 }
 
 /* ===== CTA BANNER ===== */

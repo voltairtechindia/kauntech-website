@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Compare from "@/components/sections/Compare";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export const metadata: Metadata = {
 export default function ComparePage() {
   return (
     <main style={{ paddingTop: 80 }}>
+      <Breadcrumbs trail={[{ name: "Compare", path: "/compare" }]} />
       <Compare />
     </main>
   );

@@ -159,7 +159,9 @@ export default function Hero() {
                     filter: "drop-shadow(0 0 20px rgba(249, 115, 22, 0.4))",
                   }}
                 />
-                <h2
+                {/* Decorative brand lockup inside the phone mockup — not a
+                    document heading, so it's a styled <span>, not an <h2>. */}
+                <span
                   style={{
                     fontSize: "1.8rem",
                     fontWeight: 900,
@@ -168,7 +170,7 @@ export default function Hero() {
                   }}
                 >
                   KAUNTECH
-                </h2>
+                </span>
               </div>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import Workflow from "@/components/sections/Workflow";
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ const howToLd = {
 export default function HowItWorksPage() {
   return (
     <main style={{ paddingTop: 80 }}>
+      <Breadcrumbs trail={[{ name: "How It Works", path: "/how-it-works" }]} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(howToLd) }}

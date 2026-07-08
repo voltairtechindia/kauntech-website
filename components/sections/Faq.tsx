@@ -1,95 +1,65 @@
-"use client";
+import Link from "next/link";
 
-import { useRef, useState } from "react";
+import { getFaqPairs } from "@/lib/faq/db";
+import { buildFaqLd } from "@/lib/faq/ld";
 
-type QA = { q: string; a: string };
+import FaqAccordion from "./FaqAccordion";
 
-// Grounded strictly in live product facts — no regional-language claims (Coming Soon).
-const FAQS: QA[] = [
-  {
-    q: "What is Kauntech?",
-    a: "Kauntech is an AI-powered business card scanner for Android and iOS with offline-first scanning. It uses on-device OCR to read visiting cards, enriches contacts with AI, and routes leads to your CRM, Google Sheets, or WhatsApp — in under 30 seconds. Cloud backup is optional and you choose what syncs.",
-  },
-  {
-    q: "Does Kauntech work without internet?",
-    a: "Yes. Kauntech is built offline-first — scanning, processing, and saving contacts all work with zero internet connection. A brief connection is only needed when you choose to sync to a CRM or run AI enrichment.",
-  },
-  {
-    q: "Is Kauntech DPDP Act 2023 compliant?",
-    a: "Yes. All card processing happens on your device and your scanned contacts are never uploaded to Kauntech's servers, satisfying the DPDP Act 2023 principle of data minimisation by design.",
-  },
-  {
-    q: "Where is my scanned contact data stored?",
-    a: "On your device only, in AES-256 encrypted local storage. We do not save or store your scanned images or contact details on our servers.",
-  },
-  {
-    q: "What is a K-Token?",
-    a: "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features such as AI Intel enrichment, AI Fix, and AI Strategy, and are only consumed when you actively use an AI feature.",
-  },
-  {
-    q: "How much does Kauntech cost?",
-    a: "Kauntech offers a free plan with 49 scans and 100 K-Tokens per month. Paid plans are Pro at ₹499/month and Ultra at ₹1,299/month, plus a Custom plan for enterprises. Annual billing is discounted (Pro ₹399/mo, Ultra ₹999/mo on annual).",
-  },
-];
+/**
+ * Marketing FAQ section (server component). Reads the Q&A from the DB-backed
+ * `site_faqs` table (admin-editable, falls back to a built-in set), renders the
+ * accordion, and — only when `showSchema` is set — emits the FAQPage JSON-LD.
+ *
+ * The canonical FAQPage schema lives on the dedicated /faq page (showSchema),
+ * so the homepage renders a short teaser (limit + seeAllHref) WITHOUT schema to
+ * avoid duplicate FAQPage structured data on two indexable URLs.
+ */
+export default async function Faq({
+  limit,
+  showSchema = false,
+  headingLevel = 2,
+  eyebrow = "Questions Answered",
+  heading = "Frequently Asked Questions",
+  subtitle = "Everything about offline scanning, K-Tokens, DPDP compliance, and pricing.",
+  seeAllHref,
+}: {
+  limit?: number;
+  showSchema?: boolean;
+  headingLevel?: 1 | 2;
+  eyebrow?: string;
+  heading?: string;
+  subtitle?: string;
+  seeAllHref?: string;
+} = {}) {
+  const faqs = await getFaqPairs(limit);
+  const faqLd = showSchema ? buildFaqLd(faqs) : null;
+  const Heading = headingLevel === 1 ? "h1" : "h2";
 
-const faqLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQS.map(({ q, a }) => ({
-    "@type": "Question",
-    name: q,
-    acceptedAnswer: { "@type": "Answer", text: a },
-  })),
-};
-
-function FaqItem({ q, a }: QA) {
-  const [open, setOpen] = useState(false);
-  const innerRef = useRef<HTMLDivElement>(null);
-
-  return (
-    <div className={`faq-item${open ? " active" : ""}`}>
-      <button
-        type="button"
-        className="faq-question"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span>{q}</span>
-        <span className="faq-toggle" aria-hidden="true">
-          +
-        </span>
-      </button>
-      <div
-        className="faq-answer"
-        style={{ maxHeight: open ? innerRef.current?.scrollHeight ?? 400 : 0 }}
-      >
-        <div className="faq-answer-inner" ref={innerRef}>
-          {a}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function Faq() {
   return (
     <section id="faq">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
-      />
+      {faqLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
+      )}
       <div className="container">
         <div className="section-header reveal">
-          <span className="section-label">Questions Answered</span>
-          <h2>Frequently Asked Questions</h2>
-          <p>Everything about offline scanning, K-Tokens, DPDP compliance, and pricing.</p>
+          <span className="section-label">{eyebrow}</span>
+          <Heading>{heading}</Heading>
+          <p>{subtitle}</p>
         </div>
 
-        <div className="faq-list reveal reveal-delay-1">
-          {FAQS.map((item) => (
-            <FaqItem key={item.q} {...item} />
-          ))}
-        </div>
+        <FaqAccordion faqs={faqs} />
+
+        {seeAllHref && (
+          <div className="faq-see-all reveal">
+            <Link href={seeAllHref} className="faq-see-all-link">
+              See all frequently asked questions
+              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

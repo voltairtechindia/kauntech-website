@@ -31,7 +31,8 @@ const HEADER = `# Kauntech
 - [Pricing](${SITE_URL}/pricing): Plans and what's included.
 - [Compare](${SITE_URL}/compare): How Kauntech stacks up against other scanners.
 - [Compliance](${SITE_URL}/compliance): DPDP Act 2023 and on-device data handling.
-- [Help](${SITE_URL}/help): Support and common questions.
+- [FAQ](${SITE_URL}/faq): Answers on offline scanning, DPDP compliance, data storage, K-Tokens, and pricing.
+- [Help](${SITE_URL}/help): Auto-sync setup guide (webhook & Google Sheets).
 - [Contact](${SITE_URL}/contact): Get in touch with the team.`;
 
 const FOOTER = `## Policies

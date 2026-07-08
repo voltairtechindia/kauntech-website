@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import Breadcrumbs from "@/components/Breadcrumbs";
 import BlogMedia from "@/components/BlogMedia";
 import Markdown from "@/components/Markdown";
 import {
@@ -110,6 +111,12 @@ export default async function BlogPostPage({
 
   return (
     <main className="blog-main blog-article" style={{ paddingTop: 80 }}>
+      <Breadcrumbs
+        trail={[
+          { name: "Blog", path: "/blog" },
+          { name: post.title, path: `/blog/${post.slug}` },
+        ]}
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}

@@ -28,11 +28,11 @@ const firaCode = Fira_Code({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "AI Business Card Scanner — Offline & DPDP Compliant | Kauntech",
+    default: "Offline AI Card Scanner – DPDP Safe | Kauntech",
     template: "%s | Kauntech",
   },
   description:
-    "Kauntech is India's offline-first AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant — scanning runs on your device and cloud backup is optional, so you choose what syncs.",
+    "Kauntech is India's offline AI business card scanner. Scan, enrich & sync contacts in 30 seconds. DPDP Act 2023 compliant — your data stays on-device.",
   keywords: [
     "offline business card scanner India",
     "AI visiting card scanner",
@@ -112,12 +112,54 @@ const organizationLd = {
     "@type": "Place",
     name: "Mumbai, India",
   },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Mumbai",
+    addressRegion: "Maharashtra",
+    addressCountry: "IN",
+  },
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    email: "business@voltairtech.com",
+    areaServed: "IN",
+    availableLanguage: ["en", "hi"],
+  },
   sameAs: [
     "https://www.linkedin.com/company/120934522/",
     "https://www.facebook.com/profile.php?id=61589123915607",
     "https://www.instagram.com/kauntech/",
     "https://kauntech.quora.com/",
     "https://discord.gg/AVYMsrhk",
+  ],
+};
+
+// Local entity for "Mumbai / India" local-SEO signals. Street address + a real
+// public phone are intentionally omitted (the +91 98765 43210 seen in the app
+// demo is a placeholder, not a support line) — add both here once available.
+const localBusinessLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  name: "Kauntech",
+  url: SITE_URL + "/",
+  logo: SITE_URL + "/assets/logo-gold.png",
+  image: SITE_URL + "/assets/logo-gold.png",
+  email: "business@voltairtech.com",
+  priceRange: "₹₹",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Mumbai",
+    addressRegion: "Maharashtra",
+    addressCountry: "IN",
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "India",
+  },
+  sameAs: [
+    "https://www.linkedin.com/company/120934522/",
+    "https://www.facebook.com/profile.php?id=61589123915607",
+    "https://www.instagram.com/kauntech/",
   ],
 };
 
@@ -161,6 +203,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessLd) }}
         />
         <script
           type="application/ld+json"

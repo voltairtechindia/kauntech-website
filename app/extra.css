@@ -1306,3 +1306,424 @@
     font-size: 16px;
   }
 }
+
+/* ====== Home overview + internal-link hub (SEO/AEO) ====== */
+.home-overview .container {
+  max-width: 900px;
+}
+.overview-answers {
+  display: grid;
+  gap: 44px;
+}
+.overview-answers h2 {
+  font-size: clamp(1.4rem, 3.6vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+  margin-bottom: 14px;
+}
+.overview-answers p {
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  line-height: 1.75;
+  max-width: 780px;
+}
+.overview-explore {
+  margin-top: 64px;
+  padding-top: 48px;
+  border-top: 1px solid var(--border);
+}
+.overview-explore h2 {
+  font-size: clamp(1.3rem, 3vw, 1.75rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
+}
+.overview-explore ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+.overview-explore a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.overview-explore a::before {
+  content: "→";
+  color: var(--gold);
+  font-weight: 700;
+}
+.overview-explore a:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+
+/* ====== Home highlights (why Kauntech — H2 + H3 cards) ====== */
+.home-highlights {
+  padding: 40px 0 8px;
+}
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.highlight-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.highlight-card:hover {
+  border-color: rgba(249, 115, 22, 0.4);
+  transform: translateY(-4px);
+}
+.highlight-icon {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--gold-dim);
+  color: var(--gold);
+  font-size: 1.4rem;
+  margin-bottom: 20px;
+}
+.highlight-card h3 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  margin-bottom: 12px;
+}
+.highlight-card p {
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* ===================================================================== */
+/* Kauntech vs X — comparison hub cards (/compare) + vs pages (/compare/<slug>) */
+/* ===================================================================== */
+
+/* --- Hub: "Detailed comparisons" cards on /compare --- */
+.detailed-compare {
+  margin-top: 72px;
+}
+.detailed-compare h2 {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-align: center;
+  margin-bottom: 12px;
+}
+.detailed-compare-sub {
+  color: var(--text-dim);
+  text-align: center;
+  max-width: 620px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+.detailed-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.detailed-compare-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: transform 0.25s ease, border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.detailed-compare-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(249, 115, 22, 0.4);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+.detailed-compare-vs {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.detailed-compare-x {
+  font-family: var(--mono);
+  color: var(--gold);
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+.detailed-compare-card p {
+  color: var(--text-dim);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  flex: 1;
+}
+.detailed-compare-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.detailed-compare-card:hover .detailed-compare-cta i {
+  transform: translateX(4px);
+}
+.detailed-compare-cta i {
+  transition: transform 0.25s ease;
+}
+
+/* --- vs page layout --- */
+.vs-container {
+  max-width: 900px;
+  padding-top: 32px;
+  padding-bottom: 96px;
+}
+.vs-hero {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.vs-hero h1 {
+  font-size: clamp(2rem, 5.5vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  margin: 16px 0 16px;
+}
+.vs-oneliner {
+  color: var(--gold);
+  font-size: 1.1rem;
+  font-weight: 600;
+  max-width: 640px;
+  margin: 0 auto 20px;
+}
+.vs-intro {
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  line-height: 1.75;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.vs-block {
+  margin-top: 56px;
+}
+.vs-h2 {
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 24px;
+}
+
+/* --- vs comparison table --- */
+.vs-table-wrap {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-x: auto;
+  background: var(--bg-card);
+}
+.vs-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 640px;
+}
+.vs-table th,
+.vs-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+  vertical-align: top;
+  line-height: 1.55;
+}
+.vs-table tr:last-child th,
+.vs-table tr:last-child td {
+  border-bottom: none;
+}
+.vs-table thead th {
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 1rem;
+}
+.vs-table tbody th[scope="row"] {
+  font-weight: 600;
+  color: var(--text);
+  width: 24%;
+  min-width: 150px;
+}
+.vs-table td {
+  color: var(--text-dim);
+}
+.vs-table .vs-table-kauntech {
+  color: var(--text);
+  background: rgba(249, 115, 22, 0.05);
+}
+.vs-table thead .vs-table-kauntech {
+  color: var(--gold);
+}
+.vs-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  color: #34d399;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+/* --- Why teams choose Kauntech (wins list) --- */
+.vs-wins {
+  list-style: none;
+  display: grid;
+  gap: 14px;
+  padding: 0;
+  margin: 0;
+}
+.vs-wins li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  line-height: 1.6;
+}
+.vs-wins .vs-check {
+  margin-top: 3px;
+}
+
+/* --- Where competitor is strong (honest paragraph) --- */
+.vs-strong {
+  padding: 24px 28px;
+  background: rgba(129, 140, 248, 0.06);
+  border: 1px solid rgba(129, 140, 248, 0.2);
+  border-radius: var(--radius);
+}
+.vs-strong p {
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1.75;
+  margin: 0;
+}
+
+/* --- CTA block --- */
+.vs-cta {
+  margin-top: 64px;
+  text-align: center;
+  padding: 44px 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.vs-cta-title {
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
+}
+.vs-cta p {
+  color: var(--text-dim);
+  max-width: 520px;
+  margin: 0 auto 28px;
+  line-height: 1.7;
+}
+
+/* --- FAQ accordion --- */
+.vs-faq {
+  display: grid;
+  gap: 12px;
+}
+.vs-faq-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px 20px;
+}
+.vs-faq-item summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 16px 0;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.vs-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.vs-faq-item summary::after {
+  content: "+";
+  color: var(--gold);
+  font-size: 1.3rem;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.vs-faq-item[open] summary::after {
+  transform: rotate(45deg);
+}
+.vs-faq-item p {
+  color: var(--text-dim);
+  line-height: 1.7;
+  padding: 0 0 16px;
+  margin: 0;
+}
+
+/* --- Other comparisons nav --- */
+.vs-more {
+  margin-top: 56px;
+  padding-top: 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+.vs-more-label {
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+.vs-more a {
+  color: var(--gold);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.vs-more a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .detailed-compare-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

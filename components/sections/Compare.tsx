@@ -1,3 +1,7 @@
+import Link from "next/link";
+
+import { competitors } from "@/lib/compare/competitors";
+
 type Cell = "yes" | "no" | string;
 
 const rows: { feature: string; cells: Cell[] }[] = [
@@ -37,7 +41,7 @@ export default function Compare() {
       <div className="container">
         <div className="section-header reveal">
           <span className="section-label">Market Leaders</span>
-          <h2>Why Kauntech Stands Apart</h2>
+          <h1>Why Kauntech Stands Apart</h1>
           <p>
             Competition makes us strong. Here is how our offline-first architecture compares to top
             Indian market alternatives.
@@ -70,6 +74,31 @@ export default function Compare() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="detailed-compare reveal">
+          <h2>Detailed comparisons</h2>
+          <p className="detailed-compare-sub">
+            Go deeper on how Kauntech stacks up against specific alternatives —
+            privacy, offline OCR, platforms and lead routing.
+          </p>
+          <div className="detailed-compare-grid">
+            {competitors.map((c) => (
+              <Link
+                key={c.slug}
+                href={`/compare/${c.slug}`}
+                className="detailed-compare-card"
+              >
+                <span className="detailed-compare-vs">
+                  Kauntech <span className="detailed-compare-x">vs</span> {c.name}
+                </span>
+                <p>{c.oneLiner}</p>
+                <span className="detailed-compare-cta">
+                  Compare <i className="fa-solid fa-arrow-right" />
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>
