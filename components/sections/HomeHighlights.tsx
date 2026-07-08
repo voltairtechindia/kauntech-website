@@ -6,7 +6,7 @@
  */
 const HIGHLIGHTS: { icon: string; title: string; body: string }[] = [
   {
-    icon: "fa-solid fa-wifi",
+    icon: "fa-solid fa-microchip",
     title: "100% Offline OCR",
     body: "Scan and read business cards with zero internet — the OCR engine runs entirely on your device, so it works on the exhibition floor or a basement conference hall.",
   },
@@ -21,7 +21,7 @@ const HIGHLIGHTS: { icon: string; title: string; body: string }[] = [
     body: "Capture, enrich, and push a qualified lead to your CRM, Google Sheets, or WhatsApp in under 30 seconds — no manual typing, no data re-entry.",
   },
   {
-    icon: "fa-solid fa-wand-magic-sparkles",
+    icon: "fa-solid fa-brain",
     title: "AI Contact Enrichment",
     body: "On-device AI — AI Intel, AI Fix, and AI Strategy — fills missing fields, cleans formatting, and scores every lead, powered by K-Tokens you only spend when you use them.",
   },
