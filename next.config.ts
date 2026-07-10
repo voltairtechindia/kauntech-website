@@ -79,7 +79,7 @@ const buildCsp = (allowEval: boolean) =>
     // SUPABASE_ORIGIN is the site project, home of the public `ar-gallery` bucket
     // (curated 3D models). three.js / a-gltf-model fetch those .glb files here, so
     // it must be in connect-src for both the editor previews and the WebAR viewer.
-    `connect-src 'self' blob: data: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} ${GTM_ORIGIN} ${GA_ENDPOINTS} ${GADS_ENDPOINTS} https://script.google.com https://script.googleusercontent.com`,
+    `connect-src 'self' blob: data: ${SUPABASE_ORIGIN} ${APP_SUPABASE_ORIGIN} ${MODEL_VIEWER_CDN} ${VERCEL_ANALYTICS} ${GTM_ORIGIN} ${GA_ENDPOINTS} ${GADS_ENDPOINTS}`,
     "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com",
     // jsDelivr added for the 8th Wall engine binary: it spins up camera/CV/SLAM
     // workers loaded from the same CDN as its xr.js, so they must be allowed here

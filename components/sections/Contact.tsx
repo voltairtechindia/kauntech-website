@@ -1,10 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbztbMN_DrSEfxk7F6gljRxpYBp7qhkybE0on_Jfc5JvtIAg7ymdZCDVHVd3Szm3pPj0/exec";
 
 // Handshake with /contact/thank-you: the conversion only fires when this flag is
 // present, so a refresh or a direct visit to the thank-you URL can't inflate leads.
@@ -17,6 +14,11 @@ export default function Contact() {
   const [canSubmit, setCanSubmit] = useState(false);
   const [error, setError] = useState("");
 
+  // The thank-you page is static: warm it so the post-submit hop is instant.
+  useEffect(() => {
+    router.prefetch("/contact/thank-you");
+  }, [router]);
+
   // Gate the button on native validity: every required field filled, email/phone
   // well-formed. Recomputed on any input/change (covers autofill + paste).
   const syncValidity = () => setCanSubmit(!!formRef.current?.checkValidity());
@@ -28,7 +30,8 @@ export default function Contact() {
     setError("");
     const data = new FormData(form);
 
-    // Canonical store: Supabase via our own API route (returns real success).
+    // Supabase via our own API route — the single store. Inquiries are read back
+    // in kauntech-admin (lib/inquiries.ts).
     let ok = false;
     let detail = "";
     try {
@@ -52,13 +55,6 @@ export default function Contact() {
         } | null;
         if (j && typeof j.detail === "string") detail = j.detail;
       }
-    } catch (err) {
-      console.error(err);
-    }
-
-    // Best-effort mirror to the existing Google Sheet (fire-and-forget).
-    try {
-      await fetch(SCRIPT_URL, { method: "POST", body: data, mode: "no-cors" });
     } catch (err) {
       console.error(err);
     }
@@ -184,6 +180,7 @@ export default function Contact() {
                   name="Name"
                   placeholder="Priya Sharma"
                   autoComplete="name"
+                  maxLength={200}
                   required
                   className="contact-field"
                 />
@@ -198,6 +195,7 @@ export default function Contact() {
                   name="Company"
                   placeholder="Acme Logistics Pvt. Ltd."
                   autoComplete="organization"
+                  maxLength={200}
                   required
                   className="contact-field"
                 />
@@ -215,6 +213,7 @@ export default function Contact() {
                   name="Phone"
                   placeholder="+91 90000 12345"
                   autoComplete="tel"
+                  maxLength={50}
                   required
                   className="contact-field"
                 />
@@ -229,6 +228,7 @@ export default function Contact() {
                   name="Email"
                   placeholder="priya@acmelogistics.in"
                   autoComplete="email"
+                  maxLength={320}
                   required
                   className="contact-field"
                 />
@@ -244,6 +244,7 @@ export default function Contact() {
                 name="Message"
                 rows={4}
                 placeholder="e.g. We're a 20-person sales team scanning ~200 cards a month and want a demo."
+                maxLength={5000}
                 required
                 className="contact-field"
                 style={{ resize: "vertical" }}
