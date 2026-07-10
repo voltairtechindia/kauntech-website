@@ -416,6 +416,34 @@
   font-weight: 700;
 }
 
+/* Invalid field: red rim + matching focus ring, overriding the gold default. */
+.contact-field[aria-invalid="true"] {
+  border-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.05);
+}
+.contact-field[aria-invalid="true"]:focus {
+  border-color: #f87171;
+  background: rgba(239, 68, 68, 0.07);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+/* `.cta-box p` in globals.css sets a dim 1.2rem / 40px-margin body style and
+   out-specifies a bare class, so both of these must be scoped to .cta-box. */
+.cta-box .field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  max-width: none;
+  color: #f87171;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  text-align: left;
+}
+.cta-box .field-error i {
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
 .contact-submit {
   align-self: center;
   padding: 16px 44px;
@@ -432,11 +460,11 @@
   background: var(--gradient);
 }
 
-.contact-note {
+.cta-box .contact-note {
   text-align: center;
   color: var(--text-dim);
   font-size: 0.85rem;
-  margin: 0;
+  margin: 0 auto;
 }
 
 .contact-error {

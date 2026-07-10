@@ -1,17 +1,62 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Handshake with /contact/thank-you: the conversion only fires when this flag is
 // present, so a refresh or a direct visit to the thank-you URL can't inflate leads.
 export const LEAD_FLAG = "kt_lead_submitted";
 
+type FieldName = "Name" | "Company" | "Phone" | "Email" | "Message";
+const FIELDS: FieldName[] = ["Name", "Company", "Phone", "Email", "Message"];
+
+const REQUIRED: Record<FieldName, string> = {
+  Name: "Please tell us your name.",
+  Company: "Please add your company name.",
+  Phone: "Please add a phone number we can reach you on.",
+  Email: "Please add your work email.",
+  Message: "Please tell us what you need help with.",
+};
+
+// Mirrors the server's EMAIL_RE (app/api/contact/route.ts) but also insists on a
+// dotted TLD — the browser's own type="email" check happily accepts "a@b".
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+const PHONE_CHARS_RE = /^[+\d][\d\s().-]*$/;
+
+/** "" when the field is good; otherwise the message to show under it. */
+function validateField(name: FieldName, raw: string): string {
+  const value = raw.trim();
+  if (!value) return REQUIRED[name];
+
+  if (name === "Email" && !EMAIL_RE.test(value)) {
+    return "That doesn't look like an email address. Example: priya@acmelogistics.in";
+  }
+  if (name === "Phone") {
+    if (!PHONE_CHARS_RE.test(value)) {
+      return "Use only digits, spaces and + ( ) - in a phone number.";
+    }
+    const digits = (value.match(/\d/g) ?? []).length;
+    if (digits < 7 || digits > 15) {
+      return "That phone number doesn't look right. Example: +91 90000 12345";
+    }
+  }
+  if (name === "Message" && value.length < 5) {
+    return "Tell us a little more so we can reply properly.";
+  }
+  return "";
+}
+
 export default function Contact() {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [canSubmit, setCanSubmit] = useState(false);
+  // Seed with the "empty" verdict so the first server render agrees with the
+  // first client render (an untouched form is exactly five missing fields).
+  const [problems, setProblems] = useState<Partial<Record<FieldName, string>>>(
+    () => ({ ...REQUIRED })
+  );
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
   const [error, setError] = useState("");
 
   // The thank-you page is static: warm it so the post-submit hop is instant.
@@ -19,9 +64,36 @@ export default function Contact() {
     router.prefetch("/contact/thank-you");
   }, [router]);
 
-  // Gate the button on native validity: every required field filled, email/phone
-  // well-formed. Recomputed on any input/change (covers autofill + paste).
-  const syncValidity = () => setCanSubmit(!!formRef.current?.checkValidity());
+  // Re-validate every field, push each verdict into the element's own validity via
+  // setCustomValidity (so form.checkValidity() — and the button — agree with the
+  // messages we render), and recompute whether the form can be submitted.
+  const syncValidity = useCallback(() => {
+    const form = formRef.current;
+    if (!form) return;
+    const next: Partial<Record<FieldName, string>> = {};
+    for (const name of FIELDS) {
+      const el = form.elements.namedItem(name) as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | null;
+      if (!el) continue;
+      const msg = validateField(name, el.value);
+      el.setCustomValidity(msg);
+      next[name] = msg;
+    }
+    setProblems(next);
+    setCanSubmit(form.checkValidity());
+  }, []);
+
+  // Autofill and back-forward restore don't fire input events; check once on mount.
+  useEffect(() => syncValidity(), [syncValidity]);
+
+  // Only complain about a field once the user has left it — no yelling mid-type.
+  const handleBlur = (e: React.FocusEvent<HTMLFormElement>) => {
+    // React types e.target as the form; the real target is whichever control blurred.
+    const name = (e.target as unknown as { name?: string }).name as FieldName;
+    if (FIELDS.includes(name)) setTouched((t) => ({ ...t, [name]: true }));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -78,6 +150,37 @@ export default function Contact() {
     setSubmitting(false);
   };
 
+  const shown = (name: FieldName) => (touched[name] ? problems[name] ?? "" : "");
+  const fieldProps = (name: FieldName, id: string) => ({
+    name,
+    id,
+    className: "contact-field",
+    required: true,
+    "aria-invalid": shown(name) ? true : undefined,
+    "aria-describedby": shown(name) ? `${id}-err` : undefined,
+  });
+
+  const fieldError = (name: FieldName, id: string) => {
+    const msg = shown(name);
+    if (!msg) return null;
+    return (
+      <p className="field-error" id={`${id}-err`}>
+        <i className="fa-solid fa-circle-exclamation" />
+        <span>{msg}</span>
+      </p>
+    );
+  };
+
+  // Hint under the button. If they've filled everything but something is
+  // malformed, say so — never leave a dead button unexplained.
+  const anyShownProblem = FIELDS.some((n) => shown(n));
+  const allFilled = FIELDS.every((n) => problems[n] !== REQUIRED[n]);
+  const hint = canSubmit
+    ? "We only use these details to reply to you. No spam, ever."
+    : anyShownProblem || allFilled
+      ? "Please fix the highlighted fields above."
+      : "Fill in all five fields to send your message.";
+
   const labelStyle = {
     fontSize: "0.9rem",
     fontWeight: 600,
@@ -88,6 +191,7 @@ export default function Contact() {
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
     gap: 20,
   } as const;
+  const cellStyle = { display: "flex", flexDirection: "column", gap: 8 } as const;
 
   return (
     <section className="cta-banner" id="contact">
@@ -145,6 +249,8 @@ export default function Contact() {
             onSubmit={handleSubmit}
             onInput={syncValidity}
             onChange={syncValidity}
+            onBlur={handleBlur}
+            noValidate
             style={{
               display: "flex",
               flexDirection: "column",
@@ -170,85 +276,77 @@ export default function Contact() {
             />
 
             <div style={rowStyle}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={cellStyle}>
                 <label htmlFor="cName" style={labelStyle}>
                   Your name
                 </label>
                 <input
                   type="text"
-                  id="cName"
-                  name="Name"
                   placeholder="Priya Sharma"
                   autoComplete="name"
                   maxLength={200}
-                  required
-                  className="contact-field"
+                  {...fieldProps("Name", "cName")}
                 />
+                {fieldError("Name", "cName")}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={cellStyle}>
                 <label htmlFor="cCompany" style={labelStyle}>
                   Company
                 </label>
                 <input
                   type="text"
-                  id="cCompany"
-                  name="Company"
                   placeholder="Acme Logistics Pvt. Ltd."
                   autoComplete="organization"
                   maxLength={200}
-                  required
-                  className="contact-field"
+                  {...fieldProps("Company", "cCompany")}
                 />
+                {fieldError("Company", "cCompany")}
               </div>
             </div>
 
             <div style={rowStyle}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={cellStyle}>
                 <label htmlFor="cPhone" style={labelStyle}>
                   Phone
                 </label>
                 <input
                   type="tel"
-                  id="cPhone"
-                  name="Phone"
+                  inputMode="tel"
                   placeholder="+91 90000 12345"
                   autoComplete="tel"
                   maxLength={50}
-                  required
-                  className="contact-field"
+                  {...fieldProps("Phone", "cPhone")}
                 />
+                {fieldError("Phone", "cPhone")}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={cellStyle}>
                 <label htmlFor="cEmail" style={labelStyle}>
                   Work email
                 </label>
                 <input
                   type="email"
-                  id="cEmail"
-                  name="Email"
+                  inputMode="email"
                   placeholder="priya@acmelogistics.in"
                   autoComplete="email"
                   maxLength={320}
-                  required
-                  className="contact-field"
+                  {...fieldProps("Email", "cEmail")}
                 />
+                {fieldError("Email", "cEmail")}
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={cellStyle}>
               <label htmlFor="cMessage" style={labelStyle}>
                 What do you need help with?
               </label>
               <textarea
-                id="cMessage"
-                name="Message"
                 rows={4}
                 placeholder="e.g. We're a 20-person sales team scanning ~200 cards a month and want a demo."
                 maxLength={5000}
-                required
-                className="contact-field"
                 style={{ resize: "vertical" }}
+                {...fieldProps("Message", "cMessage")}
               />
+              {fieldError("Message", "cMessage")}
             </div>
 
             <button
@@ -260,11 +358,7 @@ export default function Contact() {
               <i className={submitting ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-paper-plane"} />
             </button>
 
-            <p className="contact-note">
-              {canSubmit || submitting
-                ? "We only use these details to reply to you. No spam, ever."
-                : "Fill in all five fields to send your message."}
-            </p>
+            <p className="contact-note">{hint}</p>
 
             {error && (
               <div role="alert" aria-live="assertive" className="contact-error">
