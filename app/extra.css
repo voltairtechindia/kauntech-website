@@ -379,11 +379,129 @@
   box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.18);
 }
 
-/* Home "Get in Touch" heading — fluid so it never overflows on small phones. */
+/* Contact heading — fluid so it never overflows on small phones. */
 .contact-heading {
   font-size: clamp(1.6rem, 5vw, 2.4rem);
   font-weight: 900;
   margin: 0;
+}
+
+/* "What this form is for" list, above the fields. */
+.contact-uses {
+  list-style: none;
+  margin: 0 auto 36px;
+  padding: 0;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+}
+.contact-uses li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-dim);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+.contact-uses i {
+  color: var(--gold);
+  font-size: 0.95rem;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.contact-uses strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.contact-submit {
+  align-self: center;
+  padding: 16px 44px;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+/* Submit stays inert until every required field is valid. */
+.btn-primary:disabled,
+.btn-primary:disabled:hover {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  background: var(--gradient);
+}
+
+.contact-note {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.contact-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #f87171;
+}
+
+/* ========================= Contact thank-you ========================= */
+.thankyou-icon {
+  font-size: 3rem;
+  color: #4ade80;
+}
+.thankyou-next {
+  text-align: left;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.thankyou-next > p {
+  color: var(--text);
+  font-weight: 700;
+  margin: 0 0 14px;
+}
+.thankyou-next ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.thankyou-next li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+.thankyou-next i {
+  color: var(--gold);
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+.thankyou-next a,
+.cta-box a[href^="mailto:"] {
+  color: var(--gold);
+  font-weight: 600;
+}
+.thankyou-next a:hover,
+.cta-box a[href^="mailto:"]:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+  .contact-submit {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ============================ Careers ============================ */
