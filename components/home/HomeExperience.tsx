@@ -7,6 +7,7 @@ import StoreBadges from "@/components/sections/StoreBadges";
 import CssPhone from "@/components/phone/CssPhone";
 import { PHONE_SCREENS, CardScreen } from "@/components/phone/Screens";
 import type { PhoneSceneState } from "@/components/phone/PhoneCanvas";
+import { TEXT_OUT_AT, TEXT_OUT_DUR, TEXT_IN_DUR, FLIP_AT } from "@/components/phone/flight";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/motion/gsapSetup";
 
 const PhoneCanvas = dynamic(() => import("@/components/phone/PhoneCanvas"), { ssr: false });
@@ -112,7 +113,9 @@ const CHAPTERS: Chapter[] = [
   },
 ];
 
-const STORY_UNITS = CHAPTERS.length; // timeline units (last unit = dwell on final chapter)
+const SEGMENTS = CHAPTERS.length - 1; // phone flights between chapters
+const STORY_TAIL = 0.5; // dwell on the last chapter before the stage unpins (in units)
+const STORY_SPAN = SEGMENTS + STORY_TAIL; // total timeline length, 1 unit ≈ 100vh
 
 export default function HomeExperience() {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -121,7 +124,7 @@ export default function HomeExperience() {
   const storyRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
-  const sceneState = useRef<PhoneSceneState>({ pos: 0, pointer: { x: 0, y: 0 } });
+  const sceneState = useRef<PhoneSceneState>({ pos: 0, exit: 0, pointer: { x: 0, y: 0 } });
   const chapterRef = useRef(0);
   const [chapter, setChapter] = useState(0);
   const [canvasOn, setCanvasOn] = useState(false); // capability gate (desktop + webgl + motion ok)
@@ -184,6 +187,12 @@ export default function HomeExperience() {
         });
 
         /* ---- hero scroll: phone drifts toward chapter 1, copy parallaxes away ---- */
+        const applyChapter = (c: number) => {
+          if (c !== chapterRef.current) {
+            chapterRef.current = c;
+            setChapter(c);
+          }
+        };
         ScrollTrigger.create({
           trigger: heroRef.current,
           start: "top top",
@@ -191,6 +200,8 @@ export default function HomeExperience() {
           scrub: true,
           onUpdate: (self) => {
             sceneState.current.pos = self.progress;
+            // swap the screen exactly when the flight to chapter 1 goes edge-on
+            applyChapter(self.progress >= FLIP_AT ? 1 : 0);
           },
         });
         gsap.to(heroCopyRef.current, {
@@ -202,7 +213,7 @@ export default function HomeExperience() {
 
         /* ---- pinned story ---- */
         const texts = gsap.utils.toArray<HTMLElement>(".k-chapter", stageRef.current!);
-        gsap.set(texts, { autoAlpha: 0, y: 70 });
+        gsap.set(texts, { autoAlpha: 0, y: 60 });
         gsap.set(texts[0], { autoAlpha: 1, y: 0 });
 
         const tl = gsap.timeline({
@@ -210,27 +221,61 @@ export default function HomeExperience() {
           scrollTrigger: {
             trigger: stageRef.current,
             start: "top top",
-            end: `+=${STORY_UNITS * 100}%`,
+            end: `+=${STORY_SPAN * 100}%`,
             pin: true,
-            scrub: 0.9,
+            anticipatePin: 1,
+            scrub: 0.7,
+            // pause mid-story → glide to the nearest chapter's dwell, so the
+            // reader never rests on a half-finished transition
+            snap: {
+              snapTo: (value: number) => {
+                const seg = value * STORY_SPAN;
+                if (seg < 0.12 || seg > SEGMENTS + 0.32) return value; // entering/leaving — don't yank
+                const i = Math.min(Math.max(Math.round(seg - 0.25), 0), SEGMENTS);
+                return (i + 0.25) / STORY_SPAN;
+              },
+              duration: { min: 0.35, max: 0.9 },
+              delay: 0.12,
+              ease: "power3.inOut",
+            },
             onUpdate: (self) => {
-              const seg = Math.min(self.progress * STORY_UNITS, STORY_UNITS - 1);
+              const seg = Math.min(self.progress * STORY_SPAN, SEGMENTS);
               sceneState.current.pos = 1 + seg;
-              const c = 1 + Math.round(seg);
-              if (c !== chapterRef.current) {
-                chapterRef.current = c;
-                setChapter(c);
-              }
+              // screen/rail/glow swap at the edge-on flip point of the flight
+              applyChapter(1 + Math.floor(seg + (1 - FLIP_AT)));
             },
           },
         });
 
+        // Beat sheet per segment (see components/phone/flight.ts): the outgoing
+        // text is fully gone BEFORE the incoming one starts, and both are hidden
+        // while the phone crosses the middle — nothing ever overlaps.
         texts.forEach((el, i) => {
-          if (i > 0) tl.fromTo(el, { autoAlpha: 0, y: 70 }, { autoAlpha: 1, y: 0, duration: 0.4 }, i - 0.4);
-          if (i < texts.length - 1) tl.to(el, { autoAlpha: 0, y: -70, duration: 0.35, ease: "power2.in" }, i + 0.62);
+          if (i > 0) {
+            tl.fromTo(
+              el,
+              { autoAlpha: 0, y: 60 },
+              { autoAlpha: 1, y: 0, duration: TEXT_IN_DUR },
+              i - TEXT_IN_DUR,
+            );
+          }
+          if (i < texts.length - 1) {
+            tl.to(el, { autoAlpha: 0, y: -60, duration: TEXT_OUT_DUR, ease: "power2.in" }, i + TEXT_OUT_AT);
+          }
         });
         // keep the timeline the full length so the last chapter dwells
-        tl.to({}, { duration: 0.01 }, STORY_UNITS - 0.01);
+        tl.to({}, { duration: 0.01 }, STORY_SPAN - 0.01);
+
+        /* ---- story exit: the phone rides up and away with the unpinned stage ---- */
+        ScrollTrigger.create({
+          trigger: storyRef.current,
+          start: "bottom bottom",
+          end: "bottom 30%",
+          scrub: true,
+          onUpdate: (self) => {
+            sceneState.current.exit = self.progress;
+          },
+        });
 
         /* ---- canvas lifecycle: kill WebGL once the story is behind us ---- */
         ScrollTrigger.create({

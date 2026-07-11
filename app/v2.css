@@ -563,7 +563,10 @@ html.lenis body {
   position: absolute;
   top: 50%;
   translate: 0 -50%;
-  width: min(450px, 33vw);
+  /* % is relative to .k-stage-inner (max 1500px) — with the offsets below the
+     two columns can never meet in the middle, and both clear the phone's
+     rest poses (centered at 27% / 73% of the viewport) */
+  width: min(440px, 34%);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -571,11 +574,11 @@ html.lenis body {
   z-index: 2;
 }
 .k-chapter.side-l {
-  left: max(5.5vw, calc((100vw - 1360px) / 2));
+  left: clamp(24px, 4vw, 90px);
 }
 .k-chapter.side-r {
   /* extra clearance so copy never collides with the progress rail */
-  right: max(9vw, calc((100vw - 1360px) / 2 + 96px));
+  right: clamp(110px, 9vw, 170px);
 }
 
 .k-chapter p {

@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Html, Environment, Lightformer, useGLTF } from "@react-three/drei";
 import { PHONE_SCREENS } from "./Screens";
+import { FLIGHT_START, FLIGHT_END } from "./flight";
 
 /**
  * The 3D phone — a real iPhone 16 model (public/models/iphone16.glb, prepared
@@ -27,6 +28,8 @@ import { PHONE_SCREENS } from "./Screens";
 
 export type PhoneSceneState = {
   pos: number;
+  /** 0→1 as the story unpins — the phone rides up and away with the stage */
+  exit: number;
   pointer: { x: number; y: number };
 };
 
@@ -132,6 +135,7 @@ function PhoneRig({
   const group = useRef<THREE.Group>(null);
   const screenDom = useRef<HTMLDivElement>(null);
   const intro = useRef(0);
+  const booted = useRef(false);
   const phone = useKauntechPhone();
 
   useFrame((state, delta) => {
@@ -139,9 +143,23 @@ function PhoneRig({
     if (!g) return;
 
     const viewport = state.viewport.getCurrentViewport(state.camera, new THREE.Vector3(0, 0, 0));
-    const { pos, pointer } = sceneState.current;
+    const { pos, pointer, exit } = sceneState.current;
+    // mid-story (re)mount — e.g. scrolling back up into the story after the
+    // canvas was killed: skip the hero intro and snap straight to the pose
+    const midMount = !booted.current && pos > 0.5;
+    booted.current = true;
+    if (midMount) intro.current = 1;
+
     const i = Math.min(Math.floor(pos), POSES.length - 2);
-    const frac = smooth(THREE.MathUtils.clamp(pos - i, 0, 1));
+    // dwell on the pose while the chapter is read, then fly across during the
+    // text-swap gap — windows shared with the GSAP timeline via flight.ts
+    const frac = smooth(
+      THREE.MathUtils.clamp(
+        (THREE.MathUtils.clamp(pos - i, 0, 1) - FLIGHT_START) / (FLIGHT_END - FLIGHT_START),
+        0,
+        1,
+      ),
+    );
     const a = POSES[i];
     const b = POSES[Math.min(i + 1, POSES.length - 1)];
 
@@ -157,7 +175,8 @@ function PhoneRig({
     const targetY =
       THREE.MathUtils.lerp(a.y, b.y, frac) * viewport.height +
       Math.sin(t * 1.3) * 0.05 + // idle float
-      (1 - inE) * -0.7; // intro rise
+      (1 - inE) * -0.7 + // intro rise
+      exit * viewport.height * 1.1; // story exit — ride up with the unpinning stage
     const targetZ = arc * 0.55;
     const targetRotY =
       THREE.MathUtils.lerp(a.rotY, b.rotY, frac) +
@@ -167,6 +186,11 @@ function PhoneRig({
       THREE.MathUtils.lerp(a.rotZ, b.rotZ, frac) + Math.sin(t * 0.8) * 0.013;
     const targetRotX = Math.sin(t * 1.05) * 0.012 - pointer.y * 0.06;
 
+    if (midMount) {
+      g.position.set(targetX, targetY, targetZ);
+      g.rotation.set(targetRotX, targetRotY, targetRotZ);
+    }
+
     const d = 4.2; // damping speed
     g.position.x = THREE.MathUtils.damp(g.position.x, targetX, d, delta);
     g.position.y = THREE.MathUtils.damp(g.position.y, targetY, d, delta);
@@ -174,7 +198,7 @@ function PhoneRig({
     g.rotation.y = THREE.MathUtils.damp(g.rotation.y, targetRotY, d, delta);
     g.rotation.z = THREE.MathUtils.damp(g.rotation.z, targetRotZ, d, delta);
     g.rotation.x = THREE.MathUtils.damp(g.rotation.x, targetRotX, d, delta);
-    const s = (0.84 + 0.16 * inE) * 1.07;
+    const s = (0.84 + 0.16 * inE) * 1.28;
     g.scale.setScalar(s);
 
     // hide the DOM screen when the glass faces away from the camera (drei Html
