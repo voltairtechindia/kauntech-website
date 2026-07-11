@@ -384,20 +384,16 @@
 
 .kps-qr {
   position: relative;
-  display: grid;
-  grid-template-columns: repeat(17, 10px);
-  grid-auto-rows: 10px;
-  gap: 1px;
+  display: block;
   padding: 10px;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 14px rgba(9, 9, 11, 0.08);
 }
-.kps-qr i {
-  border-radius: 1.5px;
-}
-.kps-qr i.on {
-  background: #09090b;
+.kps-qr img {
+  display: block;
+  width: 190px;
+  height: 190px;
 }
 .kps-qr-k {
   position: absolute;
@@ -461,6 +457,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  flex: none;
+}
+.kps-vcard-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
 .kps-vcard-who {
