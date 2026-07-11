@@ -310,6 +310,17 @@ const ic = {
       <circle cx="12" cy="20" r="0.5" fill="currentColor" />
     </I>
   ),
+  box: (s = 16, c = "") => (
+    <I size={s} className={c}>
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5M12 22V12" />
+    </I>
+  ),
+  play: (s = 16, c = "") => (
+    <I size={s} className={c}>
+      <path d="m6 3 14 9-14 9V3z" />
+    </I>
+  ),
 };
 
 /* ------------------------------- shared chrome ------------------------------- */
@@ -599,6 +610,81 @@ export function IntelScreen() {
   );
 }
 
+/* ----------------------------- 3b · AI STRATEGY --------------------------------
+   app/contact/[id].tsx — Strategy segment (Ultra's "AI Sales Strategy"): the
+   Deal Verdict card with its confidence meter, the three-step playbook
+   (opener → objection → next move) and the same floating action bar.        */
+
+const PLAYS = [
+  { n: "01", tag: "THE OPENER", icon: ic.sparkles, text: "“Congrats on the Pune expansion — that rollout is exactly where we help.”" },
+  { n: "02", tag: "THE OBJECTION", icon: ic.chat, text: "They already run Zoho — lead with offline scanning and DPDP compliance." },
+  { n: "03", tag: "NEXT MOVE", icon: ic.send, text: "Send the Pro deck today. Follow up Thursday morning, 11:00." },
+];
+
+export function StrategyScreen() {
+  return (
+    <div className="kps kps--strategy">
+      <StatusBar />
+      <div className="kps-head kps-head--center">
+        <span className="kps-head-back">{ic.arrowLeft(18)}</span>
+        <span className="kps-head-title">Contact Details</span>
+        <span className="kps-head-spacer" />
+      </div>
+
+      <div className="kps-segs">
+        <span>{ic.user(13)} General</span>
+        <span>{ic.brain(13)} Intel</span>
+        <span className="on">{ic.target(13)} Strategy</span>
+      </div>
+
+      <div className="kps-intel-status" aria-hidden="true">
+        <span>Reading the Intel dossier…</span>
+        <span>Weighing role, budget &amp; timing…</span>
+        <span>Drafting openers &amp; counters…</span>
+        <span className="ok">Playbook ready ✓ · 100 tokens</span>
+      </div>
+
+      <div className="kps-verdict">
+        <label>{ic.target(11)} DEAL VERDICT</label>
+        <div className="kps-verdict-row">
+          <b>PURSUE NOW</b>
+          <span className="kps-verdict-score">
+            87<i>% fit</i>
+          </span>
+        </div>
+        <span className="kps-verdict-bar">
+          <i />
+        </span>
+        <small>Decision-maker · budget window open · warm intro available</small>
+      </div>
+
+      {PLAYS.map((p, idx) => (
+        <div className={`kps-play kps-play--${idx + 1}`} key={p.n}>
+          <span className="kps-play-ic">{p.icon(15)}</span>
+          <span className="kps-play-body">
+            <label>
+              <em>{p.n}</em> {p.tag}
+            </label>
+            <p>{p.text}</p>
+          </span>
+        </div>
+      ))}
+
+      <div className="kps-actionbar">
+        <span className="kps-action">
+          {ic.share(17)}
+          <em>Share</em>
+        </span>
+        <span className="kps-action-fab">{ic.target(22)}</span>
+        <span className="kps-action gold">
+          {ic.refresh(17)}
+          <em>Regenerate</em>
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* --------------------------------- 4 · LEADS -----------------------------------
    app/(tabs)/leads.tsx — People/Events switcher, search + temperature filter,
    "All Leads" event selector, lead rows with initial avatars, Brain/channel
@@ -842,6 +928,53 @@ export function PlanScreen() {
   );
 }
 
+/* --------------------------------- 7 · AR CARD ----------------------------------
+   The WebAR card viewer (designed in the kauntech.com/ar studio, opened by
+   the app's scanner): dark camera space, tracked paper card + floor reticle,
+   the holographic V-Card floating above it, layer chips, share-link pill.    */
+
+export function ArScreen() {
+  return (
+    <div className="kps kps--ar">
+      <StatusBar light />
+      <div className="kps-scan-top">
+        <span className="kps-scan-x">{ic.x(18)}</span>
+        <span className="kps-scan-toggles">
+          <span className="kps-glass-pill on kps-ar-live">
+            <i /> AR · TRACKING
+          </span>
+        </span>
+      </div>
+
+      <div className="kps-ar-stage">
+        <span className="kps-ar-beam" />
+        <span className="kps-ar-ring" />
+        <span className="kps-ar-paper">
+          <span className="kps-bizcard-line w60" />
+          <span className="kps-bizcard-line w45" />
+        </span>
+
+        <div className="kps-ar-holo">
+          <div className="kps-ar-holo-brand">KAUNTECH</div>
+          <span className="kps-ar-holo-avatar">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/assets/founder.jpg" alt="" width={54} height={54} loading="lazy" />
+          </span>
+          <b>Harshal Vadgama</b>
+          <i>Founder · Kauntech</i>
+        </div>
+
+        <span className="kps-ar-chip kps-ar-chip--1">{ic.box(11)} 3D LOGO</span>
+        <span className="kps-ar-chip kps-ar-chip--2">{ic.play(11)} INTRO VIDEO</span>
+        <span className="kps-ar-chip kps-ar-chip--3">{ic.userPlus(11)} TAP TO SAVE</span>
+      </div>
+
+      <div className="kps-ar-share">{ic.share(13)} kauntech.com/ar/harshal</div>
+      <p className="kps-ar-hint">Scanned with the Kauntech camera — the card lifts off the paper.</p>
+    </div>
+  );
+}
+
 /* ------------------------------------ index ------------------------------------ */
 
 export type ChapterScreen = {
@@ -850,12 +983,14 @@ export type ChapterScreen = {
   accent: string;
 };
 
-/** Order matches the scroll story: hero shows the V-Card, then the 5 chapters. */
+/** Order matches the scroll story: hero shows the V-Card, then the 5 chapters
+    (Scan → Sync → Intel → Strategy → AR). Leads/Plan screens stay exported
+    for reuse elsewhere. */
 export const PHONE_SCREENS: ChapterScreen[] = [
   { id: "vcard", Screen: CardScreen, accent: "#D97706" },
   { id: "scan", Screen: ScanScreen, accent: "#EA580C" },
+  { id: "sync", Screen: ConfigsScreen, accent: "#22C55E" },
   { id: "intel", Screen: IntelScreen, accent: "#6366F1" },
-  { id: "leads", Screen: LeadsScreen, accent: "#EF4444" },
-  { id: "configs", Screen: ConfigsScreen, accent: "#22C55E" },
-  { id: "plan", Screen: PlanScreen, accent: "#F59E0B" },
+  { id: "strategy", Screen: StrategyScreen, accent: "#10B981" },
+  { id: "ar", Screen: ArScreen, accent: "#8B5CF6" },
 ];

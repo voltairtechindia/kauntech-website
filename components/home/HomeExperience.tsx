@@ -48,7 +48,23 @@ const CHAPTERS: Chapter[] = [
     screen: 1,
   },
   {
-    kicker: "02 · AI Intel",
+    kicker: "02 · Sync",
+    label: "Sync",
+    title: (
+      <>
+        One scan. <em>Five destinations.</em> Zero retyping.
+      </>
+    ),
+    body: "The moment a lead is saved, Kauntech routes it: a row in Google Sheets, a drafted WhatsApp intro, a Gmail follow-up, a Telegram post, a webhook to anywhere.",
+    bullets: [
+      "Sheets · WhatsApp · Gmail · Telegram · Webhooks",
+      "Under 30 seconds, scan to synced",
+      "Your CRM via webhook — no lock-in",
+    ],
+    screen: 2,
+  },
+  {
+    kicker: "03 · AI Intel",
     label: "Intel",
     title: (
       <>
@@ -61,53 +77,37 @@ const CHAPTERS: Chapter[] = [
       "Decision power & personalization hooks",
       "50 tokens per dossier — pay per use",
     ],
-    screen: 2,
-  },
-  {
-    kicker: "03 · Leads",
-    label: "Leads",
-    title: (
-      <>
-        Every card walks in <em>Hot, Warm or Cold.</em>
-      </>
-    ),
-    body: "Scans land in a temperature pipeline with event tags, search and bulk export. A mini-CRM that lives in your pocket — not another tab your team ignores.",
-    bullets: [
-      "Hot / Warm / Cold pipeline with event tags",
-      "Search people, companies & events",
-      "CSV export & bulk actions",
-    ],
     screen: 3,
   },
   {
-    kicker: "04 · Syncs & APIs",
-    label: "Configs",
+    kicker: "04 · AI Strategy",
+    label: "Strategy",
     title: (
       <>
-        One scan. <em>Five destinations.</em> Zero retyping.
+        The dossier becomes <em>a playbook.</em>
       </>
     ),
-    body: "The moment a lead is saved, Kauntech routes it: a row in Google Sheets, a drafted WhatsApp intro, a Gmail follow-up, a Telegram post, a webhook to anywhere.",
+    body: "AI Sales Strategy reads the intel and calls the deal — pursue, nurture or pass — then arms you with the opener, the objection to expect and your next move. Your pipeline keeps score in Hot, Warm and Cold.",
     bullets: [
-      "Sheets · WhatsApp · Gmail · Telegram · Webhooks",
-      "Under 30 seconds, scan to synced",
-      "Your CRM via webhook — no lock-in",
+      "Deal Verdict with a confidence score",
+      "Openers, objections & next moves",
+      "Hot / Warm / Cold pipeline + event tags",
     ],
     screen: 4,
   },
   {
-    kicker: "05 · Plan",
-    label: "Plan",
+    kicker: "05 · AR Cards",
+    label: "AR",
     title: (
       <>
-        Pay in <em>K-Tokens,</em> not empty promises.
+        Your card <em>comes alive</em> in their camera.
       </>
     ),
-    body: "One token currency meters everything AI — AI Fix costs 1, a full dossier 50, a sales strategy 100. Start free with 100 tokens a month; top up from ₹99 when you need more.",
+    body: "Build an AR twin of your V-Card in the kauntech.com/ar studio — 3D logo, intro video, voice note. When someone scans your card with Kauntech, it lifts off the paper. That's the card they remember.",
     bullets: [
-      "Free: 100 tokens + 49 scans monthly",
-      "Pro ₹399/mo billed annually",
-      "Top-up packs from ₹99",
+      "3D models, video & audio on your card",
+      "Design in the browser at kauntech.com/ar",
+      "AR cards on Pro & Ultra plans",
     ],
     screen: 5,
   },

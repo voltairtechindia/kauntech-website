@@ -40,10 +40,10 @@ const PHONE_H = 2.46; // target world height
 const POSES = [
   { x: 0.21, y: -0.01, rotY: -0.3, rotZ: -0.05 }, // hero — right side, angled to copy
   { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 1 scan — left
-  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.04 }, // 2 intel — right
-  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.05 }, // 3 leads — left
-  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.05 }, // 4 route — right
-  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 5 plan — left
+  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.04 }, // 2 sync — right
+  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.05 }, // 3 intel — left
+  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.05 }, // 4 strategy — right
+  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 5 ar — left
 ];
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
