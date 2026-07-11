@@ -1,4 +1,14 @@
 import type { Metadata } from "next";
+import {
+  CircleHelp,
+  ShieldCheck,
+  Table,
+  TriangleAlert,
+  Wrench,
+  Zap,
+} from "lucide-react";
+
+import Ic from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Help & Setup Guide",
@@ -132,7 +142,7 @@ export default function HelpPage() {
         <div className="legal-card">
           <h1 className="grad-text">Help &amp; Setup Guide</h1>
           <span className="last-updated">
-            <i className="fa-solid fa-circle-question" /> Auto-Sync: Webhook &amp; Google Sheets
+            <Ic icon={CircleHelp} /> Auto-Sync: Webhook &amp; Google Sheets
           </span>
 
           <div className="legal-body">
@@ -145,7 +155,7 @@ export default function HelpPage() {
 
             {/* ───────────── Google Sheets ───────────── */}
             <h2>
-              <i className="fa-solid fa-table" /> Google Sheets — without signing in
+              <Ic icon={Table} /> Google Sheets — without signing in
             </h2>
             <p>
               This option sends each lead to a tiny <strong>Google Apps Script</strong> that you
@@ -157,7 +167,7 @@ export default function HelpPage() {
 
             <div className="alert-box indigo-alert">
               <h4>
-                <i className="fa-solid fa-triangle-exclamation" /> The one setting that matters
+                <Ic icon={TriangleAlert} /> The one setting that matters
               </h4>
               <p style={{ marginBottom: 0 }}>
                 When you deploy the Web app, set <strong>Execute as: Me</strong> and{" "}
@@ -205,7 +215,7 @@ export default function HelpPage() {
 
             {/* ───────────── Webhook ───────────── */}
             <h2>
-              <i className="fa-solid fa-bolt" /> Webhook — POST to your own endpoint
+              <Ic icon={Zap} /> Webhook — POST to your own endpoint
             </h2>
             <p>
               Prefer to send leads to a CRM, Zapier/Make, or your own API? The Webhook tab fires an
@@ -226,7 +236,7 @@ export default function HelpPage() {
 
             <div className="alert-box indigo-alert">
               <h4>
-                <i className="fa-solid fa-shield-halved" /> Delivery &amp; retries
+                <Ic icon={ShieldCheck} /> Delivery &amp; retries
               </h4>
               <p style={{ marginBottom: 0 }}>
                 Respond with a <strong>2xx</strong> status to acknowledge receipt. Kauntech retries
@@ -238,7 +248,7 @@ export default function HelpPage() {
 
             {/* ───────────── Troubleshooting ───────────── */}
             <h2>
-              <i className="fa-solid fa-wrench" /> Troubleshooting
+              <Ic icon={Wrench} /> Troubleshooting
             </h2>
             <ul>
               <li>

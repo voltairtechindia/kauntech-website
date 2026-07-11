@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { CircleAlert, CircleCheck, LoaderCircle, Paperclip, Send } from "lucide-react";
+
+import Ic from "@/components/ui/Icon";
 
 type JobOption = { slug: string; title: string };
 type Status = { kind: "success" | "error"; text: string } | null;
@@ -146,7 +149,7 @@ export default function CareerForm({
           <label htmlFor="ap_resume">Resume * (PDF or DOCX, max 10 MB)</label>
           <div className="file-field">
             <label className="btn-secondary" style={{ cursor: "pointer", padding: "12px 22px" }}>
-              <i className="fa-solid fa-paperclip" />
+              <Ic icon={Paperclip} />
               <span>Choose file</span>
               <input
                 id="ap_resume"
@@ -183,19 +186,13 @@ export default function CareerForm({
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <button type="submit" className="btn-primary" disabled={submitting}>
           <span>{submitting ? "Submitting…" : "Submit Application"}</span>
-          <i className={submitting ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-paper-plane"} />
+          {submitting ? <Ic icon={LoaderCircle} className="ic-spin" /> : <Ic icon={Send} />}
         </button>
       </div>
 
       {status && (
         <div role="status" aria-live="polite" className={`career-status ${status.kind}`}>
-          <i
-            className={
-              status.kind === "success"
-                ? "fa-solid fa-circle-check"
-                : "fa-solid fa-circle-exclamation"
-            }
-          />
+          {status.kind === "success" ? <Ic icon={CircleCheck} /> : <Ic icon={CircleAlert} />}
           <span>{status.text}</span>
         </div>
       )}

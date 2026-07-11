@@ -1,4 +1,17 @@
 import type { Metadata } from "next";
+import {
+  Bot,
+  CalendarDays,
+  ClipboardList,
+  History,
+  Info,
+  Lock,
+  Mail,
+  Scale,
+  ShieldUser,
+} from "lucide-react";
+
+import Ic from "@/components/ui/Icon";
 
 // Hidden, recruitment-specific privacy notice. Like the main app (which is
 // offline-first with optional, user-controlled cloud backup), resume data is
@@ -21,7 +34,7 @@ export default function RecruitmentPrivacyPage() {
         <div className="legal-card">
           <h1 className="grad-text">Recruitment Privacy Notice</h1>
           <span className="last-updated">
-            <i className="fa-solid fa-calendar-days" /> Last Updated: June 1, 2026
+            <Ic icon={CalendarDays} /> Last Updated: June 1, 2026
           </span>
 
           <div className="legal-body">
@@ -35,7 +48,7 @@ export default function RecruitmentPrivacyPage() {
 
             <div className="alert-box indigo-alert">
               <h4>
-                <i className="fa-solid fa-circle-info" /> Why this is a separate notice
+                <Ic icon={Info} /> Why this is a separate notice
               </h4>
               <p style={{ marginBottom: 0 }}>
                 Our product is offline-first and stores no contact data on our servers. Recruitment
@@ -47,7 +60,7 @@ export default function RecruitmentPrivacyPage() {
             </div>
 
             <h2>
-              <i className="fa-solid fa-clipboard-list" /> 1. What We Collect
+              <Ic icon={ClipboardList} /> 1. What We Collect
             </h2>
             <ul>
               <li>
@@ -66,7 +79,7 @@ export default function RecruitmentPrivacyPage() {
             </ul>
 
             <h2>
-              <i className="fa-solid fa-scale-balanced" /> 2. Lawful Basis
+              <Ic icon={Scale} /> 2. Lawful Basis
             </h2>
             <p>
               We process this data on the basis of <strong>your consent</strong>, which you give by
@@ -76,7 +89,7 @@ export default function RecruitmentPrivacyPage() {
             </p>
 
             <h2>
-              <i className="fa-solid fa-robot" /> 3. How We Use It (incl. AI)
+              <Ic icon={Bot} /> 3. How We Use It (incl. AI)
             </h2>
             <ul>
               <li>To review and respond to your application.</li>
@@ -97,7 +110,7 @@ export default function RecruitmentPrivacyPage() {
             </p>
 
             <h2>
-              <i className="fa-solid fa-lock" /> 4. Storage &amp; Security
+              <Ic icon={Lock} /> 4. Storage &amp; Security
             </h2>
             <ul>
               <li>
@@ -114,7 +127,7 @@ export default function RecruitmentPrivacyPage() {
             </ul>
 
             <h2>
-              <i className="fa-solid fa-clock-rotate-left" /> 5. How Long We Keep It
+              <Ic icon={History} /> 5. How Long We Keep It
             </h2>
             <p>
               We retain your application for as long as needed to assess it and, where you may be a
@@ -123,7 +136,7 @@ export default function RecruitmentPrivacyPage() {
             </p>
 
             <h2>
-              <i className="fa-solid fa-user-shield" /> 6. Your Rights
+              <Ic icon={ShieldUser} /> 6. Your Rights
             </h2>
             <p>
               Under the DPDP Act 2023 you have the right to access, correct, and erase your data,
@@ -134,7 +147,7 @@ export default function RecruitmentPrivacyPage() {
             </p>
 
             <h2>
-              <i className="fa-solid fa-envelope" /> 7. Contact
+              <Ic icon={Mail} /> 7. Contact
             </h2>
             <p>
               Kauntech Technologies Pvt. Ltd. — Data Protection contact:{" "}

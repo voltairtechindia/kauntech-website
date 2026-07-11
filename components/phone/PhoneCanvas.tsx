@@ -171,7 +171,11 @@ function PhoneRig({
     intro.current = Math.min(1, intro.current + delta / 1.3);
     const inE = smooth(intro.current);
 
-    const targetX = THREE.MathUtils.lerp(a.x, b.x, frac) * viewport.width;
+    // Cap the x-basis near a 16:9 frame (9 world units at this camera): on
+    // ultrawide / short browser windows raw vw would drift the rest poses far
+    // from the center-anchored chapter copy (v2.css .k-chapter).
+    const xBasis = Math.min(viewport.width, 9);
+    const targetX = THREE.MathUtils.lerp(a.x, b.x, frac) * xBasis;
     const targetY =
       THREE.MathUtils.lerp(a.y, b.y, frac) * viewport.height +
       Math.sin(t * 1.3) * 0.05 + // idle float

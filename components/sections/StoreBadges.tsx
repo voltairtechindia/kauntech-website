@@ -1,6 +1,7 @@
 "use client";
 
 import { appInstall, appStoreInstall } from "@/lib/gtag";
+import Brand from "@/components/ui/BrandIcons";
 
 // Client island for the Hero store badges. Kept separate so Hero stays a server
 // component — only this small interactive bit ships as client JS. The onClick
@@ -39,7 +40,9 @@ export default function StoreBadges() {
             textDecoration: "none",
           }}
         >
-          <i className="fa-brands fa-google-play" style={{ fontSize: "1.5rem", color: "#fff" }} />
+          <i className="ic" style={{ fontSize: "1.5rem", color: "#fff" }} aria-hidden="true">
+            <Brand name="googleplay" />
+          </i>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", textTransform: "uppercase" }}>
               Get it on
@@ -67,7 +70,9 @@ export default function StoreBadges() {
             textDecoration: "none",
           }}
         >
-          <i className="fa-brands fa-apple" style={{ fontSize: "1.5rem", color: "#fff" }} />
+          <i className="ic" style={{ fontSize: "1.5rem", color: "#fff" }} aria-hidden="true">
+            <Brand name="apple" />
+          </i>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
             <span style={{ fontSize: "0.65rem", color: "var(--text-dim)", textTransform: "uppercase" }}>
               Download on the

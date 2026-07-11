@@ -1,5 +1,7 @@
 import Link from "next/link";
 import SplitHeading from "@/components/motion/SplitHeading";
+import Ic from "@/components/ui/Icon";
+import { ArrowRight, Check, Coins } from "lucide-react";
 
 /**
  * Pricing teaser — numbers mirror the app paywall (source of truth:
@@ -53,7 +55,7 @@ export default function PricingTeaser() {
               <ul>
                 {p.feats.map((f) => (
                   <li key={f}>
-                    <i className="fa-solid fa-check" aria-hidden="true" /> {f}
+                    <Ic icon={Check} /> {f}
                   </li>
                 ))}
               </ul>
@@ -65,10 +67,10 @@ export default function PricingTeaser() {
         </div>
 
         <p className="k-packs reveal">
-          <i className="fa-solid fa-coins" aria-hidden="true" /> Top-up packs: <b>200 KT ₹99</b> ·{" "}
+          <Ic icon={Coins} /> Top-up packs: <b>200 KT ₹99</b> ·{" "}
           <b>600 KT ₹249</b> · <b>1,500 KT ₹549</b> · <b>4,000 KT ₹1,299</b>
           <Link href="/pricing" className="k-arrowlink">
-            Full pricing &amp; token math <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+            Full pricing &amp; token math <Ic icon={ArrowRight} />
           </Link>
         </p>
       </div>

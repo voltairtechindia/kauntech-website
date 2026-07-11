@@ -3,16 +3,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  ChevronDown,
+  CircleHelp,
+  Scale,
+  ShieldCheck,
+  Workflow,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+import Ic from "@/components/ui/Icon";
+import Brand from "@/components/ui/BrandIcons";
 
 // "Product" groups the four single-section product-story pages so the navbar
 // stays clean. The pages still exist as standalone routes (good for SEO) — the
 // dropdown just collects them under one top-level item.
-const productLinks = [
-  { href: "/features", label: "Features", icon: "fa-bolt", desc: "Offline OCR, AI enrichment & automations" },
-  { href: "/how-it-works", label: "How It Works", icon: "fa-circle-nodes", desc: "Capture, enrich & automate in 30s" },
-  { href: "/compare", label: "Compare", icon: "fa-scale-balanced", desc: "Kauntech vs. other scanners" },
-  { href: "/compliance", label: "DPDP Compliance", icon: "fa-shield-halved", desc: "Built for India's DPDP Act 2023" },
-  { href: "/faq", label: "FAQ", icon: "fa-circle-question", desc: "Offline, DPDP, K-Tokens & pricing answered" },
+const productLinks: { href: string; label: string; icon: LucideIcon; desc: string }[] = [
+  { href: "/features", label: "Features", icon: Zap, desc: "Offline OCR, AI enrichment & automations" },
+  { href: "/how-it-works", label: "How It Works", icon: Workflow, desc: "Capture, enrich & automate in 30s" },
+  { href: "/compare", label: "Compare", icon: Scale, desc: "Kauntech vs. other scanners" },
+  { href: "/compliance", label: "DPDP Compliance", icon: ShieldCheck, desc: "Built for India's DPDP Act 2023" },
+  { href: "/faq", label: "FAQ", icon: CircleHelp, desc: "Offline, DPDP, K-Tokens & pricing answered" },
 ];
 
 const mainLinks = [
@@ -21,12 +34,17 @@ const mainLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
+// Flat list for the full-screen mobile menu — product pages first, then the rest.
+const mobileLinks = [
+  ...productLinks.map(({ href, label }) => ({ href, label })),
+  ...mainLinks,
+];
+
 export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [productOpen, setProductOpen] = useState(false);
-  const [mobileProductOpen, setMobileProductOpen] = useState(false);
   const dropdownRef = useRef<HTMLLIElement>(null);
 
   const isProductActive = productLinks.some((l) => l.href === pathname);
@@ -38,9 +56,10 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close the desktop Product menu whenever the route changes.
+  // Close menus whenever the route changes.
   useEffect(() => {
     setProductOpen(false);
+    setMobileOpen(false);
   }, [pathname]);
 
   // Close the desktop Product menu on an outside click (covers touch/tablet,
@@ -56,10 +75,13 @@ export default function Navbar() {
     return () => document.removeEventListener("click", onDocClick);
   }, [productOpen]);
 
-  // When the mobile menu opens, pre-expand Product if we're on one of its pages.
+  // Lock scroll while the full-screen mobile menu is open.
   useEffect(() => {
-    if (mobileOpen) setMobileProductOpen(isProductActive);
-  }, [mobileOpen, isProductActive]);
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -83,7 +105,7 @@ export default function Navbar() {
                 aria-expanded={productOpen}
                 onClick={() => setProductOpen((v) => !v)}
               >
-                Product <i className="fa-solid fa-chevron-down caret" aria-hidden="true" />
+                Product <Ic icon={ChevronDown} className="caret" />
               </button>
               <div className="nav-dropdown-menu" role="menu">
                 {productLinks.map((l) => (
@@ -94,7 +116,9 @@ export default function Navbar() {
                     className={pathname === l.href ? "active" : undefined}
                     onClick={() => setProductOpen(false)}
                   >
-                    <i className={`fa-solid ${l.icon}`} aria-hidden="true" />
+                    <span className="nav-dd-ic">
+                      <Ic icon={l.icon} />
+                    </span>
                     <span>
                       <span className="nav-dd-label">{l.label}</span>
                       <span className="nav-dd-desc">{l.desc}</span>
@@ -115,13 +139,14 @@ export default function Navbar() {
 
           <div className="nav-actions">
             <Link href="/get" className="nav-cta">
-              Start Free Trial
+              Start Free Trial <Ic icon={ArrowRight} />
             </Link>
           </div>
 
           <button
             className={`hamburger${mobileOpen ? " active" : ""}`}
             aria-label="Toggle navigation"
+            aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
             type="button"
           >
@@ -133,44 +158,38 @@ export default function Navbar() {
       </nav>
 
       <div className={`mobile-menu${mobileOpen ? " active" : ""}`}>
-        <button
-          type="button"
-          className={`mobile-product-toggle${mobileProductOpen ? " open" : ""}${isProductActive ? " active" : ""}`}
-          aria-expanded={mobileProductOpen}
-          onClick={() => setMobileProductOpen((v) => !v)}
-        >
-          Product <i className="fa-solid fa-chevron-down caret" aria-hidden="true" />
-        </button>
-        {mobileProductOpen && (
-          <div className="mobile-sublinks">
-            {productLinks.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                className={`mobile-sublink${pathname === l.href ? " active" : ""}`}
-                onClick={closeMobile}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </div>
-        )}
+        <nav className="mm-links" aria-label="Mobile">
+          <span className="mm-label">Menu</span>
+          {mobileLinks.map((l, i) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={`mm-link${pathname === l.href ? " active" : ""}`}
+              style={{ "--i": i } as React.CSSProperties}
+              onClick={closeMobile}
+            >
+              <span className="mm-link-idx">{String(i + 1).padStart(2, "0")}</span>
+              {l.label}
+              <Ic icon={ArrowUpRight} />
+            </Link>
+          ))}
+        </nav>
 
-        {mainLinks.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={`mobile-link${pathname === l.href ? " active" : ""}`}
-            onClick={closeMobile}
-          >
-            {l.label}
-          </Link>
-        ))}
-
-        <div className="mobile-actions">
+        <div className="mm-foot">
           <Link href="/get" className="nav-cta" onClick={closeMobile}>
-            Start Free Trial
+            Start Free Trial <Ic icon={ArrowRight} />
           </Link>
+          <div className="mm-social">
+            <a href="https://www.linkedin.com/company/120934522/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+              <Brand name="linkedin" />
+            </a>
+            <a href="https://www.instagram.com/kauntech/" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+              <Brand name="instagram" />
+            </a>
+            <a href="https://discord.gg/AVYMsrhk" target="_blank" rel="noopener noreferrer" aria-label="Discord">
+              <Brand name="discord" />
+            </a>
+          </div>
         </div>
       </div>
     </>

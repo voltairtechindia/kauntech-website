@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArrowLeft,
+  CircleCheck,
+  CircleHelp,
+  IndianRupee,
+  Smartphone,
+} from "lucide-react";
 import LeadConversion from "@/components/LeadConversion";
+import Ic from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Thanks — we've got your message",
@@ -29,7 +37,7 @@ export default function ContactThankYouPage() {
               textAlign: "center",
             }}
           >
-            <i className="fa-solid fa-circle-check thankyou-icon" />
+            <Ic icon={CircleCheck} className="thankyou-icon" />
             <h1 className="contact-heading" style={{ marginTop: 20 }}>
               Thanks — your message is in
             </h1>
@@ -50,20 +58,20 @@ export default function ContactThankYouPage() {
               <p>While you wait:</p>
               <ul>
                 <li>
-                  <i className="fa-solid fa-mobile-screen" />
+                  <Ic icon={Smartphone} />
                   <span>
                     <Link href="/">Download the app</Link> and scan your first card free — no account
                     needed.
                   </span>
                 </li>
                 <li>
-                  <i className="fa-solid fa-indian-rupee-sign" />
+                  <Ic icon={IndianRupee} />
                   <span>
                     Compare <Link href="/pricing">plans and K-Token packs</Link> before we talk.
                   </span>
                 </li>
                 <li>
-                  <i className="fa-solid fa-circle-question" />
+                  <Ic icon={CircleHelp} />
                   <span>
                     Get an instant answer in our <Link href="/faq">FAQ</Link>.
                   </span>
@@ -81,7 +89,7 @@ export default function ContactThankYouPage() {
               className="btn-secondary"
               style={{ marginTop: 28, display: "inline-flex" }}
             >
-              <i className="fa-solid fa-arrow-left" />
+              <Ic icon={ArrowLeft} />
               <span>Back to home</span>
             </Link>
           </div>

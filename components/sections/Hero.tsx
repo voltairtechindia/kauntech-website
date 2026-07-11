@@ -1,4 +1,19 @@
 import Link from "next/link";
+import {
+  ArrowRight,
+  Briefcase,
+  Lock,
+  Mail,
+  Phone,
+  Play,
+  Send,
+  ShieldCheck,
+  Table,
+  User,
+  Zap,
+} from "lucide-react";
+import Ic from "@/components/ui/Icon";
+import Brand from "@/components/ui/BrandIcons";
 import StoreBadges from "./StoreBadges";
 
 export default function Hero() {
@@ -24,10 +39,10 @@ export default function Hero() {
           <div className="hero-ctas">
             <Link href="/get" className="btn-primary">
               <span>Start Free Trial</span>
-              <i className="fa-solid fa-arrow-right" />
+              <Ic icon={ArrowRight} />
             </Link>
             <button className="btn-secondary" type="button">
-              <i className="fa-solid fa-play" />
+              <Ic icon={Play} />
               <span>See Offline Demo</span>
             </button>
           </div>
@@ -103,27 +118,27 @@ export default function Hero() {
 
               <div className="extracted-data">
                 <div className="ex-field field-name">
-                  <i className="fa-solid fa-user" /> Harshal Vadgama
+                  <Ic icon={User} /> Harshal Vadgama
                 </div>
                 <div className="ex-field field-role">
-                  <i className="fa-solid fa-briefcase" /> Founder · Kauntech
+                  <Ic icon={Briefcase} /> Founder · Kauntech
                 </div>
                 <div className="ex-field field-phone">
-                  <i className="fa-solid fa-phone" /> +91 98765 43210
+                  <Ic icon={Phone} /> +91 98765 43210
                   <div className="action-toast wa-toast">
-                    <i className="fa-brands fa-whatsapp" /> Drafted &amp; Sent ✓✓
+                    <Brand name="whatsapp" /> Drafted &amp; Sent ✓✓
                   </div>
                 </div>
                 <div className="ex-field field-email">
-                  <i className="fa-solid fa-envelope" /> business@voltairtech.com
+                  <Ic icon={Mail} /> business@voltairtech.com
                   <div className="action-toast gm-toast">
-                    <i className="fa-solid fa-paper-plane" /> Drafted &amp; Sent ✓✓
+                    <Ic icon={Send} /> Drafted &amp; Sent ✓✓
                   </div>
                 </div>
               </div>
 
               <div className="sheet-overlay">
-                <i className="fa-solid fa-table" />
+                <Ic icon={Table} />
                 <span>Google Sheet Synced!</span>
               </div>
             </div>
@@ -176,15 +191,15 @@ export default function Hero() {
           </div>
 
           <div className="float-badge b1">
-            <i className="fa-solid fa-shield-halved" />
+            <Ic icon={ShieldCheck} />
             <span>On-Device OCR &amp; AI</span>
           </div>
           <div className="float-badge b2">
-            <i className="fa-solid fa-bolt" />
+            <Ic icon={Zap} />
             <span>Instant WhatsApp Sync</span>
           </div>
           <div className="float-badge b3">
-            <i className="fa-solid fa-lock" />
+            <Ic icon={Lock} />
             <span>DPDP Act 2023 Ready</span>
           </div>
         </div>

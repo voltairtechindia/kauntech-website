@@ -3,7 +3,7 @@
 ## Project Overview
 Marketing website for **Kauntech** — an offline-first business card scanner app for Android/iOS. Built with Next.js 15 App Router + TypeScript. Deployed at `https://kauntech.com`.
 
-Key product angle: 100% offline OCR, DPDP Act 2023 compliant, AI contact enrichment.
+Key product angle: offline-first OCR (say "offline-first", never "100% offline" — only the scan step is fully on-device), DPDP Act 2023 compliant, AI contact enrichment. Slogan: "Scan. Save. Outsmart."
 
 ## Stack
 - **Framework**: Next.js 15 (App Router), React 19, TypeScript 5

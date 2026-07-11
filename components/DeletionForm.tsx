@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { CircleCheck, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
+
+import Ic from "@/components/ui/Icon";
 
 export default function DeletionForm() {
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +68,7 @@ export default function DeletionForm() {
       {!submitted ? (
         <div>
           <h3>
-            <i className="fa-solid fa-trash-can" /> Request Database Purge
+            <Ic icon={Trash2} /> Request Database Purge
           </h3>
           <p className="form-desc">
             Complete this formal erasure notice. Our compliance team will inspect your request,
@@ -161,16 +164,14 @@ export default function DeletionForm() {
 
             <button type="submit" className="btn-submit" disabled={submitting}>
               <span>{submitting ? "Processing..." : "Submit Erasure Request"}</span>
-              <i
-                className={submitting ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trash-can"}
-              />
+              {submitting ? <Ic icon={LoaderCircle} className="ic-spin" /> : <Ic icon={Trash2} />}
             </button>
           </form>
         </div>
       ) : (
         <div className="success-panel active">
           <div className="success-icon">
-            <i className="fa-solid fa-circle-check" />
+            <Ic icon={CircleCheck} />
           </div>
           <h3 style={{ marginBottom: 8 }}>Erasure Request Registered!</h3>
           <p
@@ -197,7 +198,7 @@ export default function DeletionForm() {
             }}
             onClick={reset}
           >
-            <i className="fa-solid fa-arrow-rotate-left" />
+            <Ic icon={RotateCcw} />
             <span>Submit Another Request</span>
           </button>
         </div>

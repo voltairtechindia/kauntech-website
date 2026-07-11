@@ -78,7 +78,7 @@ export default function OpengraphImage() {
         </div>
 
         <div style={{ display: "flex", gap: 16, marginTop: 44 }}>
-          {["100% Offline OCR", "DPDP Act 2023 Compliant", "AI Enrichment"].map(
+          {["Offline-First OCR", "DPDP Act 2023 Compliant", "AI Enrichment"].map(
             (t) => (
               <div
                 key={t}

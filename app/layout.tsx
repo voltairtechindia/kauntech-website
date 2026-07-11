@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Fira_Sans, Fira_Code, Space_Grotesk, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import "./extra.css";
-import "./fa-subset.css";
 import "./v2.css";
 import "./phone.css";
+import "./ui.css";
 import ScrollReveal from "@/components/ScrollReveal";
 import SiteChrome from "@/components/SiteChrome";
 import GtagScripts from "@/components/GtagScripts";
@@ -77,13 +77,13 @@ export const metadata: Metadata = {
     siteName: "Kauntech",
     title: "Kauntech — The Offline-First Business Card Scanner",
     description:
-      "Capture, enrich, and automate contact management in 30 seconds without internet. 100% DPDP Act 2023 compliant.",
+      "Capture, enrich, and automate contact management in 30 seconds. Offline-first scanning, DPDP Act 2023 compliant.",
   },
   twitter: {
     card: "summary_large_image",
     title: "Kauntech — The Offline-First Business Card Scanner",
     description:
-      "Capture, enrich, and automate contact management in 30 seconds without internet. 100% DPDP Act 2023 compliant.",
+      "Capture, enrich, and automate contact management in 30 seconds. Offline-first scanning, DPDP Act 2023 compliant.",
   },
   icons: {
     icon: "/assets/logo-gold.png",
@@ -205,20 +205,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${firaSans.variable} ${firaCode.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
     >
       <head>
-        <link
-          rel="preload"
-          href="/fonts/fa-solid-subset.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/fonts/fa-brands-subset.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgLd) }}

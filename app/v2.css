@@ -332,43 +332,6 @@ html.lenis body {
   border-radius: 999px;
 }
 
-/* trust chip row — echoes the app-store creative (Made in India / DPDP / Offline) */
-.k-trust {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.k-trust-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  font-family: var(--mono);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  color: #fbd9b8;
-  border: 1px solid rgba(249, 115, 22, 0.28);
-  background: linear-gradient(180deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.04));
-  padding: 9px 15px;
-  border-radius: 999px;
-  backdrop-filter: blur(6px);
-}
-.k-trust-chip > i {
-  color: var(--k-gold);
-  font-size: 0.8rem;
-}
-
-/* tiny tricolor flag for the Made in India chip */
-.k-flag {
-  width: 15px;
-  height: 11px;
-  border-radius: 2px;
-  background: linear-gradient(180deg, #ff9933 33%, #f6f6f4 33% 66%, #138808 66%);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
 .k-hero-copy {
   display: flex;
   flex-direction: column;
@@ -518,20 +481,6 @@ html.lenis body {
   scroll-margin-top: 40px;
 }
 
-.k-story-intro {
-  padding: 130px 24px 60px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-}
-.k-story-intro p {
-  color: var(--k-mut);
-  font-family: var(--mono);
-  font-size: 0.9rem;
-}
-
 /* ---- desktop pinned stage ---- */
 
 .k-story-desktop {
@@ -563,9 +512,6 @@ html.lenis body {
   position: absolute;
   top: 50%;
   translate: 0 -50%;
-  /* % is relative to .k-stage-inner (max 1500px) — with the offsets below the
-     two columns can never meet in the middle, and both clear the phone's
-     rest poses (centered at 27% / 73% of the viewport) */
   width: min(440px, 34%);
   display: flex;
   flex-direction: column;
@@ -573,12 +519,17 @@ html.lenis body {
   visibility: hidden; /* GSAP autoAlpha takes over */
   z-index: 2;
 }
+/* Columns anchor to the CENTER line, not the stage edges — on wide desktops
+   edge-anchoring left a dead zone between copy and phone. The clamp keeps a
+   small breathing gap on laptops and caps at 110px on big screens; since both
+   sides offset from 50%, the columns can never cross the middle, and the
+   phone always rests on the opposite half (PhoneCanvas caps its x-drift to a
+   16:9 basis so it can't wander off either). */
 .k-chapter.side-l {
-  left: clamp(24px, 4vw, 90px);
+  right: calc(50% + clamp(40px, 7vw - 40px, 110px));
 }
 .k-chapter.side-r {
-  /* extra clearance so copy never collides with the progress rail */
-  right: clamp(110px, 9vw, 170px);
+  left: calc(50% + clamp(40px, 7vw - 40px, 110px));
 }
 
 .k-chapter p {
@@ -662,7 +613,8 @@ html.lenis body {
   display: flex;
   flex-direction: column;
   gap: 90px;
-  padding: 20px 24px 110px;
+  /* top padding stands in for the removed story-intro block */
+  padding: 90px 24px 110px;
 }
 
 .k-mchapter {
@@ -812,7 +764,7 @@ html.lenis body {
 
 .k-router {
   display: grid;
-  grid-template-columns: 300px 200px minmax(0, 520px);
+  grid-template-columns: 430px 160px minmax(0, 500px);
   justify-content: center;
   align-items: center;
 }
@@ -836,31 +788,223 @@ html.lenis body {
   80%, 100% { transform: scale(1.12); opacity: 0; }
 }
 
+/* ---- Scanned lead rendered as a real (landscape) business card that flips ---- */
 .k-router-card {
   position: relative;
+  width: 100%;
+  /* 3.5:2 business-card proportions — always wider than it is tall */
+  aspect-ratio: 3.5 / 2;
+  perspective: 1400px;
+  transition: transform 0.4s ease;
+}
+.k-router-card:hover {
+  transform: translateY(-5px);
+}
+
+/* the element that actually rotates on hover */
+.k-bizcard-flip {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.4, 0.1, 0.2, 1);
+}
+.k-router-card:hover .k-bizcard-flip {
+  transform: rotateY(180deg);
+}
+
+/* shared look for both faces of the card */
+.k-bizcard-face {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 16px;
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.55),
+    0 0 42px rgba(245, 158, 11, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.k-router-card:hover .k-bizcard-face {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+/* FRONT — the contact details */
+.k-bizcard-front {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: linear-gradient(160deg, #17171a, #0d0d0f);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 20px;
-  padding: 26px 30px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(245, 158, 11, 0.07);
-  width: 100%;
+  padding: 18px 24px;
+  background:
+    radial-gradient(130% 90% at 100% 0%, rgba(245, 158, 11, 0.1), transparent 55%),
+    linear-gradient(158deg, #1a1a1e, #0c0c0e);
 }
-.k-router-card i {
-  color: var(--k-gold);
-  font-size: 1.4rem;
-  margin-bottom: 6px;
+
+/* BACK — the Kauntech logo, pre-rotated so it reads correctly once flipped */
+.k-bizcard-back {
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background:
+    radial-gradient(120% 120% at 50% 30%, rgba(245, 158, 11, 0.14), transparent 60%),
+    linear-gradient(158deg, #17151a, #0a0a0c);
 }
-.k-router-card b {
+.k-bizcard-logo {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 18px;
+  filter: drop-shadow(0 8px 22px rgba(245, 158, 11, 0.35));
+}
+.k-bizcard-back-word {
   font-family: var(--k-display);
-  font-size: 1.15rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 4px;
+  color: var(--k-text);
 }
-.k-router-card span {
+.k-bizcard-back-tag {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: 0.62rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--k-gold);
+}
+/* laminated light-sweep that shimmers across the revealed logo face */
+.k-bizcard-back::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.12) 47%,
+    rgba(255, 255, 255, 0.26) 50%,
+    rgba(255, 255, 255, 0.12) 53%,
+    transparent 65%
+  );
+  transform: translateX(-130%);
+}
+.k-router-card:hover .k-bizcard-back::after {
+  animation: kShimmer 1.6s ease-in-out 0.5s infinite;
+}
+@keyframes kShimmer {
+  0% { transform: translateX(-130%); }
+  60%, 100% { transform: translateX(130%); }
+}
+
+.k-bizcard-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.k-bizcard-avatar {
+  display: block;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(140deg, var(--k-gold), var(--k-orange));
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.28);
+  flex: none;
+}
+.k-bizcard-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 2px solid #0c0c0e;
+}
+.k-bizcard-scan {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  background: rgba(34, 197, 94, 0.08);
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--k-ok);
+}
+.k-bizcard-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--k-ok);
+  box-shadow: 0 0 8px var(--k-ok);
+  animation: kPingDot 2s ease-in-out infinite;
+}
+@keyframes kPingDot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.k-bizcard-id {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.k-bizcard-id b {
+  font-family: var(--k-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--k-text);
+}
+.k-bizcard-id i {
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--k-dim);
+}
+
+.k-bizcard-rule {
+  height: 1px;
+  margin: 12px 0;
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.5), rgba(245, 158, 11, 0.05) 70%, transparent);
+}
+
+.k-bizcard-lines {
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px 18px;
+  margin: 0;
+  padding: 0;
+}
+.k-bizcard-lines li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  font-size: 0.78rem;
+  color: var(--k-dim);
+}
+.k-bizcard-wide {
+  grid-column: 1 / -1;
+}
+.k-bizcard-lines i.ic {
+  flex: none;
+  width: 15px;
+  color: var(--k-gold);
+  font-size: 0.85rem;
+}
+
+.k-bizcard-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  font-family: var(--mono);
+  font-size: 0.66rem;
   letter-spacing: 1px;
+  text-transform: uppercase;
   color: var(--k-ok);
 }
 
@@ -1256,7 +1400,7 @@ html.lenis body {
   .k-router {
     grid-template-columns: 1fr;
     gap: 26px;
-    max-width: 520px;
+    max-width: 460px;
     margin: 0 auto;
   }
   .k-router-beams {
@@ -1282,6 +1426,13 @@ html.lenis body {
   .k-cell--chips,
   .k-cell--tokens {
     grid-column: span 1;
+  }
+}
+
+@media (max-width: 480px) {
+  /* narrow phones: let the card grow to its content instead of clipping */
+  .k-router-card {
+    aspect-ratio: auto;
   }
 }
 
@@ -1312,9 +1463,15 @@ html.lenis body {
   .k-scrollcue-line::after,
   .k-beam-flow,
   .k-router-ping,
+  .k-bizcard-dot,
+  .k-router-card:hover .k-bizcard-back::after,
   .k-vault-ring,
   .k-vault-sat {
     animation: none !important;
+  }
+  /* keep the card readable — no 3D flip when motion is reduced */
+  .k-router-card:hover .k-bizcard-flip {
+    transform: none;
   }
   .k-canvas {
     display: none;
@@ -1549,9 +1706,30 @@ html.lenis body {
   color: var(--k-gold);
   margin-bottom: 18px;
 }
+.overview-explore ul {
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px;
+}
 .overview-explore a {
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 84px;
+  padding: 18px 20px;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.025);
   font-weight: 500;
   font-size: 0.94rem;
+  line-height: 1.4;
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.overview-explore a::before {
+  flex: none;
+  margin-top: 1px;
+  color: var(--k-gold);
+  font-weight: 700;
+}
+.overview-explore a:hover {
+  transform: translateY(-3px);
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.05);
 }

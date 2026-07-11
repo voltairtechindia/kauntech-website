@@ -1,4 +1,20 @@
 import type { Metadata } from "next";
+import {
+  CalendarDays,
+  Coins,
+  Gavel,
+  Info,
+  MailOpen,
+  ShieldCheck,
+  Skull,
+  Tablet,
+  UserCheck,
+  UserX,
+  Workflow,
+} from "lucide-react";
+
+import Brand from "@/components/ui/BrandIcons";
+import Ic from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -20,7 +36,7 @@ export default function TermsPage() {
         <div className="legal-card">
           <h1 className="grad-text">Terms of Service</h1>
           <span className="last-updated">
-            <i className="fa-solid fa-calendar-days" /> Last Updated: May 28, 2026
+            <Ic icon={CalendarDays} /> Last Updated: May 28, 2026
           </span>
 
           <div className="legal-body">
@@ -44,7 +60,7 @@ export default function TermsPage() {
               Terms, you must immediately cease all use of our Site and App.
             </p>
 
-            <h2><i className="fa-solid fa-user-check" /> 1. Eligibility &amp; User Accounts</h2>
+            <h2><Ic icon={UserCheck} /> 1. Eligibility &amp; User Accounts</h2>
             <p>
               To use Kauntech, you must be a corporate entity, business association, or an
               individual acting in a professional capacity who is at least 18 years of age and
@@ -65,7 +81,7 @@ export default function TermsPage() {
               </li>
             </ul>
 
-            <h2><i className="fa-solid fa-tablet-screen-button" /> 2. License &amp; App Usage</h2>
+            <h2><Ic icon={Tablet} /> 2. License &amp; App Usage</h2>
             <p>
               Subject to your strict compliance with these Terms, Kauntech grants you a limited,
               non-exclusive, non-transferable, revocable, non-sublicensable license to download and
@@ -95,7 +111,7 @@ export default function TermsPage() {
               </li>
             </ul>
 
-            <h2><i className="fa-solid fa-coins" /> 3. Subscription Plans, Billing &amp; K-Tokens</h2>
+            <h2><Ic icon={Coins} /> 3. Subscription Plans, Billing &amp; K-Tokens</h2>
             <p>
               Kauntech operates on a Software-as-a-Service (SaaS) subscription model combined with
               a credit economy powered by <strong>K-Tokens</strong>. Different subscription tiers
@@ -168,7 +184,7 @@ export default function TermsPage() {
               platform&apos;s policies (see Section 4).
             </p>
 
-            <h2><i className="fa-brands fa-apple" /> 4. App Store &amp; Google Play Subscription Terms</h2>
+            <h2><Brand name="apple" /> 4. App Store &amp; Google Play Subscription Terms</h2>
             <p>
               If you obtained the App from the Apple App Store or Google Play Store, the following
               platform-specific terms apply in addition to the rest of these Terms. In the event of
@@ -252,7 +268,7 @@ export default function TermsPage() {
               </li>
             </ul>
 
-            <h2><i className="fa-solid fa-user-slash" /> 5. Account Deletion</h2>
+            <h2><Ic icon={UserX} /> 5. Account Deletion</h2>
             <p>You may permanently delete your Kauntech account at any time directly from within the App:</p>
             <ol>
               <li>Open the <strong>Configs</strong> tab.</li>
@@ -300,7 +316,7 @@ export default function TermsPage() {
               used only for that legal purpose.
             </p>
 
-            <h2><i className="fa-solid fa-circle-nodes" /> 6. Third-Party Integrations &amp; Google OAuth</h2>
+            <h2><Ic icon={Workflow} /> 6. Third-Party Integrations &amp; Google OAuth</h2>
             <p>
               Kauntech provides integrations that allow you to sync captured leads directly to
               third-party tools, including <strong>Google Sheets</strong>,{" "}
@@ -328,7 +344,7 @@ export default function TermsPage() {
             </ul>
 
             <div className="alert-box">
-              <h4><i className="fa-solid fa-shield-halved" /> Google Limited Use Compliance</h4>
+              <h4><Ic icon={ShieldCheck} /> Google Limited Use Compliance</h4>
               <p style={{ marginBottom: 0 }}>
                 Kauntech&apos;s use and transfer of information received from Google APIs to any
                 other app will strictly adhere to the{" "}
@@ -345,7 +361,7 @@ export default function TermsPage() {
               </p>
             </div>
 
-            <h2><i className="fa-solid fa-shield-halved" /> 7. DPDP Act 2023 &amp; Privacy</h2>
+            <h2><Ic icon={ShieldCheck} /> 7. DPDP Act 2023 &amp; Privacy</h2>
             <p>
               Your privacy and data transparency are paramount. By using Kauntech, you agree to the
               collection, processing, and storage of account credentials, plans metadata, and
@@ -360,7 +376,7 @@ export default function TermsPage() {
               physical business card or digital contact details.
             </p>
 
-            <h2><i className="fa-solid fa-skull-crossbones" /> 8. Disclaimers &amp; Limitation of Liability</h2>
+            <h2><Ic icon={Skull} /> 8. Disclaimers &amp; Limitation of Liability</h2>
             <p>
               THE SITE, APP, AND SERVICES ARE PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS
               AVAILABLE&quot; BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED.
@@ -376,7 +392,7 @@ export default function TermsPage() {
               POSSIBILITY OF SUCH DAMAGES.
             </p>
 
-            <h2><i className="fa-solid fa-gavel" /> 9. Governing Law &amp; Dispute Resolution</h2>
+            <h2><Ic icon={Gavel} /> 9. Governing Law &amp; Dispute Resolution</h2>
             <p>
               These Terms and your relationship with Kauntech shall be governed by, construed, and
               enforced in accordance with the laws of <strong>India</strong>, without regard to
@@ -385,7 +401,7 @@ export default function TermsPage() {
               the competent courts located in <strong>Mumbai, Maharashtra, India</strong>.
             </p>
 
-            <h2><i className="fa-solid fa-circle-info" /> 10. Changes to These Terms</h2>
+            <h2><Ic icon={Info} /> 10. Changes to These Terms</h2>
             <p>
               We reserve the right, at our sole discretion, to modify, update, or replace these
               Terms at any time. If a revision is material, we will provide at least 15 days&apos;
@@ -394,7 +410,7 @@ export default function TermsPage() {
               notice period constitutes your binding acceptance of the updated Terms.
             </p>
 
-            <h2><i className="fa-solid fa-envelope-open-text" /> 11. Contact Us</h2>
+            <h2><Ic icon={MailOpen} /> 11. Contact Us</h2>
             <p>
               If you have any questions, concerns, or legal disputes regarding these Terms of
               Service, please contact our legal compliance team:

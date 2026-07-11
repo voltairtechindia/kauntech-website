@@ -1,15 +1,27 @@
 import SplitHeading from "@/components/motion/SplitHeading";
+import Ic from "@/components/ui/Icon";
+import Brand, { type BrandName } from "@/components/ui/BrandIcons";
+import { Check, Globe, Mail, Phone, Table, Workflow, type LucideIcon } from "lucide-react";
 
 /**
  * "One scan, five destinations" — a scanned card node fanning out to the five
  * integrations over animated SVG beams (pure CSS stroke-dash flow, no JS).
  */
-const DESTS = [
-  { icon: "fa-solid fa-table", name: "Google Sheets", note: "row appended", tint: "#22C55E", y: 42 },
-  { icon: "fa-brands fa-whatsapp", name: "WhatsApp", note: "intro drafted", tint: "#25D366", y: 126 },
-  { icon: "fa-solid fa-envelope", name: "Gmail", note: "follow-up queued", tint: "#EF4444", y: 210 },
-  { icon: "fa-brands fa-telegram", name: "Telegram", note: "posted to chat", tint: "#38BDF8", y: 294 },
-  { icon: "fa-solid fa-circle-nodes", name: "Webhook", note: "POST · 200 OK", tint: "#818CF8", y: 378 },
+type Dest = {
+  icon?: LucideIcon;
+  brand?: BrandName;
+  name: string;
+  note: string;
+  tint: string;
+  y: number;
+};
+
+const DESTS: Dest[] = [
+  { icon: Table, name: "Google Sheets", note: "row appended", tint: "#22C55E", y: 42 },
+  { brand: "whatsapp", name: "WhatsApp", note: "intro drafted", tint: "#25D366", y: 126 },
+  { icon: Mail, name: "Gmail", note: "follow-up queued", tint: "#EF4444", y: 210 },
+  { brand: "telegram", name: "Telegram", note: "posted to chat", tint: "#38BDF8", y: 294 },
+  { icon: Workflow, name: "Webhook", note: "POST · 200 OK", tint: "#818CF8", y: 378 },
 ];
 
 export default function IntegrationsRouter() {
@@ -31,9 +43,47 @@ export default function IntegrationsRouter() {
           <div className="k-router-node">
             <span className="k-router-ping" aria-hidden="true" />
             <div className="k-router-card">
-              <i className="fa-solid fa-address-card" aria-hidden="true" />
-              <b>Harshal Vadgama</b>
-              <span>scanned · enriched · saved</span>
+              <div className="k-bizcard-flip">
+                <div className="k-bizcard-face k-bizcard-front">
+                  <div className="k-bizcard-head">
+                    <span className="k-bizcard-avatar">
+                      <img src="/assets/founder.jpg" alt="Harshal Vadgama" width={46} height={46} loading="lazy" />
+                    </span>
+                    <span className="k-bizcard-scan">
+                      <i className="k-bizcard-dot" aria-hidden="true" /> scanned
+                    </span>
+                  </div>
+                  <div className="k-bizcard-id">
+                    <b>Harshal Vadgama</b>
+                    <i>Founder &amp; CEO · Kauntech</i>
+                  </div>
+                  <span className="k-bizcard-rule" aria-hidden="true" />
+                  <ul className="k-bizcard-lines">
+                    <li>
+                      <Ic icon={Phone} /> +91 98765 43210
+                    </li>
+                    <li>
+                      <Ic icon={Globe} /> kauntech.com
+                    </li>
+                    <li className="k-bizcard-wide">
+                      <Ic icon={Mail} /> harshal@kauntech.com
+                    </li>
+                  </ul>
+                  <span className="k-bizcard-foot">enriched · saved · synced</span>
+                </div>
+                <div className="k-bizcard-face k-bizcard-back" aria-hidden="true">
+                  <img
+                    className="k-bizcard-logo"
+                    src="/assets/logo-gold.webp"
+                    alt=""
+                    width={72}
+                    height={72}
+                    loading="lazy"
+                  />
+                  <span className="k-bizcard-back-word">KAUNTECH</span>
+                  <span className="k-bizcard-back-tag">Scan · Save · Outsmart</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -54,14 +104,14 @@ export default function IntegrationsRouter() {
             {DESTS.map((d, i) => (
               <li className="k-dest" key={d.name} style={{ ["--tint" as string]: d.tint, ["--i" as string]: i }}>
                 <span className="k-dest-icon">
-                  <i className={d.icon} aria-hidden="true" />
+                  {d.brand ? <Brand name={d.brand} /> : d.icon ? <Ic icon={d.icon} /> : null}
                 </span>
                 <span className="k-dest-id">
                   <b>{d.name}</b>
                   <i>{d.note}</i>
                 </span>
                 <span className="k-dest-check">
-                  <i className="fa-solid fa-check" aria-hidden="true" />
+                  <Ic icon={Check} />
                 </span>
               </li>
             ))}

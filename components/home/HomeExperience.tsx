@@ -9,6 +9,8 @@ import { PHONE_SCREENS, CardScreen } from "@/components/phone/Screens";
 import type { PhoneSceneState } from "@/components/phone/PhoneCanvas";
 import { TEXT_OUT_AT, TEXT_OUT_DUR, TEXT_IN_DUR, FLIP_AT } from "@/components/phone/flight";
 import { gsap, ScrollTrigger, SplitText, useGSAP } from "@/lib/motion/gsapSetup";
+import Ic from "@/components/ui/Icon";
+import { ArrowRight, Check, Play } from "lucide-react";
 
 const PhoneCanvas = dynamic(() => import("@/components/phone/PhoneCanvas"), { ssr: false });
 
@@ -41,7 +43,7 @@ const CHAPTERS: Chapter[] = [
     ),
     body: "The OCR engine lives on your phone — not on a server. Auto-capture locks on, reads the card and saves the contact with zero internet. Basement expo hall, airplane mode: doesn't matter.",
     bullets: [
-      "100% on-device OCR — zero internet",
+      "Offline-first, on-device OCR",
       "Paper cards, QR codes & NFC tap — one scanner",
       "Auto-capture with front + back dual scan",
     ],
@@ -314,32 +316,22 @@ export default function HomeExperience() {
 
         <div className="container k-hero-grid">
           <div className="k-hero-copy" ref={heroCopyRef}>
-            <div className="k-trust">
-              <span className="k-trust-chip">
-                <i className="k-flag" aria-hidden="true" /> Made in India
-              </span>
-              <span className="k-trust-chip">
-                <i className="fa-solid fa-shield-halved" aria-hidden="true" /> DPDP Act 2023
-              </span>
-              <span className="k-trust-chip">
-                <i className="fa-solid fa-plane-up" aria-hidden="true" /> 100% Offline
-              </span>
-            </div>
+            <span className="k-kicker">Scan. Save. Outsmart.</span>
             <h1 className="k-h1">
               Never lose a <em>business&nbsp;card</em> again.
             </h1>
             <p className="k-hero-sub">
-              Kauntech is India&apos;s first truly offline AI business card scanner — capture, enrich and
+              Kauntech is India&apos;s first offline-first AI business card scanner — capture, enrich and
               route leads to your CRM in 30 seconds, with every scan processed on your phone. Private by
               architecture, DPDP Act 2023 compliant.
             </p>
             <div className="k-hero-ctas">
               <Link href="/get" className="k-btn k-btn--primary">
                 <span>Start Free Trial</span>
-                <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+                <Ic icon={ArrowRight} />
               </Link>
               <a href="#story" className="k-btn k-btn--ghost">
-                <i className="fa-solid fa-play" aria-hidden="true" />
+                <Ic icon={Play} />
                 <span>Watch it work</span>
               </a>
             </div>
@@ -350,12 +342,8 @@ export default function HomeExperience() {
                 <span>Scan to synced lead</span>
               </div>
               <div className="k-stat">
-                <b>100%</b>
-                <span>Offline functionality</span>
-              </div>
-              <div className="k-stat">
-                <b>DPDP</b>
-                <span>Act 2023 compliant</span>
+                <b>Offline-first</b>
+                <span>OCR runs on-device</span>
               </div>
             </div>
           </div>
@@ -381,9 +369,9 @@ export default function HomeExperience() {
         <div className="k-marquee-track">
           {[0, 1].map((n) => (
             <span key={n} className="k-marquee-run">
-              100% offline OCR <i>◆</i> DPDP Act 2023 compliant <i>◆</i> NFC + QR + paper cards <i>◆</i>{" "}
+              Offline-first OCR <i>◆</i> NFC + QR + paper cards <i>◆</i>{" "}
               Deep AI Intel Scan <i>◆</i> 30-second workflow <i>◆</i> Hot / Warm / Cold pipeline <i>◆</i>{" "}
-              AR business cards <i>◆</i> Made in India <i>◆</i>{" "}
+              AR business cards <i>◆</i>{" "}
             </span>
           ))}
         </div>
@@ -391,14 +379,6 @@ export default function HomeExperience() {
 
       {/* ============================== STORY ============================= */}
       <section className="k-story" id="story" ref={storyRef}>
-        <div className="container k-story-intro">
-          <span className="k-kicker">The 30-second tour</span>
-          <h2 className="k-h2">
-            From a paper card to a working pipeline — <em>in 30 seconds.</em>
-          </h2>
-          <p>Scroll. The phone does the talking.</p>
-        </div>
-
         {/* desktop: pinned stage the 3D phone flies through */}
         <div className="k-story-desktop" ref={stageRef}>
           <div
@@ -414,7 +394,7 @@ export default function HomeExperience() {
                 <ul>
                   {c.bullets.map((b) => (
                     <li key={b}>
-                      <i className="fa-solid fa-check" aria-hidden="true" /> {b}
+                      <Ic icon={Check} /> {b}
                     </li>
                   ))}
                 </ul>
@@ -448,7 +428,7 @@ export default function HomeExperience() {
                   <ul>
                     {c.bullets.map((b) => (
                       <li key={b}>
-                        <i className="fa-solid fa-check" aria-hidden="true" /> {b}
+                        <Ic icon={Check} /> {b}
                       </li>
                     ))}
                   </ul>

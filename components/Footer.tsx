@@ -1,6 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import Ic from "@/components/ui/Icon";
+import Brand from "@/components/ui/BrandIcons";
+
+const socials = [
+  { href: "https://www.linkedin.com/company/120934522/", label: "LinkedIn", name: "linkedin" as const },
+  { href: "https://www.facebook.com/profile.php?id=61589123915607", label: "Facebook", name: "facebook" as const },
+  { href: "https://www.instagram.com/kauntech/", label: "Instagram", name: "instagram" as const },
+  { href: "https://kauntech.quora.com/", label: "Quora", name: "quora" as const },
+  { href: "https://discord.gg/AVYMsrhk", label: "Discord", name: "discord" as const },
+  { href: "https://www.reddit.com/r/Kauntech/", label: "Reddit", name: "reddit" as const },
+];
 
 export default function Footer() {
   return (
@@ -19,9 +31,9 @@ export default function Footer() {
               enrichment, and strict adherence to India&apos;s DPDP Act 2023. You stay in control of
               your data — disable cloud backup or delete it anytime.
             </p>
-            <div style={{ fontSize: "0.8rem", color: "var(--gold)", fontFamily: "var(--mono)" }}>
-              <i className="fa-solid fa-shield-halved" /> AES-256 Encrypted · On-Device OCR
-            </div>
+            <span className="footer-sec">
+              <Ic icon={ShieldCheck} /> AES-256 Encrypted · On-Device OCR
+            </span>
           </div>
 
           <div className="footer-col">
@@ -52,7 +64,7 @@ export default function Footer() {
               style={{
                 fontSize: "0.85rem",
                 color: "var(--text-dim)",
-                marginBottom: 12,
+                marginBottom: 16,
               }}
             >
               Subscribe to our newsletter for exclusive networking tips and DPDP regulatory updates.
@@ -64,8 +76,12 @@ export default function Footer() {
                 alert("Thank you for subscribing to Kauntech updates!");
               }}
             >
-              <input type="email" placeholder="Enter your business email" required />
-              <button type="submit">Subscribe Now</button>
+              <div className="fnews">
+                <input type="email" placeholder="Enter your business email" required />
+                <button type="submit" aria-label="Subscribe">
+                  <Ic icon={ArrowRight} />
+                </button>
+              </div>
             </form>
           </div>
         </div>
@@ -95,56 +111,17 @@ export default function Footer() {
             </a>
           </div>
           <div className="footer-social">
-            <a
-              href="https://www.linkedin.com/company/120934522/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn"
-            >
-              <i className="fa-brands fa-linkedin-in" />
-            </a>
-            <a
-              href="https://www.facebook.com/profile.php?id=61589123915607"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Facebook"
-            >
-              <i className="fa-brands fa-facebook-f" />
-            </a>
-            <a
-              href="https://www.instagram.com/kauntech/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-            >
-              <i className="fa-brands fa-instagram" />
-            </a>
-            <a
-              href="https://kauntech.quora.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Quora"
-            >
-              <i className="fa-brands fa-quora" />
-            </a>
-            <a
-              href="https://discord.gg/AVYMsrhk"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Discord"
-            >
-              <i className="fa-brands fa-discord" />
-            </a>
-            <a
-              href="https://www.reddit.com/r/Kauntech/"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Reddit"
-            >
-              <i className="fa-brands fa-reddit" />
-            </a>
+            {socials.map((s) => (
+              <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}>
+                <Brand name={s.name} />
+              </a>
+            ))}
           </div>
         </div>
+
+        <span className="footer-mark" aria-hidden="true">
+          KAUNTECH
+        </span>
       </div>
     </footer>
   );

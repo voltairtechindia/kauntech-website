@@ -1,5 +1,7 @@
 import Link from "next/link";
 import SplitHeading from "@/components/motion/SplitHeading";
+import Ic from "@/components/ui/Icon";
+import { ArrowRight, Cpu, Lock, ShieldCheck, ShieldUser } from "lucide-react";
 
 /** DPDP trust band — the privacy story told as architecture, not policy. */
 export default function ComplianceBand() {
@@ -11,16 +13,16 @@ export default function ComplianceBand() {
           <span className="k-vault-ring r2" />
           <span className="k-vault-ring r3" />
           <span className="k-vault-core">
-            <i className="fa-solid fa-shield-halved" />
+            <Ic icon={ShieldCheck} />
           </span>
           <span className="k-vault-sat s1">
-            <i className="fa-solid fa-lock" />
+            <Ic icon={Lock} />
           </span>
           <span className="k-vault-sat s2">
-            <i className="fa-solid fa-microchip" />
+            <Ic icon={Cpu} />
           </span>
           <span className="k-vault-sat s3">
-            <i className="fa-solid fa-user-shield" />
+            <Ic icon={ShieldUser} />
           </span>
         </div>
 
@@ -41,7 +43,7 @@ export default function ComplianceBand() {
             <span className="k-mchip">Right to erasure</span>
           </div>
           <Link href="/compliance" className="k-arrowlink">
-            Read the full compliance breakdown <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+            Read the full compliance breakdown <Ic icon={ArrowRight} />
           </Link>
         </div>
       </div>

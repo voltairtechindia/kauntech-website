@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Check, CircleCheck, Coins, Rocket } from "lucide-react";
+import Ic from "@/components/ui/Icon";
+import Brand from "@/components/ui/BrandIcons";
 
 export default function Pricing() {
   const [annual, setAnnual] = useState(false);
@@ -45,15 +48,20 @@ export default function Pricing() {
                 color: "var(--gold)",
               }}
             >
-              <i className="fa-solid fa-rocket" style={{ fontSize: "1.3rem" }} />
+              <i className="ic" style={{ fontSize: "1.3rem" }} aria-hidden="true">
+                <Rocket />
+              </i>
               <span>Exclusive Pre-Launch Rewards</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, fontSize: "0.95rem" }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <i
-                  className="fa-solid fa-circle-check"
+                  className="ic"
                   style={{ color: "#34d399", marginTop: 3, flexShrink: 0 }}
-                />
+                  aria-hidden="true"
+                >
+                  <CircleCheck />
+                </i>
                 <span>
                   <strong>First 1,000 Downloads (First 15 Days):</strong> Instantly unlock a 7-Day
                   Pro Trial fully equipped with AI Intel enrichment.
@@ -61,9 +69,12 @@ export default function Pricing() {
               </div>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
                 <i
-                  className="fa-brands fa-reddit-alien"
+                  className="ic"
                   style={{ color: "#ff4500", marginTop: 3, flexShrink: 0, fontSize: "1.1rem" }}
-                />
+                  aria-hidden="true"
+                >
+                  <Brand name="reddit" />
+                </i>
                 <span>
                   <strong>First 100 Reddit Reviewers:</strong> Share your genuine review or feedback
                   on{" "}
@@ -110,13 +121,13 @@ export default function Pricing() {
               Perfect for individual professionals exploring offline business card scanning.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 49 Scans / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 100 K-Tokens / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1 VCard · 2 Products · 2 Templates</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> QR Code &amp; NFC Scanning</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> CSV Export included</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Sync</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Offline-First Mode</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 49 Scans / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 100 K-Tokens / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 1 VCard · 2 Products · 2 Templates</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> QR Code &amp; NFC Scanning</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> CSV Export included</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Webhook &amp; WhatsApp Sync</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Offline-First Mode</li>
             </ul>
           </div>
 
@@ -132,16 +143,16 @@ export default function Pricing() {
               For active sales professionals demanding AI enrichment and CRM automations.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 500 Scans / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 1,000 K-Tokens / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Intel (2 tokens/scan)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Fix included (1 token/fix)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AR template cards (60 tokens/card)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3 VCards · 4 Products · 4 Templates</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Google Sheets &amp; Gmail Sync</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Telegram Bot Integration</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Webhook &amp; WhatsApp Automation</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Unlock more slots with tokens</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 500 Scans / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AI Intel (2 tokens/scan)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AI Fix included (1 token/fix)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AR template cards (60 tokens/card)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 3 VCards · 4 Products · 4 Templates</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Google Sheets &amp; Gmail Sync</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Telegram Bot Integration</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Webhook &amp; WhatsApp Automation</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Unlock more slots with tokens</li>
             </ul>
           </div>
 
@@ -157,15 +168,15 @@ export default function Pricing() {
               Everything in Pro, plus unlimited scans, AI Strategy, team collaboration, and cloud backup.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Unlimited Scans</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 3,000 K-Tokens / month</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> AI Strategy (6 tokens/scan)</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Full AR Studio · custom 3D, video, build from scratch</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 5 VCards · 8 Products · 6 Templates</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Company Logo on QR · Custom QR Link</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> 250 MB Cloud Storage</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Multi-User Team Collaboration</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Everything in Pro · Dedicated VIP Support</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Unlimited Scans</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 3,000 K-Tokens / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AI Strategy (6 tokens/scan)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Full AR Studio · custom 3D, video, build from scratch</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 5 VCards · 8 Products · 6 Templates</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Company Logo on QR · Custom QR Link</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 250 MB Cloud Storage</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Multi-User Team Collaboration</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Everything in Pro · Dedicated VIP Support</li>
             </ul>
           </div>
 
@@ -180,12 +191,12 @@ export default function Pricing() {
               For large corporations needing white-labeling, custom LLMs, or massive event capacity.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Unlimited Scans &amp; Tokens</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> On-Premise Storage Options</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Custom Hardware Integrations</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Advanced Analytics Dashboard</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Account Manager</li>
-              <li><span className="pf-check"><i className="fa-solid fa-check" /></span> Complete White Labeling</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Unlimited Scans &amp; Tokens</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> On-Premise Storage Options</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Custom Hardware Integrations</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Advanced Analytics Dashboard</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Account Manager</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Complete White Labeling</li>
             </ul>
             <Link
               className="price-btn outline"
@@ -265,7 +276,7 @@ export default function Pricing() {
                   marginBottom: 6,
                 }}
               >
-                <i className="fa-solid fa-coins" />
+                <Ic icon={Coins} />
                 <span style={{ fontSize: "1.6rem", fontWeight: 800, color: "var(--text)" }}>
                   {pack.tokens}
                 </span>
@@ -304,7 +315,7 @@ export default function Pricing() {
             }}
           >
             <div className="bento-icon gold" style={{ margin: 0 }}>
-              <i className="fa-solid fa-coins" />
+              <Ic icon={Coins} />
             </div>
             <div>
               <h3 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--gold)" }}>

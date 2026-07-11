@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  CircleAlert,
+  CirclePlay,
+  LoaderCircle,
+  MessagesSquare,
+  Send,
+  Tag,
+} from "lucide-react";
+import Ic from "@/components/ui/Icon";
 
 // Handshake with /contact/thank-you: the conversion only fires when this flag is
 // present, so a refresh or a direct visit to the thank-you URL can't inflate leads.
@@ -165,7 +174,7 @@ export default function Contact() {
     if (!msg) return null;
     return (
       <p className="field-error" id={`${id}-err`}>
-        <i className="fa-solid fa-circle-exclamation" />
+        <Ic icon={CircleAlert} />
         <span>{msg}</span>
       </p>
     );
@@ -224,19 +233,19 @@ export default function Contact() {
 
           <ul className="contact-uses">
             <li>
-              <i className="fa-solid fa-circle-play" />
+              <Ic icon={CirclePlay} />
               <span>
                 <strong>Book a demo</strong> — watch Kauntech scan a stack of cards, fully offline.
               </span>
             </li>
             <li>
-              <i className="fa-solid fa-tag" />
+              <Ic icon={Tag} />
               <span>
                 <strong>Get a price for your team</strong> — bulk seats, K-Token packs, custom plans.
               </span>
             </li>
             <li>
-              <i className="fa-solid fa-comments" />
+              <Ic icon={MessagesSquare} />
               <span>
                 <strong>Ask a question</strong> — integrations, DPDP compliance, switching from
                 another scanner.
@@ -355,14 +364,14 @@ export default function Contact() {
               disabled={!canSubmit || submitting}
             >
               <span>{submitting ? "Sending..." : "Send message"}</span>
-              <i className={submitting ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-paper-plane"} />
+              {submitting ? <Ic icon={LoaderCircle} className="ic-spin" /> : <Ic icon={Send} />}
             </button>
 
             <p className="contact-note">{hint}</p>
 
             {error && (
               <div role="alert" aria-live="assertive" className="contact-error">
-                <i className="fa-solid fa-circle-exclamation" />
+                <Ic icon={CircleAlert} />
                 <span>{error}</span>
               </div>
             )}

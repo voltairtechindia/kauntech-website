@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Smartphone } from "lucide-react";
 import DeletionForm from "@/components/DeletionForm";
+import Ic from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Data Deletion Request Portal",
@@ -30,7 +32,7 @@ export default function DeleteRequestPage() {
           <div className="portal-grid">
             <div className="instruction-box">
               <h3>
-                <i className="fa-solid fa-mobile-screen-button" /> Self-Service App Options
+                <Ic icon={Smartphone} /> Self-Service App Options
               </h3>
               <p
                 style={{

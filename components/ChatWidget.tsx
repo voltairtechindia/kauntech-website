@@ -2,7 +2,26 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  ArrowRight,
+  Briefcase,
+  Compass,
+  FileText,
+  Headset,
+  ListChecks,
+  Newspaper,
+  Scale,
+  Send,
+  ShieldCheck,
+  ShieldUser,
+  Tags,
+  Trash2,
+  WandSparkles,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 
+import Ic from "@/components/ui/Icon";
 import Markdown from "@/components/Markdown";
 import {
   pageContext,
@@ -10,6 +29,21 @@ import {
   type PageContext,
   type RouteSuggestion,
 } from "@/lib/site-nav";
+
+/** Lucide equivalents for the Font Awesome class strings in lib/site-nav. */
+const NAV_ICONS: Record<string, LucideIcon> = {
+  "fa-solid fa-tags": Tags,
+  "fa-solid fa-wand-magic-sparkles": WandSparkles,
+  "fa-solid fa-list-check": ListChecks,
+  "fa-solid fa-shield-halved": ShieldCheck,
+  "fa-solid fa-scale-balanced": Scale,
+  "fa-solid fa-newspaper": Newspaper,
+  "fa-solid fa-briefcase": Briefcase,
+  "fa-solid fa-headset": Headset,
+  "fa-solid fa-trash-can": Trash2,
+  "fa-solid fa-user-shield": ShieldUser,
+  "fa-solid fa-file-contract": FileText,
+};
 
 type Msg = {
   from: "bot" | "user";
@@ -340,7 +374,7 @@ export default function ChatWidget() {
             aria-label="Dismiss"
             onClick={dismissTeaser}
           >
-            <i className="fa-solid fa-xmark" />
+            <Ic icon={X} />
           </button>
           <button className="chat-teaser-main" type="button" onClick={openPanel}>
             <span className="chat-teaser-avatar">
@@ -407,7 +441,7 @@ export default function ChatWidget() {
             </div>
           </div>
           <button className="chat-close" onClick={() => setOpen(false)} type="button" aria-label="Close chat">
-            <i className="fa-solid fa-xmark" />
+            <Ic icon={X} />
           </button>
         </div>
 
@@ -459,9 +493,9 @@ export default function ChatWidget() {
                       className="chat-nav-btn"
                       onClick={() => goTo(n.path)}
                     >
-                      <i className={n.icon} />
+                      <Ic icon={NAV_ICONS[n.icon] ?? Compass} />
                       <span>{n.label}</span>
-                      <i className="fa-solid fa-arrow-right chat-nav-arrow" />
+                      <Ic icon={ArrowRight} className="chat-nav-arrow" />
                     </button>
                   ))}
                 </div>
@@ -495,7 +529,7 @@ export default function ChatWidget() {
             required
           />
           <button type="submit" disabled={busy || isAnimating || !input.trim()} aria-label="Send">
-            <i className="fa-solid fa-paper-plane" />
+            <Ic icon={Send} />
           </button>
         </form>
       </div>

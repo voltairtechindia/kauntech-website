@@ -1,0 +1,688 @@
+/* ============================================================================
+   KAUNTECH v3 POLISH LAYER — imported last, wins the cascade.
+   Custom cursor · Lucide icon shell · unified button system · glass navbar
+   refinements · full-screen mobile menu · footer redesign · site-wide spacing
+   rhythm, forms, cards and tables for the legacy inner pages.
+   ============================================================================ */
+
+/* ================================ ICON SHELL ================================
+   Every icon is a stroke SVG (Lucide) or brand glyph inside <i class="ic">.
+   The shell inherits font-size + currentColor, so all legacy CSS that sized
+   Font Awesome via font-size keeps working untouched. */
+
+i.ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-style: normal;
+  line-height: 1;
+  flex: none;
+  vertical-align: -0.125em;
+}
+i.ic > svg {
+  width: 1em;
+  height: 1em;
+  display: block;
+}
+
+/* loading spinner (replaces Font Awesome's fa-spin) */
+i.ic-spin > svg {
+  animation: icSpin 0.9s linear infinite;
+}
+@keyframes icSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================== CUSTOM CURSOR =============================== */
+
+html.k-cursor,
+html.k-cursor body,
+html.k-cursor a,
+html.k-cursor button,
+html.k-cursor input,
+html.k-cursor textarea,
+html.k-cursor select,
+html.k-cursor label,
+html.k-cursor summary,
+html.k-cursor [role="button"] {
+  cursor: none !important;
+}
+
+/* single dot, blend-difference so it stays visible on any surface */
+.kursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  mix-blend-mode: difference;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+/* ========================== SELECTION / SCROLLBAR =========================== */
+
+::selection {
+  background: rgba(245, 158, 11, 0.9);
+  color: #0a0a0a;
+}
+
+html {
+  scrollbar-color: #3f3428 #0a0a0a;
+}
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4a3a24, #2c2318);
+  border-radius: 8px;
+  border: 2px solid #0a0a0a;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6b4d24, #3d2f1c);
+}
+
+:focus-visible {
+  outline: 2px solid rgba(245, 158, 11, 0.75);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ============================ BUTTON SYSTEM v3 ==============================
+   One voice for every CTA on the site: display font, pill radius, shine sweep
+   on primaries, arrow micro-slide, pressed squash. Applies to the k-* buttons
+   AND all the legacy classes still used on inner pages. */
+
+.k-btn,
+.btn-primary,
+.btn-secondary,
+.nav-cta,
+.btn-submit,
+.contact-submit,
+.apply-cta,
+.explore-btn {
+  position: relative;
+  overflow: hidden;
+  font-family: var(--k-display);
+  letter-spacing: 0.01em;
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    background 0.3s ease,
+    color 0.3s ease;
+}
+
+.k-btn:active,
+.btn-primary:active,
+.btn-secondary:active,
+.nav-cta:active,
+.btn-submit:active,
+.contact-submit:active,
+.apply-cta:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* shine sweep across primary/gradient buttons */
+.k-btn--primary::before,
+.btn-primary::before,
+.nav-cta::before,
+.btn-submit::before,
+.contact-submit::before,
+.apply-cta::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: 0;
+  width: 45%;
+  height: 140%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  transform: translateX(-160%) skewX(-18deg);
+  transition: transform 0.65s ease;
+  pointer-events: none;
+}
+.k-btn--primary:hover::before,
+.btn-primary:hover::before,
+.nav-cta:hover::before,
+.btn-submit:hover::before,
+.contact-submit:hover::before,
+.apply-cta:hover::before {
+  transform: translateX(320%) skewX(-18deg);
+}
+
+/* arrow icons nudge forward on hover */
+.k-btn i.ic,
+.btn-primary i.ic,
+.btn-secondary i.ic,
+.nav-cta i.ic,
+.k-arrowlink i.ic {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.k-btn:hover i.ic,
+.btn-primary:hover i.ic,
+.btn-secondary:hover i.ic,
+.nav-cta:hover i.ic,
+.k-arrowlink:hover i.ic {
+  transform: translateX(4px);
+}
+
+/* legacy secondary → quiet glass pill, gold on hover (kills the indigo skin) */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--k-border);
+  color: var(--k-text);
+  backdrop-filter: blur(8px);
+}
+.btn-secondary:hover {
+  border-color: rgba(245, 158, 11, 0.5);
+  color: var(--k-gold);
+  background: rgba(245, 158, 11, 0.07);
+  transform: translateY(-3px);
+}
+
+/* ============================== NAVBAR v3 =================================== */
+
+.navbar .container {
+  border-radius: 999px;
+}
+
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-cta i.ic {
+  font-size: 0.85em;
+}
+
+/* dropdown rows: icon sits in a rounded tinted chip */
+.nav-dd-ic {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-size: 1rem;
+  color: var(--k-gold);
+  background: rgba(245, 158, 11, 0.09);
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.nav-dropdown-menu a:hover .nav-dd-ic {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: scale(1.06);
+}
+.nav-dropdown-menu a {
+  align-items: center;
+}
+
+/* hamburger → two-line morph */
+.hamburger {
+  gap: 7px;
+  padding: 10px 6px;
+}
+.hamburger span {
+  width: 26px;
+  height: 2px;
+  border-radius: 2px;
+  transition: transform 0.35s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.2s ease;
+}
+.hamburger span:nth-child(2) {
+  display: none;
+}
+.hamburger.active span:nth-child(1) {
+  transform: translateY(4.5px) rotate(45deg);
+}
+.hamburger.active span:nth-child(3) {
+  transform: translateY(-4.5px) rotate(-45deg);
+}
+
+/* ========================= MOBILE MENU — FULL SCREEN ======================== */
+
+.mobile-menu {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  gap: 0;
+  padding: 100px 28px 36px;
+  background:
+    radial-gradient(80% 50% at 80% 0%, rgba(38, 22, 10, 0.85), transparent 65%),
+    rgba(8, 7, 6, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+.mobile-menu.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mm-label {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--k-mut, #71717a);
+  margin: 0 0 14px;
+  display: block;
+}
+
+.mm-links {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  margin-bottom: 28px;
+}
+
+.mobile-menu .mm-link {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: var(--k-display);
+  font-size: clamp(1.45rem, 6vw, 1.9rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--k-text, #f5f5f4);
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: 0s;
+}
+.mobile-menu.active .mm-link {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(0.06s + var(--i, 0) * 0.045s);
+}
+.mobile-menu .mm-link.active {
+  color: var(--k-gold, #f59e0b);
+}
+.mm-link-idx {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  color: var(--k-mut, #71717a);
+}
+.mm-link i.ic {
+  margin-left: auto;
+  font-size: 0.8em;
+  color: var(--k-mut, #71717a);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+.mm-link:hover i.ic {
+  color: var(--k-gold, #f59e0b);
+  transform: translate(2px, -2px);
+}
+
+.mm-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.45s ease 0.4s, transform 0.45s ease 0.4s;
+}
+.mobile-menu.active .mm-foot {
+  opacity: 1;
+  transform: translateY(0);
+}
+.mm-foot .nav-cta {
+  justify-content: center;
+  padding: 16px 24px;
+  font-size: 1rem;
+}
+.mm-social {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  color: var(--k-dim, #a1a1aa);
+  font-size: 1.05rem;
+}
+.mm-social a {
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+.mm-social a:hover {
+  color: var(--k-gold, #f59e0b);
+  transform: translateY(-2px);
+}
+
+/* ============================== FOOTER v3 =================================== */
+
+.footer {
+  position: relative;
+  overflow: hidden;
+  padding: 90px 0 32px;
+  background:
+    radial-gradient(70% 60% at 50% 110%, rgba(249, 115, 22, 0.07), transparent 70%),
+    linear-gradient(180deg, #070606, #050505);
+  border-top: 0;
+}
+.footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, 0.4), rgba(249, 115, 22, 0.25), transparent);
+}
+
+.footer-grid {
+  gap: clamp(36px, 5vw, 72px);
+  margin-bottom: 72px;
+}
+
+.footer-brand p {
+  font-size: 0.92rem;
+  max-width: 330px;
+}
+
+.footer-sec {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.6px;
+  color: var(--k-gold);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  background: rgba(245, 158, 11, 0.06);
+  padding: 8px 14px;
+  border-radius: 999px;
+}
+
+.footer-col h4 {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: var(--k-mut, #71717a);
+  margin-bottom: 20px;
+}
+
+.footer-col a {
+  position: relative;
+  width: fit-content;
+  padding: 7px 0;
+  font-size: 0.92rem;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+.footer-col a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 4px;
+  width: 100%;
+  height: 1px;
+  background: var(--k-gold, #f59e0b);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.footer-col a:hover {
+  color: var(--k-text, #f5f5f4);
+}
+.footer-col a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* newsletter → single pill with embedded arrow button */
+.fnews {
+  position: relative;
+}
+.fnews input {
+  width: 100%;
+  padding: 15px 58px 15px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--k-border, rgba(255, 255, 255, 0.08));
+  color: var(--k-text, #f5f5f4);
+  font-size: 0.9rem;
+  font-family: var(--font);
+  outline: none;
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+.fnews input::placeholder {
+  color: var(--k-mut, #71717a);
+}
+.fnews input:focus {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.04);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+}
+.fnews button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  bottom: 5px;
+  width: 44px;
+  border: none;
+  border-radius: 999px;
+  background: var(--k-grad, linear-gradient(92deg, #f59e0b, #f97316));
+  color: #0a0a0a;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.fnews button:hover {
+  transform: scale(1.07);
+  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.4);
+}
+
+.footer-social {
+  gap: 10px;
+}
+.footer-social a {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--k-border, rgba(255, 255, 255, 0.08));
+  color: var(--k-dim, #a1a1aa);
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+.footer-social a:hover {
+  color: #0a0a0a;
+  background: var(--k-grad, linear-gradient(92deg, #f59e0b, #f97316));
+  border-color: transparent;
+  transform: translateY(-3px);
+}
+
+.footer-bottom {
+  border-top-color: rgba(255, 255, 255, 0.06);
+  padding-top: 28px;
+  gap: 24px;
+}
+
+/* oversized clipped wordmark under everything — pure decoration */
+.footer-mark {
+  display: block;
+  margin: 56px auto -0.28em;
+  text-align: center;
+  font-family: var(--k-display);
+  font-weight: 700;
+  font-size: clamp(4rem, 16vw, 15rem);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.14), rgba(245, 158, 11, 0));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ========================== GLOBAL RHYTHM (legacy) ==========================
+   Inner pages inherit a consistent vertical rhythm and tighter headline set. */
+
+section {
+  padding: clamp(72px, 9vw, 118px) 0;
+}
+
+.section-header {
+  margin-bottom: clamp(44px, 6vw, 72px);
+}
+.section-header p {
+  text-wrap: pretty;
+}
+
+/* ================================= FORMS ==================================== */
+
+.contact-field,
+.deletion-form input,
+.deletion-form textarea,
+.deletion-form select,
+.career-form input,
+.career-form textarea,
+.career-form select,
+.apply-modal input,
+.apply-modal textarea,
+.apply-modal select,
+.form-box input,
+.form-box textarea,
+.form-box select,
+.chat-input-box input {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid var(--k-border, rgba(255, 255, 255, 0.08));
+  color: var(--k-text, #f5f5f4);
+  transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+}
+
+.contact-field:focus,
+.deletion-form input:focus,
+.deletion-form textarea:focus,
+.deletion-form select:focus,
+.career-form input:focus,
+.career-form textarea:focus,
+.career-form select:focus,
+.apply-modal input:focus,
+.apply-modal textarea:focus,
+.apply-modal select:focus,
+.form-box input:focus,
+.form-box textarea:focus,
+.form-box select:focus {
+  border-color: rgba(245, 158, 11, 0.55);
+  background: rgba(245, 158, 11, 0.035);
+  box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1);
+  outline: none;
+}
+
+/* ============================ CARDS & SURFACES ==============================
+   The bento/blog/compare/FAQ cards on inner pages get the same layered
+   surface as the v2 home cells, so the whole site reads as one system. */
+
+.bento-card,
+.blog-card,
+.detailed-compare-card,
+.highlight-card,
+.cta-box,
+.faq-item {
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.035), transparent 38%),
+    linear-gradient(180deg, #121013, #0d0c0e);
+  border: 1px solid var(--k-border, rgba(255, 255, 255, 0.08));
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.bento-card:hover,
+.blog-card:hover,
+.detailed-compare-card:hover,
+.highlight-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 20px 45px rgba(0, 0, 0, 0.4);
+}
+
+.faq-item:hover,
+.faq-item.active {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* comparison tables: rounded shell + row hover */
+.comparison-table {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid var(--k-border, rgba(255, 255, 255, 0.08));
+}
+.comparison-table tbody tr {
+  transition: background 0.2s ease;
+}
+.comparison-table tbody tr:hover {
+  background: rgba(245, 158, 11, 0.04);
+}
+
+/* ============================ AMBIENT FINISH ================================
+   Site-wide film grain (the v2 home already has it per-section — this makes
+   every inner page share the same physical texture) + navbar entrance. */
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 99990; /* under the custom cursor (99999), above everything else */
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  opacity: 0.028;
+}
+
+@keyframes navDrop {
+  from {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.navbar {
+  animation: navDrop 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+/* ============================== REDUCED MOTION ============================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .k-btn--primary::before,
+  .btn-primary::before,
+  .nav-cta::before,
+  .btn-submit::before,
+  .contact-submit::before,
+  .apply-cta::before {
+    display: none;
+  }
+  .mobile-menu .mm-link,
+  .mm-foot {
+    transition: none;
+  }
+  .navbar {
+    animation: none;
+  }
+  i.ic-spin > svg {
+    animation-duration: 1.8s;
+  }
+}

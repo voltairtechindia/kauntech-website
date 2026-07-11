@@ -479,7 +479,7 @@ export function ScanScreen() {
           <span>HOLD STILL</span>
           <span>READING CARD</span>
           <span>ANALYZING</span>
-          <span className="ok">SAVED · 100% OFFLINE</span>
+          <span className="ok">SAVED · OFFLINE</span>
         </span>
         <span className="kps-hud-div" />
         <span className="kps-hud-nfc">{ic.wave(11)} TAP FOR NFC</span>
@@ -535,17 +535,16 @@ export function ScanScreen() {
 
 /* ------------------------------ 3 · AI INTEL -----------------------------------
    app/contact/[id].tsx + AIIntelPanel — centered "Contact Details" header,
-   General/Intel/Strategy segmented pills, the "Deep AI Intel Scan" card with
-   its six capability pills, cycling analysis status, resolving dossier
-   sections, and the floating Share / Brain-FAB / Regenerate action bar.      */
+   General/Intel/Strategy segmented pills, the just-scanned contact row, the
+   "Deep AI Intel Scan" card, cycling analysis status, and the extracted
+   COMPANY DOSSIER filling in fact by fact (company, size, news, decision
+   power) + personalization hooks — the payoff of the scan one chapter ago.  */
 
-const INTEL_PILLS = [
-  { icon: ic.building, label: "Company Dossier" },
-  { icon: ic.news, label: "Latest News & Moves" },
-  { icon: ic.trendUp, label: "Growth & Risk Signals" },
-  { icon: ic.gauge, label: "Decision Power" },
-  { icon: ic.sparkles, label: "Personalization Hooks" },
-  { icon: ic.compass, label: "Engagement Angle" },
+const INTEL_FACTS = [
+  { icon: ic.building, text: "IT services & product studio · Mumbai, IN" },
+  { icon: ic.users, text: "11–50 people · founded 2019 · bootstrapped" },
+  { icon: ic.news, text: "In the news: expanding to Pune this quarter" },
+  { icon: ic.gauge, text: "Decision power: Founder — signs off on tools" },
 ];
 
 export function IntelScreen() {
@@ -564,17 +563,19 @@ export function IntelScreen() {
         <span>{ic.target(13)} Strategy</span>
       </div>
 
+      <div className="kps-intel-who">
+        <span className="kps-lead-avatar">H</span>
+        <span className="kps-intel-who-id">
+          <b>Harshal Vadgama</b>
+          <i>Founder · Voltairtech</i>
+        </span>
+        <span className="kps-intel-who-tag">{ic.camera(10)} JUST SCANNED</span>
+      </div>
+
       <div className="kps-intel-card">
         <span className="kps-intel-brain">{ic.brain(22)}</span>
         <b>Deep AI Intel Scan</b>
         <p>Full company dossier + this person&apos;s role, influence, and the angle that opens the door.</p>
-        <div className="kps-intel-pills">
-          {INTEL_PILLS.map((p) => (
-            <span key={p.label}>
-              {p.icon(12)} {p.label}
-            </span>
-          ))}
-        </div>
       </div>
 
       <div className="kps-intel-status" aria-hidden="true">
@@ -584,15 +585,18 @@ export function IntelScreen() {
         <span className="ok">Dossier ready ✓ · 50 tokens</span>
       </div>
 
-      <div className="kps-sec kps-sec--1">
-        <label>OVERVIEW</label>
-        <span className="kps-line w92" />
-        <span className="kps-line w78" />
+      <div className="kps-sec kps-sec--dossier">
+        <label>COMPANY DOSSIER · VOLTAIRTECH</label>
+        {INTEL_FACTS.map((f, idx) => (
+          <span className={`kps-fact kps-fact--${idx + 1}`} key={f.text}>
+            {f.icon(12)} {f.text}
+          </span>
+        ))}
       </div>
       <div className="kps-sec kps-sec--2">
         <label>PERSONALIZATION HOOKS</label>
         <span className="kps-hook">“Congrats on the Pune expansion —”</span>
-        <span className="kps-line w70" />
+        <span className="kps-hook kps-hook--2">“Saw you&apos;re scaling the Mumbai team —”</span>
       </div>
 
       <div className="kps-actionbar">
@@ -930,8 +934,10 @@ export function PlanScreen() {
 
 /* --------------------------------- 7 · AR CARD ----------------------------------
    The WebAR card viewer (designed in the kauntech.com/ar studio, opened by
-   the app's scanner): dark camera space, tracked paper card + floor reticle,
-   the holographic V-Card floating above it, layer chips, share-link pill.    */
+   the app's scanner): dark camera space, tracked paper card (with AR corner
+   brackets) + floor reticle, a holographic 3D city model that constructs
+   itself on the card and spins on a turntable, holo particles up the beam,
+   the V-Card hologram swaying in 3D above it, layer chips, share-link pill. */
 
 export function ArScreen() {
   return (
@@ -954,7 +960,38 @@ export function ArScreen() {
           <span className="kps-bizcard-line w45" />
         </span>
 
+        <span className="kps-ar-particles" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+
+        <span className="kps-ar-model" aria-hidden="true">
+          <span className="kps-ar-turntable">
+            <span className="kps-ar-plate" />
+            <span className="kps-ar-bldg kps-ar-bldg--a">
+              <b className="kps-ar-wall kps-ar-wall--f">K</b>
+              <b className="kps-ar-wall kps-ar-wall--k" />
+              <b className="kps-ar-wall kps-ar-wall--l" />
+              <b className="kps-ar-wall kps-ar-wall--r" />
+              <b className="kps-ar-wall kps-ar-wall--t" />
+              <i className="kps-ar-beacon" />
+            </span>
+            <span className="kps-ar-bldg kps-ar-bldg--b">
+              <b className="kps-ar-wall kps-ar-wall--f" />
+              <b className="kps-ar-wall kps-ar-wall--k" />
+              <b className="kps-ar-wall kps-ar-wall--l" />
+              <b className="kps-ar-wall kps-ar-wall--r" />
+              <b className="kps-ar-wall kps-ar-wall--t" />
+            </span>
+          </span>
+        </span>
+
         <div className="kps-ar-holo">
+          <span className="kps-ar-holo-scan" aria-hidden="true" />
           <div className="kps-ar-holo-brand">KAUNTECH</div>
           <span className="kps-ar-holo-avatar">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -964,7 +1001,7 @@ export function ArScreen() {
           <i>Founder · Kauntech</i>
         </div>
 
-        <span className="kps-ar-chip kps-ar-chip--1">{ic.box(11)} 3D LOGO</span>
+        <span className="kps-ar-chip kps-ar-chip--1">{ic.box(11)} 3D MODEL</span>
         <span className="kps-ar-chip kps-ar-chip--2">{ic.play(11)} INTRO VIDEO</span>
         <span className="kps-ar-chip kps-ar-chip--3">{ic.userPlus(11)} TAP TO SAVE</span>
       </div>

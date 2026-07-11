@@ -1,4 +1,18 @@
 import type { Metadata } from "next";
+import {
+  CalendarDays,
+  CircleAlert,
+  ClipboardList,
+  Cloud,
+  Lock,
+  MailOpen,
+  RefreshCw,
+  Scale,
+  ShieldCheck,
+} from "lucide-react";
+
+import Brand from "@/components/ui/BrandIcons";
+import Ic from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -20,7 +34,7 @@ export default function PrivacyPage() {
         <div className="legal-card">
           <h1 className="grad-text">Privacy Policy</h1>
           <span className="last-updated">
-            <i className="fa-solid fa-calendar-days" /> Last Updated: June 30, 2026
+            <Ic icon={CalendarDays} /> Last Updated: June 30, 2026
           </span>
 
           <div className="legal-body">
@@ -41,7 +55,7 @@ export default function PrivacyPage() {
 
             <div className="alert-box indigo-alert">
               <h4>
-                <i className="fa-solid fa-cloud" /> Our On-Device-First Principle
+                <Ic icon={Cloud} /> Our On-Device-First Principle
               </h4>
               <p style={{ marginBottom: 0 }}>
                 Kauntech is built on-device-first: your camera images are read and parsed{" "}
@@ -58,7 +72,7 @@ export default function PrivacyPage() {
             </div>
 
             <h2>
-              <i className="fa-solid fa-clipboard-list" /> 1. Information We Process &amp; Record
+              <Ic icon={ClipboardList} /> 1. Information We Process &amp; Record
             </h2>
             <p>
               Because Kauntech operates primarily offline, our processing of data is strictly
@@ -147,7 +161,7 @@ export default function PrivacyPage() {
             </ul>
 
             <h2>
-              <i className="fa-solid fa-arrows-spin" /> 2. Legitimate Purposes &amp; DPDP Notice
+              <Ic icon={RefreshCw} /> 2. Legitimate Purposes &amp; DPDP Notice
             </h2>
             <p>
               Under the DPDP Act 2023, data processing must strictly serve specified, lawful, and
@@ -166,7 +180,7 @@ export default function PrivacyPage() {
 
             <div id="google-disclosure" />
             <h2>
-              <i className="fa-brands fa-google" /> 3. Google OAuth &amp; API User Data Disclosures
+              <Brand name="google" /> 3. Google OAuth &amp; API User Data Disclosures
             </h2>
             <p>
               The Kauntech App provides voluntary integrations with Google APIs (Google Sheets and
@@ -226,7 +240,7 @@ export default function PrivacyPage() {
 
             <div className="alert-box">
               <h4>
-                <i className="fa-solid fa-shield-halved" /> Google Limited Use Compliance
+                <Ic icon={ShieldCheck} /> Google Limited Use Compliance
               </h4>
               <p>
                 Kauntech&apos;s use and transfer of information received from Google APIs to any
@@ -268,7 +282,7 @@ export default function PrivacyPage() {
             </div>
 
             <h2>
-              <i className="fa-solid fa-lock" /> 4. Data Security &amp; AES-256 Encryption
+              <Ic icon={Lock} /> 4. Data Security &amp; AES-256 Encryption
             </h2>
             <p>
               We implement top-tier technical and organizational security measures to shield your
@@ -293,7 +307,7 @@ export default function PrivacyPage() {
             </ul>
 
             <h2>
-              <i className="fa-solid fa-scale-balanced" /> 5. Your DPDP Act Rights (Consent, Access
+              <Ic icon={Scale} /> 5. Your DPDP Act Rights (Consent, Access
               &amp; Deletion)
             </h2>
             <p>
@@ -328,7 +342,7 @@ export default function PrivacyPage() {
             </ul>
 
             <h2>
-              <i className="fa-solid fa-circle-exclamation" /> 6. Changes to This Privacy Policy
+              <Ic icon={CircleAlert} /> 6. Changes to This Privacy Policy
             </h2>
             <p>
               We may update our Privacy Policy from time to time to accommodate changes in Google
@@ -339,7 +353,7 @@ export default function PrivacyPage() {
             </p>
 
             <h2>
-              <i className="fa-solid fa-envelope-open-text" /> 7. Contact our Privacy Officer
+              <Ic icon={MailOpen} /> 7. Contact our Privacy Officer
             </h2>
             <p>
               If you have any questions, compliance queries, or complaints regarding our data

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+import Ic from "@/components/ui/Icon";
 
 import { getFaqPairs } from "@/lib/faq/db";
 import { buildFaqLd } from "@/lib/faq/ld";
@@ -56,7 +58,7 @@ export default async function Faq({
           <div className="faq-see-all reveal">
             <Link href={seeAllHref} className="faq-see-all-link">
               See all frequently asked questions
-              <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+              <Ic icon={ArrowRight} />
             </Link>
           </div>
         )}

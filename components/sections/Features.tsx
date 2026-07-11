@@ -1,6 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Brain,
+  Check,
+  Clock,
+  ExternalLink,
+  FlaskConical,
+  Languages,
+  Layers,
+  Palette,
+  Server,
+  Shuffle,
+  SwitchCamera,
+} from "lucide-react";
+import Ic from "@/components/ui/Icon";
 import FeatureModal from "@/components/FeatureModal";
 
 export default function Features() {
@@ -22,7 +36,7 @@ export default function Features() {
           <div className="bento-card large reveal">
             <span className="bento-section-title">Section A · Core Architecture</span>
             <div className="bento-icon gold">
-              <i className="fa-solid fa-layer-group" />
+              <Ic icon={Layers} />
             </div>
             <h3>Offline Superpowers</h3>
             <p>
@@ -31,25 +45,25 @@ export default function Features() {
             </p>
             <ul className="feature-list">
               <li>
-                <span className="check"><i className="fa-solid fa-check" /></span>{" "}
+                <span className="check"><Ic icon={Check} /></span>{" "}
                 <strong>Works Without Internet:</strong> Scan and process cards anywhere, anytime.
               </li>
               <li>
-                <span className="check"><i className="fa-solid fa-check" /></span>{" "}
+                <span className="check"><Ic icon={Check} /></span>{" "}
                 <strong>Local Data Storage:</strong> All sensitive contact data stays encrypted on
                 your device.
               </li>
               <li>
-                <span className="check"><i className="fa-solid fa-check" /></span>{" "}
+                <span className="check"><Ic icon={Check} /></span>{" "}
                 <strong>Smart Sync:</strong> Automatically queues and backs up to cloud the moment
                 network returns.
               </li>
               <li>
-                <span className="check"><i className="fa-solid fa-check" /></span>{" "}
+                <span className="check"><Ic icon={Check} /></span>{" "}
                 <strong>Audio Notes:</strong> Record voice memos offline right after the pitch.
               </li>
               <li>
-                <span className="check"><i className="fa-solid fa-check" /></span>{" "}
+                <span className="check"><Ic icon={Check} /></span>{" "}
                 <strong>DPDP Compliant:</strong> Future-ready privacy protection.
               </li>
             </ul>
@@ -57,45 +71,45 @@ export default function Features() {
 
           <div className="bento-card reveal reveal-delay-1">
             <span className="bento-section-title">Section B · Omnichannel Capture</span>
-            <div className="bento-icon indigo"><i className="fa-solid fa-camera-rotate" /></div>
+            <div className="bento-icon indigo"><Ic icon={SwitchCamera} /></div>
             <h3>Input Flexibility</h3>
             <p>Four lightning-fast ways to capture visitor information without friction.</p>
             <ul className="feature-list">
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Business Card OCR:</strong> Point and shoot AI recognition.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>QR Code Scanner:</strong> Instant digital card capture.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>NFC Tap:</strong> Tap phone to exchange details seamlessly.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Manual Entry:</strong> Full keyboard input with custom fields.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Business Card OCR:</strong> Point and shoot AI recognition.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>QR Code Scanner:</strong> Instant digital card capture.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>NFC Tap:</strong> Tap phone to exchange details seamlessly.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Manual Entry:</strong> Full keyboard input with custom fields.</li>
             </ul>
           </div>
 
           <div className="bento-card reveal reveal-delay-2">
             <span className="bento-section-title">Section C · Intelligence</span>
-            <div className="bento-icon purple"><i className="fa-solid fa-brain" /></div>
+            <div className="bento-icon purple"><Ic icon={Brain} /></div>
             <h3>AI Enrichment</h3>
             <p>Transform raw contact details into actionable intelligence instantly.</p>
             <ul className="feature-list">
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Company Intel:</strong> Get founders, industry, and size.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Lead Scoring:</strong> Prioritize hot leads instantly.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Icebreakers:</strong> AI generated conversation starters.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Email Opener:</strong> Personalized cold email templates.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Company Intel:</strong> Get founders, industry, and size.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Lead Scoring:</strong> Prioritize hot leads instantly.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Icebreakers:</strong> AI generated conversation starters.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Email Opener:</strong> Personalized cold email templates.</li>
             </ul>
           </div>
 
           <div className="bento-card large reveal reveal-delay-3">
             <span className="bento-section-title">Section D · Multi-Channel Automation</span>
-            <div className="bento-icon green"><i className="fa-solid fa-shuffle" /></div>
+            <div className="bento-icon green"><Ic icon={Shuffle} /></div>
             <h3>Output Channels &amp; Automations</h3>
             <p>
               Set up your post-scan automation rules once, and let Kauntech route enriched contacts
               to your favorite tools instantly.
             </p>
             <ul className="feature-list feature-2col">
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>WhatsApp:</strong> Direct team/group chat routing.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Email:</strong> Auto-compose personalized drafts.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Google Sheets:</strong> Real-time spreadsheet sync.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Webhook:</strong> Connect to any CRM or ERP.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>WhatsApp:</strong> Direct team/group chat routing.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Email:</strong> Auto-compose personalized drafts.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Google Sheets:</strong> Real-time spreadsheet sync.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Webhook:</strong> Connect to any CRM or ERP.</li>
               <li style={{ gridColumn: "span 2" }}>
-                <span className="check"><i className="fa-solid fa-check" /></span>{" "}
+                <span className="check"><Ic icon={Check} /></span>{" "}
                 <strong>Telegram:</strong> Dedicated bot integration for instant notifications.
               </li>
             </ul>
@@ -103,30 +117,30 @@ export default function Features() {
 
           <div className="bento-card reveal reveal-delay-1">
             <span className="bento-section-title">Section E · Translation</span>
-            <div className="bento-icon blue"><i className="fa-solid fa-language" /></div>
+            <div className="bento-icon blue"><Ic icon={Languages} /></div>
             <h3>Multi-Language Support</h3>
             <p>Powered by emerging Indian LLMs, our translation engine is evolving.</p>
             <ul className="feature-list">
-              <li><span className="check"><i className="fa-solid fa-clock" /></span> <strong>Coming Soon:</strong> Scan different languages.</li>
-              <li><span className="check"><i className="fa-solid fa-clock" /></span> <strong>Auto-Translate:</strong> Convert to English instantly.</li>
-              <li><span className="check"><i className="fa-solid fa-clock" /></span> <strong>Smart Reply:</strong> Send Mail/WhatsApp in English or revert in original language.</li>
-              <li><span className="check"><i className="fa-solid fa-vial" /></span> <strong>Status:</strong> Currently under process.</li>
+              <li><span className="check"><Ic icon={Clock} /></span> <strong>Coming Soon:</strong> Scan different languages.</li>
+              <li><span className="check"><Ic icon={Clock} /></span> <strong>Auto-Translate:</strong> Convert to English instantly.</li>
+              <li><span className="check"><Ic icon={Clock} /></span> <strong>Smart Reply:</strong> Send Mail/WhatsApp in English or revert in original language.</li>
+              <li><span className="check"><Ic icon={FlaskConical} /></span> <strong>Status:</strong> Currently under process.</li>
             </ul>
           </div>
 
           <div className="bento-card reveal reveal-delay-2">
             <span className="bento-section-title">Section F · Brand Identity</span>
-            <div className="bento-icon red"><i className="fa-solid fa-palette" /></div>
+            <div className="bento-icon red"><Ic icon={Palette} /></div>
             <h3>Customization</h3>
             <p>
               Tailor the scanning experience and digital cards to match your corporate brand
               identity.
             </p>
             <ul className="feature-list">
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Custom QR Logo:</strong> Brand your digital QR codes.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Custom QR Links:</strong> Personalized short URLs.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>Templates:</strong> Save frequently used messages.</li>
-              <li><span className="check"><i className="fa-solid fa-check" /></span> <strong>K-Tokens:</strong> Flexible AI credit system.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Custom QR Logo:</strong> Brand your digital QR codes.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Custom QR Links:</strong> Personalized short URLs.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>Templates:</strong> Save frequently used messages.</li>
+              <li><span className="check"><Ic icon={Check} /></span> <strong>K-Tokens:</strong> Flexible AI credit system.</li>
             </ul>
             <button
               className="explore-btn"
@@ -135,7 +149,7 @@ export default function Features() {
               onClick={() => setModalOpen(true)}
             >
               <span>Explore All Features</span>
-              <i className="fa-solid fa-arrow-up-right-from-square" />
+              <Ic icon={ExternalLink} />
             </button>
           </div>
 
@@ -144,7 +158,7 @@ export default function Features() {
             style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start" }}
           >
             <span className="bento-section-title">Section G · Privacy</span>
-            <div className="bento-icon gold"><i className="fa-solid fa-server" /></div>
+            <div className="bento-icon gold"><Ic icon={Server} /></div>
             <h3 style={{ color: "var(--gold)" }}>Our Offline Storage Philosophy</h3>
             <p style={{ fontSize: "0.95rem" }}>
               We do not save or store your scanned images or contact details on our servers. We

@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Newspaper } from "lucide-react";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
+import Ic from "@/components/ui/Icon";
 import { listPublishedPosts } from "@/lib/blog/db";
 import { formatDate } from "@/lib/blog/util";
 
@@ -79,7 +81,7 @@ export default async function BlogIndexPage() {
                     />
                   ) : (
                     <div className="blog-card-media--placeholder">
-                      <i className="fa-solid fa-newspaper" />
+                      <Ic icon={Newspaper} />
                     </div>
                   )}
                 </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ArrowRight, X } from "lucide-react";
 
+import Ic from "@/components/ui/Icon";
 import CareerForm from "@/components/CareerForm";
 
 export default function ApplyModal({
@@ -32,7 +34,7 @@ export default function ApplyModal({
     <>
       <button type="button" className="btn-primary apply-cta" onClick={() => setOpen(true)}>
         <span>Apply Now</span>
-        <i className="fa-solid fa-arrow-right" />
+        <Ic icon={ArrowRight} />
       </button>
 
       <div
@@ -43,7 +45,7 @@ export default function ApplyModal({
       >
         <div className="modal-container apply-modal">
           <button className="modal-close" onClick={() => setOpen(false)} type="button">
-            <i className="fa-solid fa-xmark" />
+            <Ic icon={X} />
           </button>
 
           <h3 className="apply-modal-title">Apply for {jobTitle}</h3>

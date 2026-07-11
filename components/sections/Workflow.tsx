@@ -1,3 +1,6 @@
+import { Cpu, IdCard, Send } from "lucide-react";
+import Ic from "@/components/ui/Icon";
+
 export default function Workflow() {
   return (
     <section
@@ -14,7 +17,7 @@ export default function Workflow() {
         <div className="steps-grid reveal reveal-delay-1">
           <div className="step-card">
             <div className="step-num">1</div>
-            <i className="fa-solid fa-address-card step-icon" />
+            <Ic icon={IdCard} className="step-icon" />
             <h3>CAPTURE</h3>
             <p>
               Scan physical card via OCR, scan QR code, tap NFC, or type manually. Works 100%
@@ -24,7 +27,9 @@ export default function Workflow() {
 
           <div className="step-card">
             <div className="step-num">2</div>
-            <i className="fa-solid fa-microchip step-icon" style={{ color: "var(--indigo)" }} />
+            <i className="ic step-icon" style={{ color: "var(--indigo)" }} aria-hidden="true">
+              <Cpu />
+            </i>
             <h3>ENRICH</h3>
             <p>
               Kauntech AI instantly adds company intelligence, lead scoring, and personalized
@@ -34,7 +39,9 @@ export default function Workflow() {
 
           <div className="step-card">
             <div className="step-num">3</div>
-            <i className="fa-solid fa-paper-plane step-icon" style={{ color: "#34d399" }} />
+            <i className="ic step-icon" style={{ color: "#34d399" }} aria-hidden="true">
+              <Send />
+            </i>
             <h3>AUTOMATE</h3>
             <p>
               Instantly route enriched data to WhatsApp, Email drafts, Google Sheets, or Webhooks

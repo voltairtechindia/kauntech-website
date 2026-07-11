@@ -1,7 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import {
+  ArrowRight,
+  Briefcase,
+  CircleDot,
+  Coffee,
+  IndianRupee,
+  Layers,
+  MapPin,
+  type LucideIcon,
+} from "lucide-react";
 
 import CareerForm from "@/components/CareerForm";
+import Ic from "@/components/ui/Icon";
 import { listOpenJobs } from "@/lib/careers/db";
 import type { JobOpening } from "@/lib/careers/types";
 
@@ -23,11 +34,11 @@ export const metadata: Metadata = {
   },
 };
 
-function chip(icon: string, text: string | null, gold = false) {
+function chip(icon: LucideIcon, text: string | null, gold = false) {
   if (!text) return null;
   return (
     <span className={`job-chip${gold ? " gold" : ""}`}>
-      <i className={icon} />
+      <Ic icon={icon} />
       {text}
     </span>
   );
@@ -74,7 +85,7 @@ export default async function CareersPage() {
         {jobs.length > 0 && (
           <div className="career-hero-meta">
             <span className="career-open-badge">
-              <i className="fa-solid fa-circle-dot" />
+              <Ic icon={CircleDot} />
               {jobs.length} open {jobs.length === 1 ? "role" : "roles"}
             </span>
             <span className="career-meta-sep">·</span>
@@ -90,7 +101,7 @@ export default async function CareersPage() {
         {jobs.length === 0 ? (
           <div className="career-empty-state">
             <div className="career-empty-icon">
-              <i className="fa-solid fa-mug-hot" />
+              <Ic icon={Coffee} />
             </div>
             <h3>No open roles right now</h3>
             <p>
@@ -115,17 +126,17 @@ export default async function CareersPage() {
                   ) : null}
                   <h2>{j.title}</h2>
                   <div className="job-card-tags">
-                    {chip("fa-solid fa-location-dot", j.location)}
-                    {chip("fa-solid fa-briefcase", j.employment_type)}
-                    {chip("fa-solid fa-layer-group", j.experience_level)}
-                    {chip("fa-solid fa-indian-rupee-sign", j.salary_range, true)}
+                    {chip(MapPin, j.location)}
+                    {chip(Briefcase, j.employment_type)}
+                    {chip(Layers, j.experience_level)}
+                    {chip(IndianRupee, j.salary_range, true)}
                   </div>
                   {j.positions && j.positions > 1 ? (
                     <span className="job-positions">{j.positions} positions</span>
                   ) : null}
                   <div className="job-card-cta">
                     View role &amp; apply
-                    <i className="fa-solid fa-arrow-right job-arrow" />
+                    <Ic icon={ArrowRight} className="job-arrow" />
                   </div>
                 </Link>
               ))}

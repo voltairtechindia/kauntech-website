@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import DeferredChatWidget from "@/components/DeferredChatWidget";
 import SmoothScroll from "@/components/motion/SmoothScroll";
+import CustomCursor from "@/components/ui/CustomCursor";
 
 /**
  * Renders the marketing chrome (Navbar / Footer / chat widget) around the page,
@@ -21,6 +22,7 @@ export default function SiteChrome({ children }: { children: React.ReactNode }) 
   return (
     <>
       <SmoothScroll />
+      <CustomCursor />
       <Navbar />
       {children}
       <Footer />

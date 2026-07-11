@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ArrowRight, Check, X } from "lucide-react";
+import Ic from "@/components/ui/Icon";
 
 import { competitors } from "@/lib/compare/competitors";
 
@@ -20,13 +22,13 @@ function renderCell(c: Cell) {
   if (c === "yes")
     return (
       <span className="table-check">
-        <i className="fa-solid fa-check" />
+        <Ic icon={Check} />
       </span>
     );
   if (c === "no")
     return (
       <span className="table-dash">
-        <i className="fa-solid fa-xmark" />
+        <Ic icon={X} />
       </span>
     );
   return c;
@@ -94,7 +96,7 @@ export default function Compare() {
                 </span>
                 <p>{c.oneLiner}</p>
                 <span className="detailed-compare-cta">
-                  Compare <i className="fa-solid fa-arrow-right" />
+                  Compare <Ic icon={ArrowRight} />
                 </span>
               </Link>
             ))}

@@ -1,3 +1,6 @@
+import { Cpu, FileText, HeartHandshake, Lock, ShieldUser } from "lucide-react";
+import Ic from "@/components/ui/Icon";
+
 export default function Compliance() {
   const rows: [string, string, string?][] = [
     ["Name", "User / Lead Identification"],
@@ -31,28 +34,28 @@ export default function Compliance() {
 
             <ul className="compliance-features">
               <li>
-                <div className="cf-icon"><i className="fa-solid fa-user-shield" /></div>
+                <div className="cf-icon"><Ic icon={ShieldUser} /></div>
                 <div>
                   <strong>Informed Consent Architecture:</strong> Data is never captured or synced
                   without explicit, recorded user consent.
                 </div>
               </li>
               <li>
-                <div className="cf-icon"><i className="fa-solid fa-microchip" /></div>
+                <div className="cf-icon"><Ic icon={Cpu} /></div>
                 <div>
                   <strong>Local On-Device Processing:</strong> OCR and initial AI enrichment happen
                   directly on your smartphone.
                 </div>
               </li>
               <li>
-                <div className="cf-icon"><i className="fa-solid fa-lock" /></div>
+                <div className="cf-icon"><Ic icon={Lock} /></div>
                 <div>
                   <strong>Enterprise-Grade Encryption:</strong> Data at rest and in transit is
                   secured with AES-256 encryption.
                 </div>
               </li>
               <li>
-                <div className="cf-icon"><i className="fa-solid fa-hand-holding-heart" /></div>
+                <div className="cf-icon"><Ic icon={HeartHandshake} /></div>
                 <div>
                   <strong>Complete User Ownership:</strong> Leads and users can request data
                   deletion or export at any time.
@@ -71,7 +74,7 @@ export default function Compliance() {
                 borderColor: "var(--gold)",
               }}
             >
-              <i className="fa-solid fa-file-contract badge-icon" />
+              <Ic icon={FileText} className="badge-icon" />
               <h3 style={{ fontSize: "1.3rem", color: "var(--gold)" }}>DPDP Act 2023 Audit Ledger</h3>
               <p style={{ fontSize: "0.95rem", marginTop: 8 }}>
                 Below is the exact data schema Kauntech records to maintain regulatory compliance,

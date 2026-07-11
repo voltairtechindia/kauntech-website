@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowRight, Check } from "lucide-react";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import ComparisonTable from "@/components/sections/ComparisonTable";
+import Ic from "@/components/ui/Icon";
 import { competitors, getCompetitor } from "@/lib/compare/competitors";
 
 // Fully static — the comparison data is a checked-in module, no DB / revalidation.
@@ -97,7 +99,7 @@ export default async function ComparePage({
             {data.kauntechWins.map((win, i) => (
               <li key={i}>
                 <span className="vs-check" aria-hidden="true">
-                  <i className="fa-solid fa-check" />
+                  <Ic icon={Check} />
                 </span>
                 <span>{win}</span>
               </li>
@@ -124,7 +126,7 @@ export default async function ComparePage({
           </p>
           <Link href="/get" className="btn-primary">
             Get Kauntech free
-            <i className="fa-solid fa-arrow-right" />
+            <Ic icon={ArrowRight} />
           </Link>
         </section>
 

@@ -953,6 +953,53 @@
   background: rgba(217, 119, 6, 0.12);
 }
 
+/* the just-scanned contact this dossier belongs to */
+.kps-intel-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1.5px solid var(--brd-lt);
+  border-radius: 14px;
+  padding: 9px 12px;
+  margin-bottom: 10px;
+}
+.kps-intel-who .kps-lead-avatar {
+  width: 38px;
+  height: 38px;
+  font-size: 14px;
+}
+.kps-intel-who-id {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.kps-intel-who-id b {
+  font-size: 13px;
+  font-weight: 700;
+}
+.kps-intel-who-id i {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--td);
+}
+.kps-intel-who-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--mono, monospace);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--ind);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 999px;
+  padding: 5px 9px;
+  flex: none;
+}
+
 .kps-intel-card {
   background: var(--card);
   border: 1.5px solid var(--brd-lt);
@@ -992,31 +1039,8 @@
   font-size: 11.5px;
   line-height: 1.45;
   color: var(--td);
-  margin: 0 0 13px;
+  margin: 0;
   max-width: 290px;
-}
-
-.kps-intel-pills {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  width: 100%;
-}
-.kps-intel-pills span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10.5px;
-  font-weight: 500;
-  color: var(--ts);
-  background: var(--bgc);
-  border: 1px solid var(--brd-lt);
-  border-radius: 999px;
-  padding: 8px 11px;
-  white-space: nowrap;
-}
-.kps-intel-pills svg {
-  color: var(--acc);
 }
 
 .kps-intel-status {
@@ -1033,7 +1057,7 @@
   font-weight: 500;
   color: var(--ind);
   opacity: 0;
-  animation: kpsCycle4 9s ease infinite;
+  animation: kpsCycleFast 9s ease infinite;
 }
 .kps-intel-status span::before {
   content: "";
@@ -1044,16 +1068,26 @@
   margin-right: 9px;
   box-shadow: 0 0 10px currentColor;
 }
+/* AI must read as INSTANT: the three working statuses flash through in ~2s,
+   then the "ready ✓" state holds for the rest of the 9s loop */
 .kps-intel-status span:nth-child(1) { animation-delay: 0s; }
-.kps-intel-status span:nth-child(2) { animation-delay: 2.25s; }
-.kps-intel-status span:nth-child(3) { animation-delay: 4.5s; }
-.kps-intel-status span:nth-child(4) { animation-delay: 6.75s; }
-.kps-intel-status span.ok { color: var(--ok); }
+.kps-intel-status span:nth-child(2) { animation-delay: 0.7s; }
+.kps-intel-status span:nth-child(3) { animation-delay: 1.4s; }
+.kps-intel-status span.ok {
+  color: var(--ok);
+  animation-name: kpsCycleHold;
+  animation-delay: 0s;
+}
 
-@keyframes kpsCycle4 {
+@keyframes kpsCycleFast {
   0% { opacity: 0; transform: translateY(6px); }
-  3%, 22% { opacity: 1; transform: translateY(0); }
-  25%, 100% { opacity: 0; transform: translateY(-6px); }
+  2%, 6% { opacity: 1; transform: translateY(0); }
+  8.5%, 100% { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes kpsCycleHold {
+  0%, 24% { opacity: 0; transform: translateY(6px); }
+  27%, 96% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
 }
 
 .kps-sec {
@@ -1073,32 +1107,32 @@
   margin-bottom: 10px;
 }
 
-.kps-line {
-  display: block;
-  height: 9px;
-  border-radius: 5px;
-  margin-bottom: 8px;
-  background: linear-gradient(90deg, #e7e7ea 25%, #d6d6da 50%, #e7e7ea 75%);
-  background-size: 200% 100%;
-  animation: kpsShimmer 1.6s linear infinite;
+/* extracted company facts — type in one by one right as the status hits
+   "Dossier ready ✓" (~2.4s into the 9s loop), so the scan visibly pays off */
+.kps-fact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ts);
+  padding: 4.5px 0;
+  opacity: 0;
+  animation: kpsFactIn 9s ease infinite;
 }
-.kps-line.w92 { width: 92%; }
-.kps-line.w78 { width: 78%; }
-.kps-line.w70 { width: 70%; }
-
-@keyframes kpsShimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.kps-fact svg {
+  color: var(--ind);
+  flex: none;
 }
+.kps-fact--1 { animation-delay: 0s; }
+.kps-fact--2 { animation-delay: 0.35s; }
+.kps-fact--3 { animation-delay: 0.7s; }
+.kps-fact--4 { animation-delay: 1.05s; }
 
-/* sections "resolve" in sequence — shimmer settles into a filled tone */
-.kps-sec--1 .kps-line { animation: kpsShimmer 1.6s linear infinite, kpsResolve 9s ease infinite; }
-.kps-sec--2 .kps-line { animation: kpsShimmer 1.6s linear infinite, kpsResolve 9s ease infinite 1.2s; }
-
-@keyframes kpsResolve {
-  0%, 30% { opacity: 0.75; }
-  45%, 90% { opacity: 1; background-color: rgba(99, 102, 241, 0.22); background-image: none; }
-  100% { opacity: 0.75; }
+@keyframes kpsFactIn {
+  0%, 24% { opacity: 0; transform: translateX(-9px); }
+  29%, 94% { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; }
 }
 
 .kps-hook {
@@ -1115,9 +1149,13 @@
 }
 
 @keyframes kpsHookPop {
-  0%, 48% { opacity: 0; transform: translateY(8px); }
-  56%, 94% { opacity: 1; transform: translateY(0); }
+  0%, 30% { opacity: 0; transform: translateY(8px); }
+  36%, 95% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; }
+}
+.kps-hook--2 {
+  animation-delay: 0.5s;
+  margin-bottom: 0;
 }
 
 /* floating action bar (Share / FAB / Regenerate) */
@@ -1869,9 +1907,9 @@
   opacity: 0;
   animation: kpsPlayIn 9s ease infinite;
 }
-.kps-play--1 { animation-delay: 0.5s; }
-.kps-play--2 { animation-delay: 1.1s; }
-.kps-play--3 { animation-delay: 1.7s; }
+.kps-play--1 { animation-delay: 0.3s; }
+.kps-play--2 { animation-delay: 0.7s; }
+.kps-play--3 { animation-delay: 1.1s; }
 
 @keyframes kpsPlayIn {
   0% { opacity: 0; transform: translateY(12px); }
@@ -2015,6 +2053,227 @@
   margin-bottom: 0;
 }
 
+/* AR tracking brackets pinned to the paper card (they inherit its 3D tilt) */
+.kps-ar-paper::before,
+.kps-ar-paper::after {
+  content: "";
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(167, 139, 250, 0.85);
+  animation: kpsArBracket 2.2s ease-in-out infinite;
+}
+.kps-ar-paper::before {
+  top: -7px;
+  left: -7px;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 7px;
+}
+.kps-ar-paper::after {
+  bottom: -7px;
+  right: -7px;
+  border-left: 0;
+  border-top: 0;
+  border-bottom-right-radius: 7px;
+}
+
+@keyframes kpsArBracket {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* holo particles drifting up the light beam, paper → hologram */
+.kps-ar-particles {
+  position: absolute;
+  left: 50%;
+  bottom: 100px;
+  width: 160px;
+  height: 230px;
+  margin-left: -80px;
+  pointer-events: none;
+}
+.kps-ar-particles i {
+  position: absolute;
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d8caff;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.9);
+  opacity: 0;
+  animation: kpsArParticle 4.6s linear infinite;
+}
+.kps-ar-particles i:nth-child(1) { left: 8%; animation-delay: 0s; }
+.kps-ar-particles i:nth-child(2) { left: 27%; width: 3px; height: 3px; animation-delay: 1.9s; }
+.kps-ar-particles i:nth-child(3) { left: 46%; animation-delay: 0.9s; }
+.kps-ar-particles i:nth-child(4) { left: 62%; width: 3px; height: 3px; animation-delay: 3.1s; }
+.kps-ar-particles i:nth-child(5) { left: 79%; animation-delay: 2.3s; }
+.kps-ar-particles i:nth-child(6) { left: 93%; width: 3px; height: 3px; animation-delay: 4s; }
+
+@keyframes kpsArParticle {
+  0% { transform: translateY(0) scale(0.7); opacity: 0; }
+  10% { opacity: 0.95; }
+  75% { opacity: 0.55; }
+  100% { transform: translateY(-215px) scale(1.05); opacity: 0; }
+}
+
+/* the holographic 3D city model in the beam — the layer that lifts off the
+   paper. Glass towers with lit window floors construct themselves (scaleY
+   from the ground, staggered), a beacon blinks on the tallest one, and the
+   whole plot spins on an AR turntable. Semi-transparent faces + visible
+   backfaces read as a hologram. (No filter/opacity animations on the 3D
+   groups — both flatten preserve-3d.) */
+.kps-ar-model {
+  position: absolute;
+  left: 50%;
+  top: 277px;
+  width: 72px;
+  height: 72px;
+  margin-left: -36px;
+  perspective: 600px;
+  /* anchored to the tracked card (ground plane ≈ the paper's visual center),
+     so no floating bob — AR models sit still on their surface */
+  transform: scale(1.15);
+}
+.kps-ar-turntable {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: kpsArTurn 14s linear infinite;
+}
+
+/* tilt ≈ the paper card's own perspective, so the plate sits in its plane */
+@keyframes kpsArTurn {
+  from { transform: rotateX(-26deg) rotateY(0deg); }
+  to { transform: rotateX(-26deg) rotateY(360deg); }
+}
+
+/* ground plate the model is anchored to (center of plate = ground plane) */
+.kps-ar-plate {
+  position: absolute;
+  left: 4px;
+  top: 38px;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  border: 1px solid rgba(167, 139, 250, 0.6);
+  background:
+    linear-gradient(to right, rgba(233, 213, 255, 0.22) 0 1px, transparent 1px) 31px 0 / 64px 100% no-repeat,
+    linear-gradient(to bottom, rgba(233, 213, 255, 0.22) 0 1px, transparent 1px) 0 31px / 100% 64px no-repeat,
+    radial-gradient(closest-side, rgba(139, 92, 246, 0.28), rgba(139, 92, 246, 0.06));
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.35),
+    inset 0 0 14px rgba(139, 92, 246, 0.2);
+  transform: rotateX(90deg);
+}
+
+/* towers — square footprint boxes; bottoms all sit on the ground plane */
+.kps-ar-bldg {
+  position: absolute;
+  transform-style: preserve-3d;
+  transform-origin: 50% 100%;
+}
+.kps-ar-wall {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(to bottom, rgba(233, 213, 255, 0.38) 0 1px, transparent 1px 6px),
+    repeating-linear-gradient(to right, rgba(233, 213, 255, 0.14) 0 1px, transparent 1px 5px),
+    linear-gradient(165deg, rgba(139, 92, 246, 0.34), rgba(139, 92, 246, 0.08));
+  border: 1px solid rgba(167, 139, 250, 0.75);
+  box-shadow: inset 0 0 10px rgba(139, 92, 246, 0.3);
+}
+.kps-ar-wall--t {
+  background: linear-gradient(160deg, rgba(139, 92, 246, 0.4), rgba(139, 92, 246, 0.12));
+}
+
+/* tower A — the HQ: 22×22×58, gold "K" sign up top, beacon on the roof */
+.kps-ar-bldg--a {
+  left: 17px;
+  top: 12px;
+  width: 22px;
+  height: 58px;
+  animation: kpsArBldgA 9s ease-in-out infinite;
+}
+.kps-ar-bldg--a .kps-ar-wall--f {
+  transform: translateZ(11px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 3px;
+  font-size: 8px;
+  font-weight: 800;
+  color: #f2c481;
+  text-shadow: 0 0 6px rgba(242, 196, 129, 0.8);
+}
+.kps-ar-bldg--a .kps-ar-wall--k { transform: rotateY(180deg) translateZ(11px); }
+.kps-ar-bldg--a .kps-ar-wall--l { transform: rotateY(-90deg) translateZ(11px); }
+.kps-ar-bldg--a .kps-ar-wall--r { transform: rotateY(90deg) translateZ(11px); }
+.kps-ar-bldg--a .kps-ar-wall--t {
+  inset: 18px 0 auto;
+  height: 22px;
+  transform: rotateX(90deg) translateZ(29px);
+}
+
+@keyframes kpsArBldgA {
+  0%, 2% { transform: translateZ(-6px) scaleY(0.02); }
+  14%, 88% { transform: translateZ(-6px) scaleY(1); }
+  97%, 100% { transform: translateZ(-6px) scaleY(0.02); }
+}
+
+/* tower B — 16×16×36 */
+.kps-ar-bldg--b {
+  left: 42px;
+  top: 34px;
+  width: 16px;
+  height: 36px;
+  animation: kpsArBldgB 9s ease-in-out infinite;
+}
+.kps-ar-bldg--b .kps-ar-wall--f { transform: translateZ(8px); }
+.kps-ar-bldg--b .kps-ar-wall--k { transform: rotateY(180deg) translateZ(8px); }
+.kps-ar-bldg--b .kps-ar-wall--l { transform: rotateY(-90deg) translateZ(8px); }
+.kps-ar-bldg--b .kps-ar-wall--r { transform: rotateY(90deg) translateZ(8px); }
+.kps-ar-bldg--b .kps-ar-wall--t {
+  inset: 10px 0 auto;
+  height: 16px;
+  transform: rotateX(90deg) translateZ(18px);
+}
+
+@keyframes kpsArBldgB {
+  0%, 6% { transform: translateZ(9px) scaleY(0.02); }
+  18%, 86% { transform: translateZ(9px) scaleY(1); }
+  95%, 100% { transform: translateZ(9px) scaleY(0.02); }
+}
+
+/* rooftop beacon + spire (child of tower A, so it rises with the build) */
+.kps-ar-beacon {
+  position: absolute;
+  left: 50%;
+  top: -7px;
+  width: 3px;
+  height: 3px;
+  margin-left: -1.5px;
+  border-radius: 50%;
+  background: #f2c481;
+  box-shadow: 0 0 8px rgba(242, 196, 129, 0.95);
+  animation: kpsArBeacon 1.6s ease-in-out infinite;
+}
+.kps-ar-beacon::after {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 3px;
+  width: 1px;
+  height: 5px;
+  background: rgba(167, 139, 250, 0.8);
+}
+
+@keyframes kpsArBeacon {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
 /* the holographic V-Card floating above it */
 .kps-ar-holo {
   position: absolute;
@@ -2035,8 +2294,37 @@
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  animation: kpsFloat 5s ease-in-out infinite;
+  overflow: hidden;
+  animation: kpsArHolo 8s ease-in-out infinite;
 }
+
+/* the hologram sways in real 3D — perspective() must lead the transform list */
+@keyframes kpsArHolo {
+  0%, 100% { transform: perspective(700px) translateX(-50%) translateY(0) rotateX(5deg) rotateY(-13deg); }
+  25% { transform: perspective(700px) translateX(-50%) translateY(-8px) rotateX(2deg) rotateY(0deg); }
+  50% { transform: perspective(700px) translateX(-50%) translateY(-3px) rotateX(5deg) rotateY(13deg); }
+  75% { transform: perspective(700px) translateX(-50%) translateY(-10px) rotateX(8deg) rotateY(0deg); }
+}
+
+/* holographic scanline sweeping down the card */
+.kps-ar-holo-scan {
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  top: -30px;
+  height: 26px;
+  background: linear-gradient(to bottom, transparent, rgba(196, 181, 253, 0.32) 50%, transparent);
+  pointer-events: none;
+  animation: kpsArScan 3.6s ease-in-out infinite;
+}
+
+@keyframes kpsArScan {
+  0%, 10% { transform: translateY(0); opacity: 0; }
+  16% { opacity: 1; }
+  58% { opacity: 1; }
+  72%, 100% { transform: translateY(230px); opacity: 0; }
+}
+
 .kps-ar-holo-brand {
   font-size: 9px;
   font-weight: 700;
@@ -2219,5 +2507,15 @@
   .kps *::after {
     animation-duration: 0.01s !important;
     animation-iteration-count: 1 !important;
+  }
+
+  /* content that normally fades in from opacity 0 must stay readable */
+  .kps-fact,
+  .kps-hook,
+  .kps-chip,
+  .kps-ar-chip,
+  .kps-intel-status span.ok {
+    opacity: 1 !important;
+    animation: none !important;
   }
 }

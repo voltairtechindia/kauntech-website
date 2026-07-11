@@ -1,3 +1,6 @@
+import { Check } from "lucide-react";
+import Ic from "@/components/ui/Icon";
+
 import type { CompareRow } from "@/lib/compare/competitors";
 
 /**
@@ -30,7 +33,7 @@ export default function ComparisonTable({
               <th scope="row">{row.dimension}</th>
               <td className="vs-table-kauntech">
                 <span className="vs-check" aria-hidden="true">
-                  <i className="fa-solid fa-check" />
+                  <Ic icon={Check} />
                 </span>
                 {row.kauntech}
               </td>

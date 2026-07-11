@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Kauntech — Offline AI Business Card Scanner",
     short_name: "Kauntech",
     description:
-      "India's first 100% offline AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant.",
+      "India's first offline-first AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant.",
     start_url: "/",
     display: "standalone",
     background_color: "#0b0f17",

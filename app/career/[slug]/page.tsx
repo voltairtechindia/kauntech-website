@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  Briefcase,
+  IndianRupee,
+  Layers,
+  MapPin,
+  type LucideIcon,
+} from "lucide-react";
 
 import ApplyModal from "@/components/ApplyModal";
 import Markdown from "@/components/Markdown";
+import Ic from "@/components/ui/Icon";
 import { getJob, listOpenJobs } from "@/lib/careers/db";
 
 const SITE_URL = "https://www.kauntech.com";
@@ -46,11 +54,11 @@ export async function generateMetadata({
   };
 }
 
-function chip(icon: string, text: string | null, gold = false) {
+function chip(icon: LucideIcon, text: string | null, gold = false) {
   if (!text) return null;
   return (
     <span className={`job-chip${gold ? " gold" : ""}`}>
-      <i className={icon} />
+      <Ic icon={icon} />
       {text}
     </span>
   );
@@ -105,10 +113,10 @@ export default async function JobDetailPage({
           ) : null}
           <h1>{job.title}</h1>
           <div className="job-detail-meta">
-            {chip("fa-solid fa-location-dot", job.location)}
-            {chip("fa-solid fa-briefcase", job.employment_type)}
-            {chip("fa-solid fa-layer-group", job.experience_level)}
-            {chip("fa-solid fa-indian-rupee-sign", job.salary_range, true)}
+            {chip(MapPin, job.location)}
+            {chip(Briefcase, job.employment_type)}
+            {chip(Layers, job.experience_level)}
+            {chip(IndianRupee, job.salary_range, true)}
           </div>
         </header>
 
