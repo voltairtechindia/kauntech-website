@@ -16,8 +16,9 @@
   --radius: 16px;
   --font: var(--font-fira-sans), 'Fira Sans', sans-serif;
   --mono: var(--font-fira-code), 'Fira Code', monospace;
-  --gradient: linear-gradient(135deg, var(--gold), var(--indigo));
-  --gradient-hover: linear-gradient(135deg, #fdba74, #a5b4fc);
+  /* v2 rework: brand gradient unified to the app's gold→orange (was gold→indigo) */
+  --gradient: linear-gradient(135deg, #f59e0b, var(--gold));
+  --gradient-hover: linear-gradient(135deg, #fbbf24, #fdba74);
 }
 
 *, *::before, *::after { 

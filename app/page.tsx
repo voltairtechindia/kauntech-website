@@ -1,5 +1,9 @@
-import Hero from "@/components/sections/Hero";
-import HomeHighlights from "@/components/sections/HomeHighlights";
+import HomeExperience from "@/components/home/HomeExperience";
+import BentoFeatures from "@/components/home/BentoFeatures";
+import IntegrationsRouter from "@/components/home/IntegrationsRouter";
+import ComplianceBand from "@/components/home/ComplianceBand";
+import PricingTeaser from "@/components/home/PricingTeaser";
+import FinalCta from "@/components/home/FinalCta";
 import HomeOverview from "@/components/sections/HomeOverview";
 import Faq from "@/components/sections/Faq";
 
@@ -11,11 +15,16 @@ export const revalidate = 300;
 export default function HomePage() {
   return (
     <>
-      <Hero />
-      <HomeHighlights />
+      {/* Hero + marquee + pinned 3D-phone scroll story (client experience) */}
+      <HomeExperience />
+      <BentoFeatures />
+      <IntegrationsRouter />
+      <ComplianceBand />
+      <PricingTeaser />
       <HomeOverview />
       {/* Short teaser only — the canonical FAQPage schema lives on /faq. */}
       <Faq limit={6} seeAllHref="/faq" />
+      <FinalCta />
     </>
   );
 }

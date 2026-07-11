@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Fira_Sans, Fira_Code } from "next/font/google";
+import { Fira_Sans, Fira_Code, Space_Grotesk, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import "./extra.css";
 import "./fa-subset.css";
+import "./v2.css";
+import "./phone.css";
 import ScrollReveal from "@/components/ScrollReveal";
 import SiteChrome from "@/components/SiteChrome";
 import GtagScripts from "@/components/GtagScripts";
@@ -21,6 +23,24 @@ const firaCode = Fira_Code({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-fira-code",
+  display: "swap",
+  preload: false,
+});
+
+// v2 design layer: Space Grotesk carries the big display headlines, Instrument
+// Serif (italic) is the accent voice inside them. Body copy stays Fira Sans.
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-serif",
   display: "swap",
   preload: false,
 });
@@ -180,7 +200,10 @@ const websiteLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${firaSans.variable} ${firaCode.variable}`}>
+    <html
+      lang="en"
+      className={`${firaSans.variable} ${firaCode.variable} ${spaceGrotesk.variable} ${instrumentSerif.variable}`}
+    >
       <head>
         <link
           rel="preload"
