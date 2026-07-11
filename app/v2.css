@@ -259,7 +259,8 @@ html.lenis body {
   background:
     radial-gradient(45% 45% at 60% 40%, rgba(249, 115, 22, 0.34), transparent 70%),
     radial-gradient(55% 55% at 30% 70%, rgba(245, 158, 11, 0.2), transparent 70%);
-  animation: kAurora 16s ease-in-out infinite;
+  /* drift (transform) + slow breathe (opacity, kGlowPulse in ui.css) */
+  animation: kAurora 16s ease-in-out infinite, kGlowPulse 7.5s ease-in-out infinite;
 }
 .k-aurora--indigo {
   width: 44vw;
@@ -267,7 +268,7 @@ html.lenis body {
   left: -12%;
   bottom: -16%;
   background: radial-gradient(50% 50% at 50% 50%, rgba(129, 140, 248, 0.17), transparent 70%);
-  animation: kAurora 20s ease-in-out infinite reverse;
+  animation: kAurora 20s ease-in-out infinite reverse, kGlowPulse 9s ease-in-out infinite;
 }
 
 @keyframes kAurora {
@@ -792,8 +793,6 @@ html.lenis body {
 .k-router-card {
   position: relative;
   width: 100%;
-  /* 3.5:2 business-card proportions — always wider than it is tall */
-  aspect-ratio: 3.5 / 2;
   perspective: 1400px;
   transition: transform 0.4s ease;
 }
@@ -801,10 +800,10 @@ html.lenis body {
   transform: translateY(-5px);
 }
 
-/* the element that actually rotates on hover */
+/* the element that actually rotates on hover — height is driven by the FRONT
+   face (in-flow), so the card can never collapse or clip at any screen width */
 .k-bizcard-flip {
-  position: absolute;
-  inset: 0;
+  position: relative;
   transform-style: preserve-3d;
   transition: transform 0.75s cubic-bezier(0.4, 0.1, 0.2, 1);
 }
@@ -814,8 +813,6 @@ html.lenis body {
 
 /* shared look for both faces of the card */
 .k-bizcard-face {
-  position: absolute;
-  inset: 0;
   border: 1px solid rgba(245, 158, 11, 0.28);
   border-radius: 16px;
   overflow: hidden;
@@ -830,18 +827,27 @@ html.lenis body {
   border-color: rgba(245, 158, 11, 0.5);
 }
 
-/* FRONT — the contact details */
+/* FRONT — the contact details. In-flow (position: relative) so it defines the
+   card's height; the back is absolutely overlaid on top of it. */
 .k-bizcard-front {
+  position: relative;
   display: flex;
   flex-direction: column;
+  /* min-height (not aspect-ratio) gives ~3.5:2 landscape at the desktop width
+     while letting the card GROW to fit its content on small screens — a hard
+     aspect-ratio inside an overflow-hidden face would clip on narrow phones. */
+  min-height: 240px;
   padding: 18px 24px;
   background:
     radial-gradient(130% 90% at 100% 0%, rgba(245, 158, 11, 0.1), transparent 55%),
     linear-gradient(158deg, #1a1a1e, #0c0c0e);
 }
 
-/* BACK — the Kauntech logo, pre-rotated so it reads correctly once flipped */
+/* BACK — the Kauntech logo, pre-rotated so it reads correctly once flipped.
+   Absolutely overlaid so it exactly matches the front face's (content) height. */
 .k-bizcard-back {
+  position: absolute;
+  inset: 0;
   transform: rotateY(180deg);
   display: flex;
   flex-direction: column;
@@ -1430,9 +1436,12 @@ html.lenis body {
 }
 
 @media (max-width: 480px) {
-  /* narrow phones: let the card grow to its content instead of clipping */
-  .k-router-card {
-    aspect-ratio: auto;
+  /* narrow phones: give each contact its own row and let the card grow */
+  .k-bizcard-front {
+    min-height: 0;
+  }
+  .k-bizcard-lines {
+    grid-template-columns: 1fr;
   }
 }
 

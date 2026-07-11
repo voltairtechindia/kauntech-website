@@ -122,6 +122,7 @@ const STORY_SPAN = SEGMENTS + STORY_TAIL; // total timeline length, 1 unit ≈ 1
 export default function HomeExperience() {
   const rootRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
+  const heroBgRef = useRef<HTMLDivElement>(null);
   const heroCopyRef = useRef<HTMLDivElement>(null);
   const storyRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -160,6 +161,28 @@ export default function HomeExperience() {
     window.addEventListener("pointermove", onMove, { passive: true });
     return () => window.removeEventListener("pointermove", onMove);
   }, [canvasOn]);
+
+  // Hero glow leans toward the cursor. The hero background is opaque, so the
+  // global AuraField orb can't show through here — instead the whole glow field
+  // drifts a few px toward the pointer while each aurora keeps its own breathe.
+  useEffect(() => {
+    const bg = heroBgRef.current;
+    if (!bg) return;
+    if (
+      !window.matchMedia("(pointer: fine)").matches ||
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return;
+    }
+    const toX = gsap.quickTo(bg, "x", { duration: 1.1, ease: "power3.out" });
+    const toY = gsap.quickTo(bg, "y", { duration: 1.1, ease: "power3.out" });
+    const onMove = (e: PointerEvent) => {
+      toX((e.clientX / window.innerWidth - 0.5) * 52);
+      toY((e.clientY / window.innerHeight - 0.5) * 40);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
+  }, []);
 
   useGSAP(
     () => {
@@ -307,7 +330,7 @@ export default function HomeExperience() {
 
       {/* ============================== HERO ============================== */}
       <section className="k-hero" id="hero" ref={heroRef}>
-        <div className="k-hero-bg" aria-hidden="true">
+        <div className="k-hero-bg" aria-hidden="true" ref={heroBgRef}>
           <span className="k-aurora k-aurora--ember" />
           <span className="k-aurora k-aurora--indigo" />
           <span className="k-horizon" />
