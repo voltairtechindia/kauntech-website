@@ -86,7 +86,7 @@ export default function Pricing() {
                   >
                     r/Kauntech
                   </a>{" "}
-                  to earn an elite 14-Day Pro/Ultra upgrade!
+                  to earn an elite 7-Day Pro/Ultra upgrade!
                 </span>
               </div>
             </div>

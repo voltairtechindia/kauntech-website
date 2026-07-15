@@ -355,7 +355,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Exclusive pre-launch rewards: the first 1,000 downloads within the first 15 days instantly unlock a 7-Day Pro Trial " +
       "fully equipped with AI Intel enrichment. The first 100 Reddit reviewers who share a genuine review on r/Kauntech earn " +
-      "an elite 14-Day Pro/Ultra upgrade.",
+      "an elite 7-Day Pro/Ultra upgrade.",
     metadata: { tags: ["rewards", "launch", "trial", "reddit"] },
   },
 ];
