@@ -1535,8 +1535,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                       <div className="ar-row ar-between" style={{ marginTop: 14, marginBottom: 4 }}>
                         <label className="ar-label" style={{ margin: 0 }}>Tap Action (redirect link)</label>
                         {selected.link && (
-                          <a href={selected.link} target="_blank" rel="noreferrer" className="ar-link-test"
-                            style={{ fontSize: "12px", color: "var(--ar-orange-deep)", fontWeight: 700, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <a href={selected.link} target="_blank" rel="noreferrer" className="ar-link-test">
                             Test link <IconExternal />
                           </a>
                         )}
@@ -1631,21 +1630,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                       <div className="ar-row ar-between" style={{ marginBottom: 4 }}>
                         <label className="ar-label" style={{ margin: 0 }}>Tap Action (redirect link)</label>
                         {selected.link && (
-                          <a
-                            href={selected.link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="ar-link-test"
-                            style={{
-                              fontSize: "12px",
-                              color: "var(--ar-orange-deep)",
-                              fontWeight: 700,
-                              textDecoration: "none",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: "4px"
-                            }}
-                          >
+                          <a href={selected.link} target="_blank" rel="noreferrer" className="ar-link-test">
                             Test link <IconExternal />
                           </a>
                         )}
@@ -1683,7 +1668,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
                   {/* Model Brightness (Model Specific Setting) */}
                   {selected.type === "model" && (
-                    <div className="ar-card ar-stack" style={{ gap: 8, padding: "12px", border: "1px solid var(--ar-border)", background: "var(--ar-orange-soft)" }}>
+                    <div className="ar-subcard ar-stack">
                       <span className="ar-label" style={{ margin: 0 }}>Model Brightness</span>
                       <TransformSlider
                         icon={<IconSun />} label="Brightness" unit="×"
@@ -1698,7 +1683,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
                   {/* Animation Speed (Model Specific Setting) */}
                   {selected.type === "model" && (
-                    <div className="ar-card ar-stack" style={{ gap: 8, padding: "12px", border: "1px solid var(--ar-border)", background: "var(--ar-orange-soft)" }}>
+                    <div className="ar-subcard ar-stack">
                       <span className="ar-label" style={{ margin: 0 }}>Animation Speed</span>
                       <TransformSlider
                         icon={<IconRotate />} label="Speed" unit="×"

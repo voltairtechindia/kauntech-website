@@ -552,9 +552,72 @@ a.ar-brand:hover .ar-brand-dot {
   padding-left: 0;
   pointer-events: none;
 }
-.ar-props .ar-card {
+/* Direct child only — nested sub-cards (e.g. Model Brightness) must size to
+   their container, not to the panel width (that's what made them overflow). */
+.ar-props > .ar-card {
   width: 328px;
   flex: none;
+}
+
+/* Inset "sub-card" for element-specific setting groups (Model Brightness,
+   Animation Speed): a soft brand-tinted well inside the properties card. */
+.ar-subcard {
+  width: 100%;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--ar-orange-border);
+  border-radius: var(--ar-r-md);
+  background: var(--ar-orange-soft);
+  min-width: 0;
+}
+.ar-subcard .ar-label {
+  color: var(--ar-orange-deep);
+}
+
+/* "Test link" pill beside the Tap Action label */
+.ar-link-test {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ar-orange-deep);
+  text-decoration: none;
+  padding: 3px 10px;
+  border: 1px solid var(--ar-orange-border);
+  border-radius: 999px;
+  background: var(--ar-orange-soft);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ar-link-test:hover {
+  background: rgba(249, 115, 22, 0.18);
+  border-color: var(--ar-orange);
+}
+
+/* Layout tab: Position / Rotation / Scale sections read as separate groups */
+.ar-transform-group {
+  min-width: 0;
+}
+.ar-transform-group > .ar-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ar-text-muted);
+  margin-bottom: 2px;
+}
+.ar-transform-group + .ar-transform-group {
+  border-top: 1px solid var(--ar-border);
+  padding-top: var(--ar-sp-md);
+}
+
+/* Front/Back photo card footer: quality badge left, actions right */
+.ar-side-photo-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
 }
 /* Affordances that only appear in the small-screen layouts (see the media
    queries at the foot of this file). Hidden on desktop so the perfect
@@ -979,6 +1042,10 @@ a.ar-brand:hover .ar-brand-dot {
   flex-direction: column;
   gap: 6px;
   padding: 6px 0;
+  min-width: 0;
+}
+.ar-slider-row .ar-slider-num {
+  flex: none;
 }
 .ar-slider-head {
   display: flex;
@@ -1131,6 +1198,28 @@ input[type="range"]::-webkit-slider-thumb {
 }
 input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.15);
+}
+/* Firefox parity for the same slider look */
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ar-orange);
+  border: 2px solid #0a0a0b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 8px var(--ar-orange-glow);
+}
+
+/* Checkboxes (behaviour toggles etc.) pick up the brand accent */
+.ar-root input[type="checkbox"] {
+  accent-color: var(--ar-orange);
+  width: 15px;
+  height: 15px;
+  flex: none;
 }
 
 /* Helper units */
@@ -2405,6 +2494,259 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-overflow: ellipsis;
 }
 
+/* ── 3D showcase (ArShowcase) ────────────────────────────────────────────
+   The iPhone-scanning-a-card vignette on the login page and the Pro/Ultra
+   gate. The canvas is transparent over the dark page; every label inside the
+   scene is real DOM (drei <Html transform>), styled here. Purely decorative:
+   the whole block ignores the pointer. */
+.ar-showcase {
+  position: relative;
+  height: clamp(320px, 42vh, 440px);
+  pointer-events: none;
+  user-select: none;
+}
+.ar-showcase-compact {
+  height: clamp(240px, 32vh, 320px);
+}
+.ar-showcase-skel {
+  position: absolute;
+  inset: 12% 8%;
+  border-radius: var(--ar-r-xl);
+  opacity: 0.5;
+}
+/* drei Html mounts absolutely-positioned wrappers inside the canvas box */
+.ar-showcase * {
+  pointer-events: none !important;
+}
+
+/* Floating AR chips — designed at ~2× px, scaled down by the 3D transform so
+   they stay crisp. Sizes here are "world" sizes via distanceFactor 1.5. */
+.ar-shot-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-family: var(--ar-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  padding: 14px 26px;
+  border-radius: 999px;
+  color: #fff;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+.ar-shot-chip-in {
+  background: #0a66c2;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+}
+.ar-shot-chip-play {
+  background: rgba(12, 12, 14, 0.9);
+  border: 2px solid rgba(249, 115, 22, 0.65);
+  color: #fdba74;
+}
+.ar-shot-label {
+  display: inline-block;
+  white-space: nowrap;
+  font-family: var(--ar-serif);
+  font-style: italic;
+  font-size: 30px;
+  color: #fffdf9;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+/* Printed face of the 3D card — mini identity row + QR (240px design width) */
+.ar-shot-card {
+  width: 240px;
+  height: 148px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 16px;
+  color: #2d2926;
+}
+.ar-shot-card-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.ar-shot-card-avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: #b45309;
+  background: #fffdf9;
+  border: 1.5px solid rgba(245, 158, 11, 0.55);
+}
+.ar-shot-card-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ar-shot-card-lines strong {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.ar-shot-card-lines em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: #8b8680;
+  white-space: nowrap;
+}
+.ar-shot-card-qr {
+  flex: none;
+  width: 76px;
+  height: 76px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* The phone's screen — a 390×842 viewfinder mapped onto the glass */
+.ar-shot-screen {
+  position: relative;
+  width: 390px;
+  height: 842px;
+  border-radius: 56px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(249, 115, 22, 0.16), transparent 55%),
+    linear-gradient(180deg, #101013, #060607);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+.ar-shot-screen-pill {
+  position: absolute;
+  top: 84px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--ar-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #4ade80;
+  background: rgba(34, 197, 94, 0.14);
+  border: 2px solid rgba(74, 222, 128, 0.4);
+  border-radius: 999px;
+  padding: 10px 26px;
+}
+.ar-shot-screen-stage {
+  position: relative;
+  width: 272px;
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.ar-shot-screen-brackets {
+  position: absolute;
+  inset: 0;
+  border-radius: 32px;
+  /* four corner brackets, one gradient per corner */
+  background:
+    linear-gradient(#f97316, #f97316) top left / 52px 5px,
+    linear-gradient(#f97316, #f97316) top left / 5px 52px,
+    linear-gradient(#f97316, #f97316) top right / 52px 5px,
+    linear-gradient(#f97316, #f97316) top right / 5px 52px,
+    linear-gradient(#f97316, #f97316) bottom left / 52px 5px,
+    linear-gradient(#f97316, #f97316) bottom left / 5px 52px,
+    linear-gradient(#f97316, #f97316) bottom right / 52px 5px,
+    linear-gradient(#f97316, #f97316) bottom right / 5px 52px;
+  background-repeat: no-repeat;
+  opacity: 0.9;
+}
+.ar-shot-screen-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 34px;
+  padding: 18px 24px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fffdf9, #faf4eb);
+  border: 2px solid rgba(245, 158, 11, 0.7);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.5);
+  color: #2d2926;
+}
+.ar-shot-screen-card strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.ar-shot-screen-card .ar-shot-card-avatar {
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+.ar-shot-screen-chip {
+  position: absolute;
+  font-family: var(--ar-display);
+  font-weight: 800;
+  border-radius: 999px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.45);
+}
+.ar-shot-screen-chip.ar-shot-chip-in {
+  top: 44px;
+  right: 10px;
+  font-size: 26px;
+  padding: 12px 22px;
+  animation: arShotBob 3.2s ease-in-out infinite;
+}
+.ar-shot-screen-chip.ar-shot-chip-play {
+  top: 120px;
+  left: 6px;
+  font-size: 24px;
+  padding: 12px 20px;
+  animation: arShotBob 2.7s ease-in-out 0.4s infinite;
+}
+.ar-shot-screen-hint {
+  position: absolute;
+  bottom: 92px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  color: rgba(245, 245, 244, 0.75);
+}
+@keyframes arShotBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ar-shot-screen-chip.ar-shot-chip-in,
+  .ar-shot-screen-chip.ar-shot-chip-play {
+    animation: none;
+  }
+}
+
+/* The Pro/Ultra gate card centres its pitch around the compact showcase. */
+.ar-gate {
+  text-align: center;
+}
+.ar-gate .ar-showcase {
+  margin: calc(var(--ar-sp-xl) * -0.5) 0 var(--ar-sp-sm);
+}
+.ar-gate .ar-sub {
+  max-width: 52ch;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 /* ── Login page (split hero) ─────────────────────────────────────────────── */
 .ar-login {
   max-width: 1040px;
@@ -2461,6 +2803,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+/* Variant: a full-width 3-up band under the hero + sign-in panel. */
+.ar-login-points-row {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: var(--ar-sp-2xl);
+  border-top: 1px solid var(--ar-border);
+  padding-top: var(--ar-sp-2xl);
+  margin-top: var(--ar-sp-sm);
+}
+.ar-login-points-row .ar-login-point {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .ar-login-points-row {
+    flex-direction: column;
+    gap: var(--ar-sp-lg);
+  }
 }
 .ar-login-point {
   display: flex;
@@ -2697,7 +3058,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     background-position: center 8px;
     border-radius: var(--ar-r-xl) var(--ar-r-xl) 0 0;
   }
-  .ar-props.is-open .ar-card {
+  .ar-props.is-open > .ar-card {
     width: 100%;
     border: none;
     border-radius: 0;

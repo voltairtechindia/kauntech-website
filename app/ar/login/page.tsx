@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import ArHeader from "@/components/ar/ArHeader";
+import ArShowcaseLazy from "@/components/ar/ArShowcaseLazy";
 import LoginForm from "@/components/ar/LoginForm";
 import { IconBox, IconScan, IconSparkle } from "@/components/ar/icons";
 import { arAuthConfigured, getArUser } from "@/lib/ar/appAuth";
@@ -42,35 +43,10 @@ export default async function ArLoginPage({
             Design what appears when someone scans your printed KaunTech card — 3D models, tappable
             buttons, text and video floating over it in augmented reality.
           </p>
-          <ul className="ar-login-points">
-            <li className="ar-login-point">
-              <span className="ar-login-point-ico" aria-hidden>
-                <IconScan />
-              </span>
-              <div>
-                <strong>Same account as the app</strong>
-                <p>Sign in with your KaunTech app email — your printed cards sync here automatically.</p>
-              </div>
-            </li>
-            <li className="ar-login-point">
-              <span className="ar-login-point-ico" aria-hidden>
-                <IconBox />
-              </span>
-              <div>
-                <strong>Drag-and-drop 3D studio</strong>
-                <p>Place gallery models or your own uploads, wire up links, and see it live as you build.</p>
-              </div>
-            </li>
-            <li className="ar-login-point">
-              <span className="ar-login-point-ico" aria-hidden>
-                <IconSparkle />
-              </span>
-              <div>
-                <strong>Alive on every scan</strong>
-                <p>Anyone who scans your card in the KaunTech app — or its QR — sees your AR scene instantly.</p>
-              </div>
-            </li>
-          </ul>
+
+          {/* Live 3D vignette: the site's iPhone 16 model scanning an example
+              card, with the kind of AR content the studio lets you place. */}
+          <ArShowcaseLazy />
         </div>
 
         {/* Right: the sign-in panel. Auth flow unchanged (magic link / Google
@@ -94,6 +70,37 @@ export default async function ArLoginPage({
             <a href="https://www.kauntech.com/get">Get the KaunTech app</a> to create your card first.
           </p>
         </div>
+
+        {/* Full-width feature row under the hero + panel. */}
+        <ul className="ar-login-points ar-login-points-row">
+          <li className="ar-login-point">
+            <span className="ar-login-point-ico" aria-hidden>
+              <IconScan />
+            </span>
+            <div>
+              <strong>Same account as the app</strong>
+              <p>Sign in with your KaunTech app email — your printed cards sync here automatically.</p>
+            </div>
+          </li>
+          <li className="ar-login-point">
+            <span className="ar-login-point-ico" aria-hidden>
+              <IconBox />
+            </span>
+            <div>
+              <strong>Drag-and-drop 3D studio</strong>
+              <p>Place gallery models or your own uploads, wire up links, and see it live as you build.</p>
+            </div>
+          </li>
+          <li className="ar-login-point">
+            <span className="ar-login-point-ico" aria-hidden>
+              <IconSparkle />
+            </span>
+            <div>
+              <strong>Alive on every scan</strong>
+              <p>Anyone who scans your card in the KaunTech app — or its QR — sees your AR scene instantly.</p>
+            </div>
+          </li>
+        </ul>
       </div>
     </>
   );

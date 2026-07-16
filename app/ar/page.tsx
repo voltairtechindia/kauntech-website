@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import ArHeader from "@/components/ar/ArHeader";
+import ArShowcaseLazy from "@/components/ar/ArShowcaseLazy";
 import CardsDashboard, { type CardStatus, type DashItem } from "@/components/ar/CardsDashboard";
 import HowItWorks from "@/components/ar/HowItWorks";
 import { IconScan } from "@/components/ar/icons";
@@ -124,7 +125,9 @@ export default async function ArDashboard() {
         <HowItWorks />
 
         {!canAuthor ? (
-          <div className="ar-card">
+          <div className="ar-card ar-gate">
+            {/* Show what they'd unlock: the live 3D scanning vignette. */}
+            <ArShowcaseLazy compact />
             <h2 className="ar-h2">AR cards are a Pro / Ultra feature</h2>
             <p className="ar-sub" style={{ margin: "0 0 var(--ar-sp-lg)" }}>
               Upgrade in the KaunTech app to unlock custom 3D and augmented reality features for your business card.
