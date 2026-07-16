@@ -60,7 +60,9 @@ html.k-cursor [role="button"] {
   border-radius: 50%;
   background: #fff;
   mix-blend-mode: difference;
-  z-index: 99999;
+  /* Max int — the dot must outrank every overlay on the site (modals sit at
+     100000). Nothing is allowed to paint above the pointer. */
+  z-index: 2147483647;
   pointer-events: none;
 }
 
@@ -745,7 +747,7 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 99990; /* under the custom cursor (99999), above everything else */
+  z-index: 99990; /* under the custom cursor, above everything else */
   pointer-events: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 220px 220px;
