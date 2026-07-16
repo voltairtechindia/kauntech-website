@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import ArHeader from "@/components/ar/ArHeader";
 import CardsDashboard, { type CardStatus, type DashItem } from "@/components/ar/CardsDashboard";
 import HowItWorks from "@/components/ar/HowItWorks";
+import { IconScan } from "@/components/ar/icons";
 import { getDashboardData, type OwnerCard } from "@/lib/ar/db";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,9 @@ export default async function ArDashboard() {
         accent: toAccent(card.card_color),
         avatarUrl: isHttp(card.avatar_url) ? card.avatar_url : null,
         isDefault: !!card.is_default,
+        // Same vCard payload the card's QR encodes — the Share sheet turns it
+        // into a downloadable .vcf and a high-res QR without another fetch.
+        vcard: buildVCard(card),
       };
     }),
   );
@@ -95,17 +99,26 @@ export default async function ArDashboard() {
       <ArHeader email={email} />
       <div className="ar-container ar-dash-page">
         <div className="ar-dash-head">
-          <h1 className="ar-h1" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-            Your AR cards
-            {tier && (
-              <span className={`ar-badge ar-badge-${tier}`} style={{ fontSize: "11px", padding: "2px 8px", textTransform: "uppercase" }}>
-                {tier}
-              </span>
-            )}
-          </h1>
-          <p className="ar-sub" style={{ margin: "6px 0 0" }}>
-            Create immersive business cards that display 3D models, custom text, buttons, and videos in augmented reality.
-          </p>
+          <div className="ar-dash-head-text">
+            <h1 className="ar-h1" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              Your cards, <span className="ar-serif">beyond paper</span>
+              {tier && (
+                <span className={`ar-badge ar-badge-${tier}`} style={{ fontSize: "11px", padding: "2px 8px", textTransform: "uppercase" }}>
+                  {tier}
+                </span>
+              )}
+            </h1>
+            <p className="ar-sub" style={{ margin: "6px 0 0" }}>
+              Design what appears when someone scans your printed card — 3D models, buttons, text and video, live in augmented reality.
+            </p>
+          </div>
+          <div className="ar-dash-actions">
+            {/* The app's AR playground: point a camera at any KaunTech card QR
+                to jump straight into its live AR experience. */}
+            <a className="ar-btn ar-btn-ghost ar-btn-sm" href="/ar/play" target="_blank" rel="noreferrer" title="Open the AR scanner — point it at any KaunTech card">
+              <IconScan /> Scan a card
+            </a>
+          </div>
         </div>
 
         <HowItWorks />

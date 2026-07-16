@@ -14,7 +14,7 @@ import { useStorageMeter } from "./StorageMeterContext";
 import type { ArTemplate } from "@/lib/ar/db";
 import {
   IconAudio, IconAxisX, IconAxisY, IconAxisZ, IconBox, IconCheck, IconChevron, IconCopy, IconExternal, IconEye, IconEyeOff,
-  IconImage, IconLink, IconPlus, IconRoll, IconRotate, IconScale, IconSun, IconTarget, IconText,
+  IconImage, IconLink, IconPlus, IconRoll, IconRotate, IconScale, IconSmartphone, IconSun, IconTarget, IconText,
   IconTilt, IconTrash, IconTurn, IconUpload, IconVideo, IconX, socialIcon,
 } from "./icons";
 
@@ -54,9 +54,9 @@ const isOurUploadedAsset = (u?: string | null): u is string =>
 // before they publish.
 function trackTier(score: number | null): { label: string; color: string } | null {
   if (score == null) return null;
-  if (score >= 60) return { label: "Good", color: "#16a34a" };
-  if (score >= 35) return { label: "Fair", color: "#d97706" };
-  return { label: "Low", color: "#dc2626" };
+  if (score >= 60) return { label: "Good", color: "#4ade80" };
+  if (score >= 35) return { label: "Fair", color: "#fbbf24" };
+  return { label: "Low", color: "#f87171" };
 }
 
 let _n = 0;
@@ -347,6 +347,8 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedOnce, setSavedOnce] = useState(!!model);
+  // "Preview on phone" QR sheet — hands the live viewer URL to a phone camera.
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Auto-save when a card photo is added or changed: the cropper queues a save
   // (wantAutoSaveRef), and the photo's OCR effect bumps autoSaveTick once the
@@ -985,6 +987,11 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
             <span className="ar-editor-back-full">← All cards</span>
             <span className="ar-editor-back-mini" aria-hidden>←</span>
           </a>
+          {savedOnce ? (
+            <button className="ar-btn ar-btn-ghost" onClick={() => setPreviewOpen(true)} title="Scan a QR with your phone to see the published card live in AR">
+              <IconSmartphone /> <span className="ar-editor-back-full">Preview on phone</span>
+            </button>
+          ) : null}
           {dirty ? (
             <button className="ar-btn ar-btn-primary" onClick={save} disabled={busy}>
               {busy ? "Publishing…" : "Save & publish"}
@@ -994,6 +1001,8 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
           ) : null}
         </div>
       </div>
+
+      {previewOpen ? <PhonePreviewSheet cardId={card.id} dirty={dirty} onClose={() => setPreviewOpen(false)} /> : null}
 
       {error ? <p className="ar-error ar-editor-error">{error}</p> : null}
 
@@ -1777,6 +1786,99 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
             </div>
           ) : null}
         </aside>
+      </div>
+    </div>
+  );
+}
+
+/* ── "Preview on phone" sheet ─────────────────────────────────────────────
+   A QR of the card's public WebAR viewer URL: scan it with the phone camera
+   and the published experience opens right there — the classic 3D-studio
+   handoff. Pure UI: nothing about the save/publish flow changes. */
+function PhonePreviewSheet({ cardId, dirty, onClose }: { cardId: string; dirty: boolean; onClose: () => void }) {
+  const [qrPng, setQrPng] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const viewUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.kauntech.com"}/ar/view/${cardId}`;
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // Dynamic import keeps `qrcode` out of the editor bundle until first open.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const png = await QRCode.toDataURL(viewUrl, {
+          width: 720,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: { dark: "#09090B", light: "#FFFFFF" },
+        });
+        if (alive) setQrPng(png);
+      } catch {
+        if (alive) setQrPng(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [viewUrl]);
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(viewUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable — the visible link row still allows manual copy */
+    }
+  }
+
+  return (
+    <div className="ar-modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Preview on your phone">
+      <div className="ar-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="ar-share-head">
+          <div>
+            <h3 className="ar-share-title">Preview on your phone</h3>
+            <p className="ar-share-sub">
+              Point your phone camera at the QR — your card&apos;s live AR experience opens in the browser.
+              Have the printed card (or its photo on a second screen) ready to scan.
+            </p>
+          </div>
+          <button className="ar-icon-btn" onClick={onClose} aria-label="Close preview sheet">
+            <IconX />
+          </button>
+        </div>
+
+        <div className="ar-qrbox">
+          {qrPng ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qrPng} alt="QR code linking to this card's AR viewer" />
+          ) : (
+            <span className="ar-muted">Generating QR…</span>
+          )}
+        </div>
+
+        {dirty ? (
+          <p className="ar-muted" style={{ margin: 0, textAlign: "center" }}>
+            You have unsaved changes — the phone shows the last published version.
+          </p>
+        ) : null}
+
+        <div className="ar-share-actions">
+          <button className="ar-btn ar-btn-primary ar-share-wide" onClick={copyLink}>
+            {copied ? <IconCheck /> : <IconCopy />} {copied ? "Link copied" : "Copy viewer link"}
+          </button>
+          <a className="ar-btn ar-btn-ghost ar-share-wide" href={viewUrl} target="_blank" rel="noreferrer">
+            <IconExternal /> Open in this browser
+          </a>
+        </div>
       </div>
     </div>
   );

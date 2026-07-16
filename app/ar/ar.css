@@ -1,30 +1,49 @@
 /*
- * Scoped styling for the /ar owner section.
- * Premium, app-flavoured light theme with warm alabaster backgrounds,
- * smooth orange highlights, Outfit & Fira Sans fonts, and responsive animations.
+ * Scoped styling for the /ar owner section — "KaunTech AR Studio".
+ *
+ * v2: the studio now speaks the SITE's premium dark design language
+ * (globals.css / v2.css): near-black surfaces, gold→orange gradient accents,
+ * Space Grotesk display headings with Instrument Serif italic accents, and a
+ * soft ambient aura. Two things deliberately stay LIGHT, as bright "content"
+ * against the dark chrome — exactly how the home page shows the app's light
+ * screens inside the dark site:
+ *   • the ivory business-card faces (app-accurate BusinessCardItem mirror)
+ *   • the 3D stage canvas (SceneViewport paints its own light photo-table)
  *
  * Everything is namespaced under .ar-root so it does not leak.
  */
 .ar-root {
-  /* Warm Premium Light Palette */
+  /* Brand accents — same family as the marketing site (--k-gold/--k-orange) */
+  --ar-gold: #f59e0b;
   --ar-orange: #f97316;
-  --ar-orange-deep: #ea580c;
-  --ar-orange-soft: rgba(249, 115, 22, 0.07);
-  --ar-orange-glow: rgba(249, 115, 22, 0.15);
-  --ar-orange-border: rgba(249, 115, 22, 0.25);
+  /* NOTE: on the old light theme this was a darker orange for text contrast;
+     on dark it must be a LIGHTER orange for the same reason. Components use it
+     as "readable orange text/icon", so only the value changes, not the role. */
+  --ar-orange-deep: #fb923c;
+  --ar-orange-soft: rgba(249, 115, 22, 0.1);
+  --ar-orange-glow: rgba(249, 115, 22, 0.22);
+  --ar-orange-border: rgba(249, 115, 22, 0.35);
+  --ar-grad: linear-gradient(92deg, var(--ar-gold), var(--ar-orange));
 
-  --ar-bg: #fcfbf9; /* Warm alabaster */
-  --ar-surface: #ffffff; /* Pure white panels */
-  --ar-card: #ffffff;
-  --ar-text: #1c1917; /* Warm black/dark stone */
-  --ar-text-dim: #57534e; /* Medium stone gray */
-  --ar-text-muted: #a8a29e; /* Light stone gray */
-  --ar-border: #e7e5e4; /* Soft warm border */
-  --ar-border-hover: #d6d3d1;
-  --ar-danger: #dc2626;
-  --ar-danger-soft: rgba(220, 38, 38, 0.08);
-  --ar-success: #16a34a;
-  --ar-success-soft: rgba(22, 163, 74, 0.08);
+  /* Dark surfaces — matched to the site (globals --bg / --bg-card / --border) */
+  --ar-bg: #0a0a0b;
+  --ar-surface: #131316; /* panels, buttons, inputs */
+  --ar-card: #111113; /* cards */
+  --ar-raise: #1a1a1e; /* hover / pressed surfaces */
+  --ar-text: #f5f5f4;
+  --ar-text-dim: #b6b6bd;
+  --ar-text-muted: #7d7d87;
+  --ar-border: rgba(255, 255, 255, 0.08);
+  --ar-border-hover: rgba(255, 255, 255, 0.16);
+  --ar-danger: #f87171; /* readable on dark; solid fills use #dc2626 in rules */
+  --ar-danger-soft: rgba(239, 68, 68, 0.12);
+  --ar-success: #4ade80;
+  --ar-success-soft: rgba(34, 197, 94, 0.12);
+
+  /* Type: Space Grotesk carries headings (the site's display voice), Instrument
+     Serif italic is the accent inside them, Fira Sans stays the working body. */
+  --ar-display: var(--font-display), "Space Grotesk", var(--font-fira-sans), sans-serif;
+  --ar-serif: var(--font-serif), "Instrument Serif", Georgia, serif;
 
   /* Spacing/Radius Scale */
   --ar-sp-sm: 8px;
@@ -44,9 +63,25 @@
   -webkit-font-smoothing: antialiased;
   scrollbar-width: thin;
   scrollbar-color: rgba(249, 115, 22, 0.3) transparent;
+  /* Contain the ambient aura's negative z-index (see .ar-root::before). */
+  isolation: isolate;
 }
 
-/* Minimal Orangish Scrollbars */
+/* Ambient aura — the studio's version of the site's AuraField: two slow, fixed
+   brand glows behind everything. Pure CSS (no JS), pointer-events-free, and
+   kept faint so panels and the 3D stage stay the heroes. */
+.ar-root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(min(52vw, 760px) min(38vw, 560px) at 86% -6%, rgba(249, 115, 22, 0.1), transparent 68%),
+    radial-gradient(min(46vw, 680px) min(36vw, 520px) at -8% 104%, rgba(245, 158, 11, 0.07), transparent 66%);
+}
+
+/* Minimal orange scrollbars */
 .ar-root ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -59,11 +94,15 @@
   border-radius: 9999px;
 }
 .ar-root ::-webkit-scrollbar-thumb:hover {
-  background: var(--ar-orange-deep);
+  background: var(--ar-orange);
 }
 
 .ar-root * {
   box-sizing: border-box;
+}
+.ar-root ::selection {
+  background: rgba(249, 115, 22, 0.35);
+  color: #fff;
 }
 
 .ar-container {
@@ -84,7 +123,7 @@
   }
 }
 
-/* Header styling */
+/* Header styling — glassy dark bar, matching the site navbar */
 .ar-header {
   display: flex;
   align-items: center;
@@ -94,8 +133,9 @@
   border-bottom: 1px solid var(--ar-border);
   position: sticky;
   top: 0;
-  background: rgba(252, 251, 249, 0.85);
-  backdrop-filter: blur(12px);
+  background: rgba(10, 10, 11, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   z-index: 10;
   transition: border-color 0.2s ease;
 }
@@ -103,17 +143,35 @@
   display: flex;
   align-items: center;
   gap: var(--ar-sp-sm);
-  font-weight: 800;
+  font-family: var(--ar-display);
+  font-weight: 700;
   font-size: 20px;
   letter-spacing: -0.03em;
   color: var(--ar-text);
+  text-decoration: none;
+}
+a.ar-brand:hover .ar-brand-dot {
+  box-shadow: 0 0 16px var(--ar-orange-glow), 0 0 4px var(--ar-orange-glow);
 }
 .ar-brand-dot {
   width: 11px;
   height: 11px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--ar-orange), var(--ar-orange-deep));
-  box-shadow: 0 0 10px var(--ar-orange-glow);
+  background: var(--ar-grad);
+  box-shadow: 0 0 12px var(--ar-orange-glow);
+  transition: box-shadow 0.25s ease;
+}
+.ar-brand-studio {
+  margin-left: 2px;
+  font-family: var(--ar-serif);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.92em;
+  letter-spacing: 0;
+  background: var(--ar-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .ar-mono {
   font-family: var(--font-fira-code), monospace;
@@ -121,18 +179,32 @@
 
 /* Typography */
 .ar-h1 {
+  font-family: var(--ar-display);
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.03em;
   margin: 0 0 var(--ar-sp-sm);
   color: var(--ar-text);
 }
 .ar-h2 {
+  font-family: var(--ar-display);
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.02em;
   margin: 0 0 var(--ar-sp-md);
   color: var(--ar-text);
+}
+/* Instrument Serif italic accent — the site's display flourish, e.g.
+   "Your card, <em class="ar-serif">beyond paper</em>." */
+.ar-serif {
+  font-family: var(--ar-serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  background: var(--ar-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 .ar-sub {
   color: var(--ar-text-dim);
@@ -143,12 +215,12 @@
 
 /* Informative Context Card & Step Grid */
 .ar-context-card {
-  background: var(--ar-surface);
+  background: var(--ar-card);
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-lg);
   padding: var(--ar-sp-xl);
   margin-bottom: var(--ar-sp-2xl);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 .ar-context-card-header {
   display: flex;
@@ -159,7 +231,8 @@
   margin-bottom: var(--ar-sp-lg);
 }
 .ar-context-title {
-  font-weight: 800;
+  font-family: var(--ar-display);
+  font-weight: 700;
   font-size: 16px;
   color: var(--ar-orange-deep);
   display: flex;
@@ -186,7 +259,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-family: var(--ar-display);
+  font-weight: 700;
   font-size: 13.5px;
   border: 1px solid var(--ar-orange-border);
   flex: none;
@@ -214,7 +288,7 @@
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-lg);
   padding: var(--ar-sp-xl);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02), 0 1px 3px rgba(0, 0, 0, 0.01);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .ar-grid {
@@ -240,14 +314,15 @@
   text-decoration: none;
 }
 .ar-btn-primary {
-  background: linear-gradient(135deg, var(--ar-orange), var(--ar-orange-deep));
-  color: #ffffff;
-  box-shadow: 0 2px 8px var(--ar-orange-glow);
+  background: var(--ar-grad);
+  color: #1a1205;
+  font-weight: 700;
+  box-shadow: 0 2px 12px var(--ar-orange-glow);
 }
 .ar-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px var(--ar-orange-glow);
-  opacity: 0.95;
+  box-shadow: 0 4px 18px var(--ar-orange-glow);
+  filter: brightness(1.06);
 }
 .ar-btn-ghost {
   background: var(--ar-surface);
@@ -258,6 +333,10 @@
   border-color: var(--ar-orange-border);
   background: var(--ar-orange-soft);
   color: var(--ar-orange-deep);
+}
+.ar-btn-sm {
+  font-size: 13.5px;
+  padding: 8px 14px;
 }
 .ar-btn:disabled {
   opacity: 0.5;
@@ -273,12 +352,15 @@
   font-family: inherit;
   font-size: 15px;
   color: var(--ar-text);
-  background: #ffffff;
+  background: var(--ar-surface);
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   padding: 12px 14px;
   outline: none;
   transition: all 0.2s ease;
+}
+.ar-field::placeholder {
+  color: var(--ar-text-muted);
 }
 .ar-field:focus {
   border-color: var(--ar-orange);
@@ -308,7 +390,7 @@
 .ar-badge-published {
   background: var(--ar-success-soft);
   color: var(--ar-success);
-  border: 1px solid rgba(22, 163, 74, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.25);
 }
 .ar-badge-draft {
   background: var(--ar-orange-soft);
@@ -316,13 +398,13 @@
   border: 1px solid var(--ar-orange-border);
 }
 .ar-badge-locked {
-  background: #f4f4f5;
+  background: var(--ar-raise);
   color: var(--ar-text-muted);
-  border: 1px solid #e4e4e7;
+  border: 1px solid var(--ar-border);
 }
 
-/* Icon-only status chip on the AR card face (published / draft / no AR). A
-   small round token reads cleaner on the card than a text pill. */
+/* Icon-only status chip on the AR card face (published / draft / no AR). These
+   sit on the IVORY card face, so they keep light-theme colors on purpose. */
 .ar-status-chip {
   display: inline-flex;
   align-items: center;
@@ -338,9 +420,9 @@
   height: 15px;
 }
 .ar-status-published {
-  background: var(--ar-success-soft);
-  color: var(--ar-success);
-  border-color: rgba(22, 163, 74, 0.25);
+  background: rgba(22, 163, 74, 0.1);
+  color: #16a34a;
+  border-color: rgba(22, 163, 74, 0.3);
 }
 .ar-status-published svg {
   width: 20px;
@@ -348,14 +430,14 @@
   stroke-width: 3;
 }
 .ar-status-draft {
-  background: var(--ar-orange-soft);
-  color: var(--ar-orange-deep);
-  border-color: var(--ar-orange-border);
+  background: rgba(249, 115, 22, 0.1);
+  color: #ea580c;
+  border-color: rgba(249, 115, 22, 0.3);
 }
 .ar-status-none {
-  background: #f4f4f5;
-  color: var(--ar-text-muted);
-  border-color: #e4e4e7;
+  background: rgba(0, 0, 0, 0.05);
+  color: #a8a29e;
+  border-color: rgba(0, 0, 0, 0.1);
 }
 
 /* Layout helpers */
@@ -384,7 +466,7 @@
   background: var(--ar-danger-soft);
   padding: 10px 14px;
   border-radius: var(--ar-r-md);
-  border: 1px solid rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 /* Interactive Composer Workspace */
@@ -408,7 +490,9 @@
   gap: var(--ar-sp-lg);
   padding: var(--ar-sp-md) var(--ar-sp-2xl);
   border-bottom: 1px solid var(--ar-border);
-  background: var(--ar-surface);
+  background: rgba(17, 17, 19, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   flex: none;
 }
 .ar-topbar-title .ar-h1 {
@@ -526,7 +610,7 @@
   padding: 12px 14px;
   border-radius: var(--ar-r-md);
   border: 1px solid var(--ar-border);
-  background: #ffffff;
+  background: var(--ar-surface);
   color: var(--ar-text);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -547,7 +631,7 @@
   background: var(--ar-orange-soft);
   color: var(--ar-orange-deep);
   border-color: var(--ar-orange);
-  box-shadow: inset 0 1px 2px rgba(249, 115, 22, 0.05);
+  box-shadow: inset 0 1px 2px rgba(249, 115, 22, 0.08);
 }
 
 /* Asset segment selector */
@@ -555,7 +639,8 @@
   display: flex;
   gap: 4px;
   padding: 4px;
-  background: #f4f3f0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
 }
 .ar-asset-tab {
@@ -575,9 +660,9 @@
   color: var(--ar-text);
 }
 .ar-asset-tab.is-active {
-  background: #ffffff;
+  background: var(--ar-raise);
   color: var(--ar-orange-deep);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 .ar-asset-tab-ico {
   display: inline-flex;
@@ -610,8 +695,8 @@
   text-align: left;
   border: none;
   border-radius: var(--ar-r-md);
-  background: linear-gradient(135deg, var(--ar-orange), var(--ar-orange-deep));
-  color: #ffffff;
+  background: var(--ar-grad);
+  color: #1a1205;
   cursor: pointer;
   box-shadow: 0 6px 18px var(--ar-orange-glow);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -631,7 +716,7 @@
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.28);
   font-size: 19px;
 }
 .ar-asset-cta-text {
@@ -704,7 +789,7 @@
 }
 .ar-asset-upload:hover:not(:disabled) .ar-asset-upload-ico {
   background: var(--ar-orange);
-  color: #ffffff;
+  color: #1a1205;
 }
 .ar-asset-upload-title {
   font-size: 13.5px;
@@ -724,7 +809,7 @@
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-lg);
   background: var(--ar-card);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
 .ar-collapse-head {
@@ -740,7 +825,7 @@
   transition: background 0.15s ease;
 }
 .ar-collapse-head:hover {
-  background: #fdfdfc;
+  background: rgba(255, 255, 255, 0.03);
 }
 .ar-collapse-card > .ar-collapse-head {
   padding: var(--ar-sp-lg) var(--ar-sp-xl);
@@ -878,14 +963,14 @@
   transition: all 0.15s ease;
 }
 .ar-icon-btn:hover {
-  background: #f4f3f0;
+  background: var(--ar-raise);
   color: var(--ar-text);
   border-color: var(--ar-border);
 }
 .ar-icon-danger:hover {
   background: var(--ar-danger-soft);
   color: var(--ar-danger);
-  border-color: rgba(220, 38, 38, 0.15);
+  border-color: rgba(239, 68, 68, 0.25);
 }
 
 /* Custom transform/axes inputs */
@@ -938,7 +1023,7 @@
   cursor: pointer;
   height: 6px;
   border-radius: 3px;
-  background: #e7e5e4;
+  background: rgba(255, 255, 255, 0.1);
   outline: none;
 }
 
@@ -950,7 +1035,7 @@
   padding: 12px;
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
-  background: #fdfdfb;
+  background: var(--ar-surface);
 }
 .ar-target-missing {
   border-color: var(--ar-orange-border);
@@ -968,9 +1053,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff;
+  background: var(--ar-raise);
   color: var(--ar-text-muted);
-  border: 1px dashed var(--ar-border);
+  border: 1px dashed var(--ar-border-hover);
 }
 .ar-target-body {
   display: flex;
@@ -1009,7 +1094,7 @@
   padding: 8px 16px;
   border-radius: 9999px;
   border: 1px solid var(--ar-border);
-  background: #ffffff;
+  background: var(--ar-surface);
   color: var(--ar-text-dim);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1030,7 +1115,7 @@
 input[type="range"]::-webkit-slider-runnable-track {
   height: 6px;
   border-radius: 3px;
-  background: #e7e5e4;
+  background: rgba(255, 255, 255, 0.1);
 }
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -1039,8 +1124,8 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   border-radius: 50%;
   background: var(--ar-orange);
-  border: 2px solid #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 2px solid #0a0a0b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 8px var(--ar-orange-glow);
   margin-top: -5px;
   transition: transform 0.1s ease;
 }
@@ -1055,7 +1140,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0;
   border: 1px solid var(--ar-border);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--ar-surface);
   cursor: pointer;
   outline: none;
 }
@@ -1070,26 +1155,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 100%;
   color: var(--ar-danger);
   background: var(--ar-danger-soft);
-  border-color: rgba(220, 38, 38, 0.1);
+  border-color: rgba(239, 68, 68, 0.15);
   padding: 10px;
 }
 .ar-del-full:hover {
-  border-color: var(--ar-danger);
-  background: var(--ar-danger);
+  border-color: #dc2626;
+  background: #dc2626;
   color: #ffffff;
 }
 
-/* Composition 3D Viewport styling */
+/* Composition 3D Viewport styling. The R3F canvas paints its own light
+   "photo table" background (SceneViewport) — the content window stays bright
+   against the dark chrome, so the fallback here matches the scene color to
+   avoid a flash while the canvas mounts. */
 .ar-stage {
   position: relative;
   flex: 1;
   min-width: 0;
   height: 100%;
-  border: 1px solid var(--ar-border);
+  border: 1px solid var(--ar-border-hover);
   border-radius: var(--ar-r-xl);
   overflow: hidden;
-  background: radial-gradient(circle at 50% 40%, #faf9f6, #eae8e3);
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.03);
+  background: radial-gradient(circle at 50% 40%, #f4f3f1, #e9e7e2);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 18px 48px rgba(0, 0, 0, 0.42);
 }
 .ar-stage canvas {
   display: block;
@@ -1102,7 +1190,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: var(--ar-r-md);
   overflow: hidden;
   border: 2px solid #ffffff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
   background: #ffffff;
   z-index: 5;
 }
@@ -1119,9 +1207,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   text-align: center;
   padding: 4px;
-  color: var(--ar-text-muted);
+  color: #78716c;
   background: #faf9f6;
-  border-top: 1px solid var(--ar-border);
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 .ar-stage-empty {
   position: absolute;
@@ -1132,20 +1220,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 14px 16px;
   border-radius: var(--ar-r-md);
   background: rgba(255, 255, 255, 0.95);
-  border: 1px solid var(--ar-border);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   backdrop-filter: blur(12px);
   font-size: 13px;
-  color: var(--ar-text-dim);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  color: #57534e;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   z-index: 5;
 }
 .ar-stage-empty-title {
   font-weight: 800;
-  color: var(--ar-orange-deep);
+  color: #ea580c;
   margin-bottom: 4px !important;
 }
 
-/* Modals & Popovers (Cropper / Gallery picker) */
+/* Modals & Popovers (Cropper / Gallery picker / Share / Preview) */
 .ar-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1154,7 +1242,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(27, 25, 23, 0.4);
+  background: rgba(4, 4, 5, 0.66);
   backdrop-filter: blur(8px);
   animation: fadeIn 0.25s ease-out;
 }
@@ -1166,14 +1254,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .ar-modal {
   background: var(--ar-card);
-  border: 1px solid var(--ar-border);
+  border: 1px solid var(--ar-border-hover);
   border-radius: var(--ar-r-xl);
   padding: var(--ar-sp-xl);
   width: min(460px, 100%);
   display: flex;
   flex-direction: column;
   gap: var(--ar-sp-lg);
-  box-shadow: 0 24px 64px rgba(27, 25, 23, 0.12);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
   animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1197,7 +1285,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   cursor: grab;
   touch-action: none;
   display: flex;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 .ar-crop-frame:active {
   cursor: grabbing;
@@ -1224,7 +1312,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: var(--ar-success-soft);
   padding: 6px 14px;
   border-radius: 9999px;
-  border: 1px solid rgba(22, 163, 74, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.25);
 }
 
 /* ── Dashboard structure rework ───────────────────────────────────── */
@@ -1232,6 +1320,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   flex-direction: column;
   gap: var(--ar-sp-2xl);
+}
+/* Page head: title block + quick actions (e.g. "Scan a card") side by side. */
+.ar-dash-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ar-sp-lg);
+  flex-wrap: wrap;
+  margin-bottom: var(--ar-sp-2xl);
+}
+.ar-dash-head-text {
+  min-width: 0;
+}
+.ar-dash-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ar-sp-sm);
+  flex: none;
 }
 .ar-dash-add {
   flex: none;
@@ -1248,7 +1354,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: var(--ar-r-lg);
   background: var(--ar-card);
   padding: 16px 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 .ar-usage-head {
   display: flex;
@@ -1277,12 +1383,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-meter {
   height: 8px;
   border-radius: 9999px;
-  background: #f4f3f0;
+  background: rgba(255, 255, 255, 0.07);
   overflow: hidden;
 }
 .ar-meter-fill {
   height: 100%;
-  background: linear-gradient(to right, var(--ar-orange), var(--ar-orange-deep));
+  background: var(--ar-grad);
   border-radius: 9999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1295,7 +1401,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-lg);
   background: var(--ar-card);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
 .ar-dash-combined > .ar-usage,
@@ -1366,7 +1472,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: var(--ar-r-lg);
   background: var(--ar-card);
   padding: 16px 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
 }
 .ar-storage-compact {
   padding: 12px 14px;
@@ -1387,7 +1493,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   gap: 8px;
   padding: 9px 12px;
   text-align: left;
-  background: var(--ar-card);
+  background: var(--ar-surface);
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   cursor: pointer;
@@ -1395,7 +1501,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .ar-template-row:hover {
   border-color: var(--ar-orange);
-  background: var(--ar-orange-soft, rgba(255, 122, 0, 0.06));
+  background: var(--ar-orange-soft);
 }
 .ar-template-badge {
   flex: 0 0 auto;
@@ -1403,7 +1509,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #fff;
+  color: #1a1205;
   background: var(--ar-orange);
   padding: 2px 7px;
   border-radius: 999px;
@@ -1431,15 +1537,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
   justify-content: center;
   width: 34px;
   color: var(--ar-text-muted);
-  background: var(--ar-card);
+  background: var(--ar-surface);
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   cursor: pointer;
   transition: color 0.15s ease, border-color 0.15s ease;
 }
 .ar-template-del:hover {
-  color: #dc2626;
-  border-color: #dc2626;
+  color: var(--ar-danger);
+  border-color: rgba(239, 68, 68, 0.45);
 }
 
 /* Playback-speed segmented control (video sound settings). */
@@ -1457,7 +1563,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-variant-numeric: tabular-nums;
   text-align: center;
   color: var(--ar-text);
-  background: var(--ar-card);
+  background: var(--ar-surface);
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   cursor: pointer;
@@ -1469,7 +1575,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-speed-btn.is-active {
   background: var(--ar-orange);
   border-color: var(--ar-orange);
-  color: #fff;
+  color: #1a1205;
   font-weight: 700;
 }
 
@@ -1482,7 +1588,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   background: var(--ar-card);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 }
 .ar-header-meters > .ar-header-storage + .ar-header-storage {
@@ -1531,20 +1637,20 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-storage-meter {
   height: 7px;
   border-radius: 9999px;
-  background: #f4f3f0;
+  background: rgba(255, 255, 255, 0.07);
   overflow: hidden;
 }
 .ar-storage-fill {
   height: 100%;
   border-radius: 9999px;
-  background: linear-gradient(to right, var(--ar-orange), var(--ar-orange-deep));
+  background: var(--ar-grad);
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ar-storage-high .ar-storage-fill {
   background: linear-gradient(to right, #f59e0b, #d97706);
 }
 .ar-storage-full .ar-storage-fill {
-  background: linear-gradient(to right, #ef4444, var(--ar-danger));
+  background: linear-gradient(to right, #ef4444, #dc2626);
 }
 .ar-storage-foot {
   margin-top: 7px;
@@ -1594,21 +1700,21 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: var(--ar-r-lg);
   background: var(--ar-card);
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015), 0 1px 2px rgba(0, 0, 0, 0.008);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.2);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ar-tile:hover {
   border-color: var(--ar-orange-border);
-  box-shadow: 0 12px 30px rgba(27, 25, 23, 0.06), 0 1px 2px rgba(27, 25, 23, 0.02);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
   transform: translateY(-4px);
 }
 .ar-tile-idle .ar-tile-thumb {
-  background: #fbfbfa;
+  background: var(--ar-surface);
 }
 .ar-tile-thumb {
   position: relative;
   aspect-ratio: 1.6;
-  background: #f6f5f2;
+  background: var(--ar-raise);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1634,7 +1740,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   position: absolute;
   top: 12px;
   left: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 .ar-tile-body {
   padding: 18px 18px 0;
@@ -1657,9 +1763,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   margin-top: auto;
 }
 .ar-tile-edit {
-  flex: 2;
+  flex: 1;
   font-size: 13.5px;
-  padding: 8px 12px;
+  padding: 8px 10px;
 }
 .ar-tile-confirm {
   flex-direction: column;
@@ -1675,10 +1781,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 /* ── App-style business card face (grid of cards that look like the app) ──
-   Each tile renders a dark card with an accent gradient border, identity row
-   and KAUNTECH wordmark — mirroring the app's BusinessCardItem — with the
-   AR actions sitting on the tile below it. The per-card accent comes from an
-   inline --tile-accent set in CardsDashboard. */
+   Each tile renders the app's BusinessCardItem in its LIGHT theme: ivory body,
+   dark ink text, accent gradient border. It deliberately stays LIGHT on the
+   dark studio — a real card floating on the desk — so all colors inside it are
+   fixed (not token-driven). The per-card accent comes from an inline
+   --tile-accent set in CardsDashboard. */
 .ar-cardgrid {
   grid-template-columns: repeat(auto-fill, minmax(264px, 1fr));
 }
@@ -1697,9 +1804,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-cardtile .ar-tile-actions {
   padding: 0;
 }
-/* Light "warm ivory" card face, matching the app's BusinessCardItem in LIGHT
-   mode: ivory body (#FFFDF9), dark ink text, accent gradient border with a
-   metallic highlight, floating on the page like a credit card. */
 .ar-cardface {
   position: relative;
   display: flex;
@@ -1711,12 +1815,12 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background:
     linear-gradient(135deg, #fffdf9, #faf8f4 55%, #faf4eb) padding-box,
     linear-gradient(135deg, var(--tile-accent), rgba(0, 0, 0, 0.25), var(--tile-accent)) border-box;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   transition: box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .ar-cardtile:hover .ar-cardface {
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.14);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.6), 0 0 24px color-mix(in srgb, var(--tile-accent) 14%, transparent);
 }
 .ar-cardtile.ar-tile-idle .ar-cardface {
   opacity: 0.9;
@@ -1895,21 +1999,22 @@ input[type="range"]::-webkit-slider-thumb:hover {
   opacity: 0.8;
 }
 
-/* ── Loaders: skeletons (dashboard) + spinner (editor) ─────────────────── */
+/* ── Loaders: skeletons (dashboard) + spinner (editor) ─────────────────────
+   .ar-skel shimmers ON the dark page; .ar-skel-dark keeps its historical name
+   but is the shimmer used INSIDE the light/ivory card face. */
 @keyframes ar-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
 .ar-skel {
   border-radius: 8px;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.045) 25%, rgba(0, 0, 0, 0.09) 37%, rgba(0, 0, 0, 0.045) 63%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.11) 37%, rgba(255, 255, 255, 0.05) 63%);
   background-size: 200% 100%;
   animation: ar-shimmer 1.4s ease-in-out infinite;
 }
-/* On-dark variant, for the placeholders inside the dark card face. */
 .ar-skel-dark {
   border-radius: 8px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.1) 37%, rgba(255, 255, 255, 0.04) 63%);
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.05) 25%, rgba(0, 0, 0, 0.1) 37%, rgba(0, 0, 0, 0.05) 63%);
   background-size: 200% 100%;
   animation: ar-shimmer 1.4s ease-in-out infinite;
 }
@@ -1926,8 +2031,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  border: 3px solid var(--ar-orange-soft);
-  border-top-color: var(--ar-orange-deep);
+  border: 3px solid rgba(249, 115, 22, 0.18);
+  border-top-color: var(--ar-orange);
   animation: ar-spin 0.8s linear infinite;
 }
 .ar-editor-loading {
@@ -1942,7 +2047,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* Expanded custom labeled buttons for tiles */
 .ar-icon-btn-bordered {
   height: 33px;
-  padding: 0 10px;
+  padding: 0 9px;
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   font-size: 12.5px;
@@ -1963,7 +2068,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: var(--ar-orange-soft);
 }
 .ar-icon-btn-bordered.ar-icon-danger:hover {
-  border-color: rgba(220, 38, 38, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
   background: var(--ar-danger-soft);
   color: var(--ar-danger);
 }
@@ -1971,15 +2076,15 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-btn-danger {
   background: var(--ar-danger-soft);
   color: var(--ar-danger);
-  border: 1px solid rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 .ar-btn-danger:hover {
-  background: var(--ar-danger);
+  background: #dc2626;
   color: #ffffff;
 }
 
 .ar-empty {
-  border: 2px dashed var(--ar-border);
+  border: 2px dashed var(--ar-border-hover);
   border-radius: var(--ar-r-lg);
   padding: var(--ar-sp-3xl) var(--ar-sp-xl);
   text-align: center;
@@ -2003,7 +2108,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 /* KaunTech gallery modal popup styling */
 .ar-gallery-modal {
   background: var(--ar-card);
-  border: 1px solid var(--ar-border);
+  border: 1px solid var(--ar-border-hover);
   border-radius: var(--ar-r-xl);
   padding: var(--ar-sp-xl);
   width: min(720px, 100%);
@@ -2011,7 +2116,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   flex-direction: column;
   gap: var(--ar-sp-lg);
-  box-shadow: 0 24px 64px rgba(27, 25, 23, 0.12);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
   animation: modalScaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .ar-gallery-head {
@@ -2040,7 +2145,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: var(--ar-sp-sm);
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
-  background: #fdfdfb;
+  background: var(--ar-surface);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -2050,6 +2155,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px var(--ar-orange-glow);
 }
+/* The little GLB preview canvases render a light photo-table scene
+   (GalleryPicker's own lights) — keep the light well behind them. */
 .ar-gallery-canvas {
   display: block;
   width: 100%;
@@ -2057,7 +2164,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: 8px;
   overflow: hidden;
   background: radial-gradient(circle at 50% 35%, #ffffff, #f0ede8);
-  border: 1px solid var(--ar-border);
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 .ar-gallery-name {
   font-size: 13px;
@@ -2075,7 +2182,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 0 14px;
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
-  background: #ffffff;
+  background: var(--ar-surface);
   transition: border-color 0.2s ease;
 }
 .ar-gallery-search:focus-within {
@@ -2096,6 +2203,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   padding: 12px 0;
   font-size: 14.5px;
   color: var(--ar-text);
+}
+.ar-gallery-search-input::placeholder {
+  color: var(--ar-text-muted);
 }
 
 /* Collapsible inner groups */
@@ -2121,7 +2231,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   gap: 4px;
   padding: 4px;
-  background: #f4f3f0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   margin-bottom: var(--ar-sp-lg);
   flex: none;
@@ -2154,9 +2265,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: var(--ar-text);
 }
 .ar-sidebar-tab-btn.is-active {
-  background: #ffffff;
+  background: var(--ar-raise);
   color: var(--ar-orange-deep);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 .ar-sidebar-tab-btn.is-active svg {
   color: var(--ar-orange);
@@ -2166,7 +2277,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: flex;
   gap: 4px;
   padding: 4px;
-  background: #f4f3f0;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-md);
   margin-bottom: var(--ar-sp-sm);
   flex: none;
@@ -2191,9 +2303,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   color: var(--ar-text);
 }
 .ar-properties-tab-btn.is-active {
-  background: #ffffff;
+  background: var(--ar-raise);
   color: var(--ar-orange-deep);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .ar-sidebar-tab-content,
@@ -2217,6 +2329,210 @@ input[type="range"]::-webkit-slider-thumb:hover {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ── Share & phone-preview modals (QR handoff to the phone) ──────────────── */
+.ar-qrbox {
+  align-self: center;
+  width: min(240px, 70vw);
+  aspect-ratio: 1;
+  padding: 12px;
+  border-radius: var(--ar-r-lg);
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ar-qrbox img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  image-rendering: pixelated;
+}
+.ar-share-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ar-sp-md);
+}
+.ar-share-title {
+  font-family: var(--ar-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--ar-text);
+}
+.ar-share-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--ar-text-dim);
+  line-height: 1.5;
+}
+.ar-share-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--ar-sp-sm);
+}
+.ar-share-actions .ar-btn {
+  font-size: 13.5px;
+  padding: 10px 12px;
+}
+.ar-share-wide {
+  grid-column: 1 / -1;
+}
+.ar-share-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--ar-border);
+  border-radius: var(--ar-r-md);
+  background: var(--ar-surface);
+  font-family: var(--font-fira-code), monospace;
+  font-size: 12px;
+  color: var(--ar-text-dim);
+  overflow: hidden;
+}
+.ar-share-link span {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Login page (split hero) ─────────────────────────────────────────────── */
+.ar-login {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: var(--ar-sp-3xl) var(--ar-sp-xl) 96px;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(28px, 5vw, 64px);
+  align-items: center;
+  min-height: calc(100vh - 140px);
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.ar-login-hero {
+  min-width: 0;
+}
+.ar-login-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ar-orange-deep);
+  background: var(--ar-orange-soft);
+  border: 1px solid var(--ar-orange-border);
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin-bottom: var(--ar-sp-lg);
+}
+.ar-login-title {
+  font-family: var(--ar-display);
+  font-size: clamp(34px, 4.6vw, 52px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  margin: 0 0 var(--ar-sp-lg);
+  color: var(--ar-text);
+}
+.ar-login-title .ar-serif {
+  font-size: 1.04em;
+}
+.ar-login-lede {
+  font-size: 16.5px;
+  line-height: 1.65;
+  color: var(--ar-text-dim);
+  margin: 0 0 var(--ar-sp-2xl);
+  max-width: 46ch;
+}
+.ar-login-points {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ar-sp-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ar-login-point {
+  display: flex;
+  gap: var(--ar-sp-md);
+  align-items: flex-start;
+}
+.ar-login-point-ico {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--ar-orange-soft);
+  border: 1px solid var(--ar-orange-border);
+  color: var(--ar-orange-deep);
+  font-size: 15px;
+}
+.ar-login-point strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--ar-text);
+}
+.ar-login-point p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ar-text-dim);
+}
+.ar-login-panel {
+  min-width: 0;
+}
+.ar-login-panel .ar-card {
+  padding: var(--ar-sp-2xl);
+}
+.ar-login-foot {
+  margin-top: var(--ar-sp-lg);
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ar-text-muted);
+  line-height: 1.6;
+}
+.ar-login-foot a {
+  color: var(--ar-orange-deep);
+  text-decoration: none;
+}
+.ar-login-foot a:hover {
+  text-decoration: underline;
+}
+.ar-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ar-text-muted);
+  font-size: 12.5px;
+}
+.ar-divider::before,
+.ar-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ar-border);
+}
+@media (max-width: 900px) {
+  .ar-login {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: var(--ar-sp-2xl);
+    min-height: 0;
+    padding-top: var(--ar-sp-2xl);
   }
 }
 
@@ -2358,9 +2674,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
     overflow-y: auto;
     overflow-x: hidden;
     background: var(--ar-surface);
-    border-top: 1px solid var(--ar-border);
+    border-top: 1px solid var(--ar-border-hover);
     border-radius: var(--ar-r-xl) var(--ar-r-xl) 0 0;
-    box-shadow: 0 -16px 48px rgba(27, 25, 23, 0.22);
+    box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.6);
     z-index: 60;
     opacity: 1;
     pointer-events: auto;
@@ -2375,7 +2691,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     display: block;
     height: 20px;
     background: var(--ar-surface);
-    background-image: linear-gradient(var(--ar-border-hover), var(--ar-border-hover));
+    background-image: linear-gradient(rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.22));
     background-repeat: no-repeat;
     background-size: 38px 4px;
     background-position: center 8px;
@@ -2406,9 +2722,29 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
   .ar-header {
     padding: var(--ar-sp-md) var(--ar-sp-lg);
+    gap: var(--ar-sp-sm);
   }
   .ar-brand {
-    font-size: 18px;
+    font-size: 16px;
+    white-space: nowrap;
+    flex: none;
+  }
+  .ar-brand-studio {
+    display: none;
+  }
+  /* The editor's live meters share the leftover row instead of overflowing. */
+  .ar-header-meters {
+    flex: 1;
+    min-width: 0;
+  }
+  .ar-header-meters .ar-header-storage {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+  /* The account email crowds a phone-width header — Sign out is what matters. */
+  .ar-header > .ar-row > .ar-muted {
+    display: none;
   }
   .ar-h1 {
     font-size: 24px;
@@ -2451,6 +2787,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .ar-gallery-grid {
     grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
   }
+  .ar-share-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Hide scrollbars by default for sidebar panels, show only on hover */
@@ -2464,7 +2803,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .ar-side-scroll-content::-webkit-scrollbar-thumb:hover,
 .ar-props::-webkit-scrollbar-thumb:hover {
-  background: var(--ar-orange-deep);
+  background: var(--ar-orange);
 }
 
 /* Stacked Card Layout for Setup Tab Photo Previews */
@@ -2478,7 +2817,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border: 1px solid var(--ar-border);
   border-radius: var(--ar-r-lg);
   padding: 14px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.015);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2486,7 +2825,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .ar-side-photo-card.is-target {
   border-color: var(--ar-orange-border);
-  box-shadow: 0 0 0 1px var(--ar-orange-border), 0 4px 12px rgba(249, 115, 22, 0.05);
+  box-shadow: 0 0 0 1px var(--ar-orange-border), 0 4px 12px rgba(249, 115, 22, 0.08);
 }
 .ar-side-photo-header {
   display: flex;
@@ -2507,7 +2846,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid var(--ar-border);
-  background: #fbfbfa;
+  background: var(--ar-raise);
 }
 .ar-side-photo-img {
   width: 100%;
@@ -2523,9 +2862,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1.5px dashed var(--ar-border);
+  border: 1.5px dashed var(--ar-border-hover);
   border-radius: 8px;
-  background: #fafaf9;
+  background: var(--ar-surface);
   cursor: pointer;
   padding: 16px;
   color: var(--ar-text-muted);
@@ -2546,7 +2885,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .ar-side-photo-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -2562,8 +2901,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 .ar-side-photo-overlay-btn {
   background: rgba(255, 255, 255, 0.95);
-  color: var(--ar-text);
-  border: 1px solid var(--ar-border);
+  color: #1c1917;
+  border: 1px solid rgba(0, 0, 0, 0.08);
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -2573,18 +2912,18 @@ input[type="range"]::-webkit-slider-thumb:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.15s ease;
 }
 .ar-side-photo-overlay-btn:hover {
   background: #ffffff;
-  color: var(--ar-orange-deep);
-  border-color: var(--ar-orange-border);
+  color: #ea580c;
+  border-color: rgba(249, 115, 22, 0.4);
 }
 .ar-side-photo-overlay-btn.ar-btn-danger:hover {
-  color: var(--ar-danger);
-  border-color: rgba(220, 38, 38, 0.15);
-  background: var(--ar-danger-soft);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
+  background: #fef2f2;
 }
 .ar-side-photo-badges {
   display: flex;
@@ -2625,19 +2964,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* User Plan Tier Badges */
 .ar-badge-free {
-  background: #f4f4f5;
-  color: #71717a;
-  border: 1px solid #e4e4e7;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ar-text-muted);
+  border: 1px solid var(--ar-border);
 }
 .ar-badge-pro {
-  background: rgba(249, 115, 22, 0.08);
-  color: #f97316;
-  border: 1px solid rgba(249, 115, 22, 0.2);
+  background: rgba(249, 115, 22, 0.12);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.3);
 }
 .ar-badge-ultra {
-  background: rgba(147, 51, 234, 0.08);
-  color: #9333ea;
-  border: 1px solid rgba(147, 51, 234, 0.2);
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
 }
-
-

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
@@ -29,10 +30,10 @@ export default function ArHeader({ email }: { email?: string | null }) {
 
   return (
     <header className="ar-header">
-      <div className="ar-brand">
+      <Link className="ar-brand" href="/ar" title="Your AR cards">
         <span className="ar-brand-dot" />
-        KaunTech <span className="ar-mono" style={{ color: "var(--ar-orange-deep)" }}>AR</span>
-      </div>
+        KaunTech AR <span className="ar-brand-studio">Studio</span>
+      </Link>
       {meter && meter.cap > 0 ? (
         <div className="ar-header-meters">
           {tokens && tokens.limit > 0 ? (

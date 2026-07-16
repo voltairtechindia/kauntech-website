@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { EffectiveTier, TokenBreakdown } from "@/lib/ar/db";
-import { IconCheck, IconExternal, IconGlobe, IconLock, IconMail, IconPencil, IconPhone, IconPlus, IconTrash } from "./icons";
+import { IconCheck, IconCopy, IconDownload, IconExternal, IconGlobe, IconLock, IconMail, IconPencil, IconPhone, IconPlus, IconQr, IconShare, IconTrash, IconX } from "./icons";
 import StorageMeter from "./StorageMeter";
 import TokenMeter from "./TokenMeter";
 
@@ -27,6 +27,9 @@ export interface DashItem {
   accent: string;
   avatarUrl: string | null;
   isDefault: boolean;
+  /** The vCard payload the card's QR encodes (built server-side, same as the
+   *  app) — powers the Share sheet's .vcf download and high-res QR. */
+  vcard: string;
 }
 
 function initialOf(name: string): string {
@@ -61,6 +64,8 @@ export default function CardsDashboard({
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Card whose Share sheet is open (QR download / .vcf / AR link).
+  const [shareItem, setShareItem] = useState<DashItem | null>(null);
   // Cards whose AR we just removed — optimistically flip them to idle ("Set up
   // AR") until the server refetch lands. We never hide the card itself: removing
   // AR on the web keeps the underlying business card (cards are app-only).
@@ -308,6 +313,9 @@ export default function CardsDashboard({
                         <IconExternal /> View AR
                       </a>
                     ) : null}
+                    <button className="ar-icon-btn-bordered" title="Share — QR, contact file & AR link" aria-label="Share this card" onClick={() => setShareItem(item)}>
+                      <IconShare />
+                    </button>
                     <button className="ar-icon-btn-bordered ar-icon-danger" title="Remove the AR from this card (keeps the card)" onClick={() => setConfirmId(item.id)}>
                       <IconTrash /> Remove AR
                     </button>
@@ -323,6 +331,9 @@ export default function CardsDashboard({
                         <IconPlus /> Set up AR
                       </Link>
                     )}
+                    <button className="ar-icon-btn-bordered" title="Share — QR & contact file" aria-label="Share this card" onClick={() => setShareItem(item)}>
+                      <IconShare />
+                    </button>
                   </div>
                 )}
               </div>
@@ -330,6 +341,164 @@ export default function CardsDashboard({
           })}
         </div>
       )}
+
+      {shareItem ? <ShareSheet item={shareItem} onClose={() => setShareItem(null)} /> : null}
+    </div>
+  );
+}
+
+/* ── Share sheet ──────────────────────────────────────────────────────────
+   Everything the owner needs to hand their card around, generated fully
+   client-side: a high-res contact QR (same vCard payload + center K badge as
+   the app's generated QR), a downloadable .vcf, and — when the AR is
+   published — the public viewer link a phone opens straight into. */
+function ShareSheet({ item, onClose }: { item: DashItem; onClose: () => void }) {
+  const [qrPng, setQrPng] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const published = item.status === "published";
+  const viewUrl = `${typeof window !== "undefined" ? window.location.origin : "https://www.kauntech.com"}/ar/view/${item.id}`;
+  const slug = (item.name || "card").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "card";
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // Build the QR lazily (dynamic import keeps `qrcode` out of the page chunk),
+  // then overlay the K badge on a canvas — errorCorrectionLevel M leaves room
+  // for a ~26% centre logo, exactly like the app's QRGenerator.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const QRCode = (await import("qrcode")).default;
+        const base = await QRCode.toDataURL(item.vcard, {
+          width: 1024,
+          margin: 2,
+          errorCorrectionLevel: "M",
+          color: { dark: "#09090B", light: "#FFFFFF" },
+        });
+        const composed = await new Promise<string>((resolve) => {
+          const qrImg = new Image();
+          qrImg.onload = () => {
+            const size = 1024;
+            const canvas = document.createElement("canvas");
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return resolve(base);
+            ctx.drawImage(qrImg, 0, 0, size, size);
+            const logo = new Image();
+            const finish = () => resolve(canvas.toDataURL("image/png"));
+            logo.onload = () => {
+              const d = size * 0.26;
+              const cx = size / 2;
+              const cy = size / 2;
+              // Same orange-red badge the app draws behind the K mark.
+              ctx.fillStyle = "#BF4321";
+              ctx.beginPath();
+              ctx.arc(cx, cy, d / 2, 0, Math.PI * 2);
+              ctx.fill();
+              const pad = d * 0.18;
+              ctx.drawImage(logo, cx - d / 2 + pad, cy - d / 2 + pad, d - pad * 2, d - pad * 2);
+              finish();
+            };
+            logo.onerror = finish;
+            logo.src = "/assets/logo-mark.png";
+          };
+          qrImg.onerror = () => resolve(base);
+          qrImg.src = base;
+        });
+        if (alive) setQrPng(composed);
+      } catch {
+        if (alive) setQrPng(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [item]);
+
+  function download(name: string, href: string) {
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function downloadVcf() {
+    const url = URL.createObjectURL(new Blob([item.vcard], { type: "text/vcard;charset=utf-8" }));
+    download(`${slug}.vcf`, url);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(viewUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      /* clipboard unavailable — the visible link row still allows manual copy */
+    }
+  }
+
+  return (
+    <div className="ar-modal-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label={`Share ${item.name}`}>
+      <div className="ar-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="ar-share-head">
+          <div>
+            <h3 className="ar-share-title">Share “{item.name}”</h3>
+            <p className="ar-share-sub">
+              {published
+                ? "Scanning the QR saves your contact; the AR link opens your live card in any phone browser."
+                : "Scanning the QR saves your contact. Publish the card's AR to get a shareable viewer link too."}
+            </p>
+          </div>
+          <button className="ar-icon-btn" onClick={onClose} aria-label="Close share sheet">
+            <IconX />
+          </button>
+        </div>
+
+        <div className="ar-qrbox">
+          {qrPng ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={qrPng} alt={`${item.name} contact QR code`} />
+          ) : (
+            <span className="ar-muted">Generating QR…</span>
+          )}
+        </div>
+
+        {published ? (
+          <div className="ar-share-link" title={viewUrl}>
+            <IconQr />
+            <span>{viewUrl.replace(/^https?:\/\//, "")}</span>
+          </div>
+        ) : null}
+
+        <div className="ar-share-actions">
+          <button className="ar-btn ar-btn-ghost" onClick={() => qrPng && download(`kauntech-${slug}-qr.png`, qrPng)} disabled={!qrPng}>
+            <IconDownload /> QR as PNG
+          </button>
+          <button className="ar-btn ar-btn-ghost" onClick={downloadVcf}>
+            <IconDownload /> Contact (.vcf)
+          </button>
+          {published ? (
+            <>
+              <button className="ar-btn ar-btn-primary ar-share-wide" onClick={copyLink}>
+                {copied ? <IconCheck /> : <IconCopy />} {copied ? "Link copied" : "Copy AR link"}
+              </button>
+              <a className="ar-btn ar-btn-ghost ar-share-wide" href={viewUrl} target="_blank" rel="noreferrer">
+                <IconExternal /> Open AR viewer
+              </a>
+            </>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }

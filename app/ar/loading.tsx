@@ -8,8 +8,10 @@ export default function ArDashboardLoading() {
   return (
     <div className="ar-container ar-dash-page" aria-busy="true" aria-label="Loading your AR cards">
       <div className="ar-dash-head">
-        <div className="ar-skel ar-skel-title" />
-        <div className="ar-skel ar-skel-sub" />
+        <div className="ar-dash-head-text" style={{ flex: 1 }}>
+          <div className="ar-skel ar-skel-title" />
+          <div className="ar-skel ar-skel-sub" />
+        </div>
       </div>
 
       <div className="ar-skel ar-skel-bar" />
