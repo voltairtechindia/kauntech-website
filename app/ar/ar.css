@@ -2494,37 +2494,24 @@ input[type="range"]::-moz-range-thumb {
   text-overflow: ellipsis;
 }
 
-/* ── 3D showcase (ArShowcase) ────────────────────────────────────────────
-   The iPhone-scanning-a-card vignette on the login page and the Pro/Ultra
-   gate. Fully WebGL — labels are canvas textures painted in the component
-   (no DOM overlays), so only the wrapper needs styling. Purely decorative:
-   the whole block ignores the pointer. */
-.ar-showcase {
-  position: relative;
-  height: clamp(320px, 42vh, 440px);
+/* ── Phone vignette ──────────────────────────────────────────────────────
+   The home page's AR-chapter phone (CssPhone + ArScreen, styled by the
+   global phone.css) reused on the login hero and the Pro/Ultra gate.
+   Purely decorative — the whole block ignores the pointer. */
+.ar-phone-vignette {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--ar-sp-xl);
   pointer-events: none;
   user-select: none;
 }
-.ar-showcase-compact {
-  height: clamp(240px, 32vh, 320px);
-}
-.ar-showcase-skel {
-  position: absolute;
-  inset: 12% 8%;
-  border-radius: var(--ar-r-xl);
-  opacity: 0.5;
-}
-/* drei Html mounts absolutely-positioned wrappers inside the canvas box */
-.ar-showcase * {
-  pointer-events: none !important;
-}
 
-/* The Pro/Ultra gate card centres its pitch around the compact showcase. */
+/* The Pro/Ultra gate card centres its pitch around the phone. */
 .ar-gate {
   text-align: center;
 }
-.ar-gate .ar-showcase {
-  margin: calc(var(--ar-sp-xl) * -0.5) 0 var(--ar-sp-sm);
+.ar-gate .ar-phone-vignette {
+  margin: 0 0 var(--ar-sp-lg);
 }
 .ar-gate .ar-sub {
   max-width: 52ch;
