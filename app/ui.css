@@ -81,6 +81,34 @@ html.k-cursor [role="button"] {
   contain: layout paint;
 }
 
+/* ---- Below-the-fold render deferral --------------------------------------
+   content-visibility:auto lets the browser SKIP style/layout/paint for these
+   sections until the reader scrolls near them. On slow devices the first
+   frame previously styled + laid out + rasterized the ENTIRE home page
+   (six animated CSS-phone mockups included) before anything painted — this
+   was the main source of PageSpeed's late first paint. Only GSAP-free
+   sections are listed (HomeExperience's pinned story must keep real layout
+   for ScrollTrigger measurements); contain-intrinsic-size keeps scroll
+   height sane before first render and `auto` remembers the real size after. */
+.k-bento-section,
+.k-router-section,
+.k-vault-section,
+.k-plans-section,
+.home-overview,
+#faq,
+.k-final {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+/* the stacked mobile story chapters (no ScrollTrigger there — desktop's
+   pinned stage is a separate, display:none-on-mobile subtree) */
+@media (max-width: 1023px) {
+  .k-mchapter {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 950px;
+  }
+}
+
 /* Orb wrapper — mounted one frame AFTER first paint (see AuraField.tsx) so the
    heavy blur raster never blocks FCP; the fade-in hides the late arrival. */
 .k-aura-orbs {

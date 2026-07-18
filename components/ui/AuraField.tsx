@@ -19,13 +19,21 @@ export default function AuraField() {
   // Deferred mount: the orbs are 50–68vw circles under filter:blur(120px), and
   // rasterizing them is by far the heaviest part of the very first frame — on
   // slow devices it visibly delays first paint (PageSpeed's FCP/LCP). Painting
-  // them one frame AFTER first paint (with a CSS fade-in masking the pop)
-  // keeps the visual identical while taking them off the critical path.
+  // them AFTER first paint (with a CSS fade-in masking the pop) keeps the
+  // visual identical while taking them off the critical path. Double-rAF is
+  // required: a single rAF callback runs BEFORE the frame it was queued in is
+  // painted, so mounting there would still land the orbs in the first frame.
   const [showOrbs, setShowOrbs] = useState(false);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setShowOrbs(true));
-    return () => cancelAnimationFrame(id);
+    let id2 = 0;
+    const id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => setShowOrbs(true));
+    });
+    return () => {
+      cancelAnimationFrame(id1);
+      cancelAnimationFrame(id2);
+    };
   }, []);
 
   useEffect(() => {
