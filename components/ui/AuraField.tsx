@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 /**
@@ -16,6 +16,17 @@ import gsap from "gsap";
  */
 export default function AuraField() {
   const cursorRef = useRef<HTMLDivElement>(null);
+  // Deferred mount: the orbs are 50–68vw circles under filter:blur(120px), and
+  // rasterizing them is by far the heaviest part of the very first frame — on
+  // slow devices it visibly delays first paint (PageSpeed's FCP/LCP). Painting
+  // them one frame AFTER first paint (with a CSS fade-in masking the pop)
+  // keeps the visual identical while taking them off the critical path.
+  const [showOrbs, setShowOrbs] = useState(false);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShowOrbs(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   useEffect(() => {
     const el = cursorRef.current;
@@ -60,9 +71,13 @@ export default function AuraField() {
 
   return (
     <div className="k-aura" aria-hidden="true">
-      <span className="k-aura-orb k-aura-orb--a" />
-      <span className="k-aura-orb k-aura-orb--b" />
-      <span className="k-aura-orb k-aura-orb--c" />
+      {showOrbs && (
+        <span className="k-aura-orbs">
+          <span className="k-aura-orb k-aura-orb--a" />
+          <span className="k-aura-orb k-aura-orb--b" />
+          <span className="k-aura-orb k-aura-orb--c" />
+        </span>
+      )}
       <div className="k-aura-cursor" ref={cursorRef}>
         <span className="k-aura-cursor-core" />
       </div>

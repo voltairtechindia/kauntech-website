@@ -81,6 +81,18 @@ html.k-cursor [role="button"] {
   contain: layout paint;
 }
 
+/* Orb wrapper — mounted one frame AFTER first paint (see AuraField.tsx) so the
+   heavy blur raster never blocks FCP; the fade-in hides the late arrival. */
+.k-aura-orbs {
+  position: absolute;
+  inset: 0;
+  animation: kAuraFadeIn 0.9s ease-out both;
+}
+@keyframes kAuraFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* the three ambient orbs — viewport-anchored, so a little brand glow rides
    behind every section as you scroll. Kept few + low-opacity ("minimal"). */
 .k-aura-orb {

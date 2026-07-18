@@ -6,14 +6,21 @@ import { GA_ID, ADS_ID } from "@/lib/gtag";
 // scroll-depth + outbound-link tracking. Rendered a single time from
 // app/layout.tsx (do not also inline gtag elsewhere or pageviews double-count).
 // CSP allowances for every Google origin used here live in next.config.ts.
+//
+// strategy="lazyOnload": gtag.js + the Ads container it chains are ~370 KB of
+// JS with 300 ms+ of main-thread tasks — loading them during the load window
+// was the site's single largest "unused JavaScript" / long-task source on
+// PageSpeed. Post-load loading loses no data: page_view fires when gtag.js
+// processes the queued config, and events fired before that sit in the
+// dataLayer queue (see lib/gtag.ts).
 export default function GtagScripts() {
   return (
     <>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
-      <Script id="gtag-init" strategy="afterInteractive">
+      <Script id="gtag-init" strategy="lazyOnload">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
@@ -22,9 +29,13 @@ export default function GtagScripts() {
           gtag('config', '${ADS_ID}');
         `}
       </Script>
-      <Script id="gtag-engagement" strategy="afterInteractive">
+      <Script id="gtag-engagement" strategy="lazyOnload">
         {`
           (function() {
+            // Queue-safe shim: pushing arguments onto dataLayer is exactly what
+            // gtag() does, so events recorded before gtag.js arrives are
+            // processed when it loads — no dependency on script order.
+            function gtag(){ (window.dataLayer = window.dataLayer || []).push(arguments); }
             var depths = [25, 50, 75, 90], fired = [];
             window.addEventListener('scroll', function() {
               var scrollable = document.body.scrollHeight - window.innerHeight;

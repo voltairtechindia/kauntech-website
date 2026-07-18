@@ -2494,16 +2494,29 @@ input[type="range"]::-moz-range-thumb {
   text-overflow: ellipsis;
 }
 
-/* ── Phone vignette ──────────────────────────────────────────────────────
-   The home page's AR-chapter phone (CssPhone + ArScreen, styled by the
-   global phone.css) reused on the login hero and the Pro/Ultra gate.
-   Purely decorative — the whole block ignores the pointer. */
+/* ── Phone vignette (ArPhone) ────────────────────────────────────────────
+   The home page's iPhone 16 GLB (same model + live-DOM screen as the scroll
+   story) idling with the AR chapter screen, on the login hero and the
+   Pro/Ultra gate. Purely decorative — the whole block ignores the pointer. */
 .ar-phone-vignette {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--ar-sp-xl);
+  position: relative;
+  height: clamp(340px, 46vh, 480px);
+  margin-top: var(--ar-sp-lg);
   pointer-events: none;
   user-select: none;
+}
+.ar-phone-vignette-compact {
+  height: clamp(260px, 34vh, 340px);
+}
+.ar-phone-skel {
+  position: absolute;
+  inset: 6% 30%;
+  border-radius: 44px;
+  opacity: 0.5;
+}
+/* drei Html mounts absolutely-positioned wrappers inside the canvas box */
+.ar-phone-vignette * {
+  pointer-events: none !important;
 }
 
 /* The Pro/Ultra gate card centres its pitch around the phone. */
@@ -2511,7 +2524,7 @@ input[type="range"]::-moz-range-thumb {
   text-align: center;
 }
 .ar-gate .ar-phone-vignette {
-  margin: 0 0 var(--ar-sp-lg);
+  margin: calc(var(--ar-sp-xl) * -0.5) 0 var(--ar-sp-sm);
 }
 .ar-gate .ar-sub {
   max-width: 52ch;

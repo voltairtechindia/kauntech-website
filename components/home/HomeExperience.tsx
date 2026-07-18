@@ -133,14 +133,24 @@ export default function HomeExperience() {
   const [canvasOn, setCanvasOn] = useState(false); // capability gate (desktop + webgl + motion ok)
   const [canvasLive, setCanvasLive] = useState(true); // lifecycle within the page
 
-  // Capability gate — only mount WebGL on motion-friendly desktops.
+  // Capability gate — only mount WebGL on motion-friendly desktops with REAL
+  // GPU acceleration. Software renderers (SwiftShader/llvmpipe — headless
+  // browsers, GPU-less VMs, Lighthouse bots) technically expose WebGL but run
+  // the whole scene on the CPU main thread (~10 s of blocking time), so they
+  // get the CssPhone fallback instead — same content, designed for exactly
+  // this case.
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
     const check = () => {
       let webgl = false;
       try {
         const c = document.createElement("canvas");
-        webgl = !!(c.getContext("webgl2") || c.getContext("webgl"));
+        const gl = (c.getContext("webgl2") || c.getContext("webgl")) as WebGLRenderingContext | null;
+        if (gl) {
+          const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+          const renderer = dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "";
+          webgl = !/swiftshader|llvmpipe|software(rasterizer|adapter)?/i.test(renderer);
+        }
       } catch {
         webgl = false;
       }

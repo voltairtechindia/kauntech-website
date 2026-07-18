@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import ArHeader from "@/components/ar/ArHeader";
-import CssPhone from "@/components/phone/CssPhone";
-import { ArScreen } from "@/components/phone/Screens";
+import ArPhoneLazy from "@/components/ar/ArPhoneLazy";
 import LoginForm from "@/components/ar/LoginForm";
 import { IconBox, IconScan, IconSparkle } from "@/components/ar/icons";
 import { arAuthConfigured, getArUser } from "@/lib/ar/appAuth";
@@ -45,13 +44,9 @@ export default async function ArLoginPage({
             buttons, text and video floating over it in augmented reality.
           </p>
 
-          {/* The home page's AR-chapter phone: the app scanning a card, the
-              AR twin lifting off the paper. */}
-          <div className="ar-phone-vignette" aria-hidden="true">
-            <CssPhone scale={0.5}>
-              <ArScreen />
-            </CssPhone>
-          </div>
+          {/* The home page's iPhone 16 GLB with the AR chapter screen live on
+              its glass: the app scanning a card, the AR twin lifting off. */}
+          <ArPhoneLazy />
         </div>
 
         {/* Right: the sign-in panel. Auth flow unchanged (magic link / Google

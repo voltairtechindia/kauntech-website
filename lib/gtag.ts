@@ -18,12 +18,20 @@ const APPLE_APP_ID = "6769254727";
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
+    dataLayer?: unknown[];
   }
 }
 
+// gtag.js loads lazily (post-load, see GtagScripts.tsx), so an event can fire
+// before window.gtag exists. Pushing the arguments object onto dataLayer is
+// exactly what gtag() itself does — gtag.js drains the queue when it arrives,
+// so early events are delivered instead of dropped.
 function fire(...args: unknown[]) {
-  if (typeof window !== "undefined" && typeof window.gtag === "function") {
+  if (typeof window === "undefined") return;
+  if (typeof window.gtag === "function") {
     window.gtag(...args);
+  } else {
+    (window.dataLayer = window.dataLayer || []).push(arguments);
   }
 }
 

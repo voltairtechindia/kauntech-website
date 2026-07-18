@@ -122,6 +122,11 @@ const permissionsPolicy = (camera: "()" | "(self)") => ({
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Inline each page's CSS into the HTML instead of render-blocking <link>
+  // stylesheets. Lighthouse flagged the 4 CSS files as ~900 ms of blocked
+  // first paint on slow 4G; inlining removes those round-trips entirely
+  // (HTML grows, but one bigger stream beats four blocking fetches).
+  experimental: { inlineCss: true },
   // The /api/ar/asset model optimizer runs these native/WASM packages server-side;
   // keep them out of the bundle so they load from node_modules at runtime.
   serverExternalPackages: ["sharp", "meshoptimizer"],

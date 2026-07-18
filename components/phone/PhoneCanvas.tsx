@@ -48,7 +48,7 @@ const POSES = [
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
 
-type PhoneModel = {
+export type PhoneModel = {
   object: THREE.Group;
   /** model-local scale that makes the body PHONE_H world units tall */
   scale: number;
@@ -66,7 +66,7 @@ type PhoneModel = {
  * body bounding boxes rather than trusting authored transforms — the baked
  * Sketchfab hierarchy is not origin-centered.
  */
-function useKauntechPhone(): PhoneModel {
+export function useKauntechPhone(): PhoneModel {
   const { scene } = useGLTF(MODEL_URL);
 
   return useMemo(() => {
