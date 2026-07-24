@@ -1,11 +1,11 @@
 /**
  * Inline SVG icon set for the AR editor. Stroke icons (lucide-style) that
  * inherit `currentColor` and size to `1em`, so they pick up the surrounding
- * text colour/size. No icon-library dependency — keeps the /ar bundle lean.
+ * text colour/size. No icon-library dependency - keeps the /ar bundle lean.
  */
 import type { ReactNode, SVGProps } from "react";
 
-// Filled brand glyphs (simple-icons paths) — single path, fill: currentColor so
+// Filled brand glyphs (simple-icons paths) - single path, fill: currentColor so
 // the surrounding `color` (set to each brand's hue) tints them.
 function Brand({ d, ...rest }: { d: string } & SVGProps<SVGSVGElement>) {
   return (
@@ -269,7 +269,7 @@ export const IconSmartphone = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
-/* Camera viewfinder with a scan line — the "scan a card" affordance. */
+/* Camera viewfinder with a scan line - the "scan a card" affordance. */
 export const IconScan = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
     <path d="M3 7V5a2 2 0 0 1 2-2h2" />
@@ -323,21 +323,21 @@ export function socialIcon(key?: string): ReactNode {
   return C ? <C /> : <IconShare />;
 }
 
-// Left/right — X axis (horizontal)
+// Left/right - X axis (horizontal)
 export const IconAxisX = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
     <path d="M3 12h18M6 9l-3 3 3 3M18 9l3 3-3 3" />
   </Svg>
 );
 
-// Up/down — Y axis (vertical)
+// Up/down - Y axis (vertical)
 export const IconAxisY = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
     <path d="M12 3v18M9 6l3-3 3 3M9 18l3 3 3-3" />
   </Svg>
 );
 
-// Forward/back — depth, a diagonal toward/away double-arrow (pairs with the
+// Forward/back - depth, a diagonal toward/away double-arrow (pairs with the
 // horizontal ↔ and vertical ↕ so the three position controls read as a set)
 export const IconAxisZ = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
@@ -347,7 +347,7 @@ export const IconAxisZ = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
-// Tilt (pitch) — rotation about the horizontal left/right axis: an upright ring
+// Tilt (pitch) - rotation about the horizontal left/right axis: an upright ring
 // (vertical loop) threaded by a horizontal axis, so it reads as nodding fwd/back
 export const IconTilt = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
@@ -357,7 +357,7 @@ export const IconTilt = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
-// Turn (yaw) — rotation about the vertical axis: a flat ring (horizontal loop)
+// Turn (yaw) - rotation about the vertical axis: a flat ring (horizontal loop)
 // threaded by a vertical axis, so it reads as spinning flat like a turntable
 export const IconTurn = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>
@@ -367,7 +367,7 @@ export const IconTurn = (p: SVGProps<SVGSVGElement>) => (
   </Svg>
 );
 
-// Roll — rotation about the depth axis (face-on): a circular arrow spinning in
+// Roll - rotation about the depth axis (face-on): a circular arrow spinning in
 // the screen plane, so it reads as tilting the element side-to-side
 export const IconRoll = (p: SVGProps<SVGSVGElement>) => (
   <Svg {...p}>

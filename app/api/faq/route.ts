@@ -1,5 +1,5 @@
 /**
- * Admin-gated site-FAQ endpoint — the kauntech-admin FAQ manager's target.
+ * Admin-gated site-FAQ endpoint - the kauntech-admin FAQ manager's target.
  * Replaces the marketing FAQ (the `{q,a}` list shown on the homepage teaser +
  * the /faq page) AND mirrors each published entry into the RAG store
  * (doc_type "site_faq") so the chatbot answers from the same edited copy.

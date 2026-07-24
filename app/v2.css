@@ -101,12 +101,6 @@ html.lenis body {
   text-transform: uppercase;
   color: var(--k-gold);
 }
-.k-kicker::before {
-  content: "";
-  width: 26px;
-  height: 1px;
-  background: var(--k-grad);
-}
 
 .k-split-line {
   padding-bottom: 0.08em;

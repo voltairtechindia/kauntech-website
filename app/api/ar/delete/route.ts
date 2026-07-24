@@ -1,15 +1,15 @@
 /**
  * Remove the AR layer from one of the owner's cards. The web studio NEVER
- * deletes the underlying business card — those are owned by the app, and a card
+ * deletes the underlying business card - those are owned by the app, and a card
  * deleted here would also vanish from the user's app (the AR model cascades off
  * the card, not the other way round). So this only ever drops the ar_models row:
  *   - Card HAS an AR model: drop the ar_models row, freeing a slot against the
  *     plan's AR cap, and best-effort clear the AR assets from storage. The card
- *     itself stays put — both in the cloud and in the app.
+ *     itself stays put - both in the cloud and in the app.
  *   - Card has NO AR model: nothing to remove; returns ok as a no-op so the UI
  *     can stay simple. The card is left untouched.
  *
- * (Deleting the card entirely is an app-only action — see the app's delete flow,
+ * (Deleting the card entirely is an app-only action - see the app's delete flow,
  * which warns first because it cascades the AR card away too.)
  *
  * POST /api/ar/delete  (application/json)
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
   if (!card) return bad("Card not found.", 404);
 
   // Find the AR model, if any. Removing it frees the plan slot and keeps the
-  // card. If there's none, there's nothing to do — and we deliberately do NOT
+  // card. If there's none, there's nothing to do - and we deliberately do NOT
   // delete the card (that's an app-only action), so this is a safe no-op.
   const { data: model } = await supabase
     .from("ar_models")
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
   // Best-effort storage cleanup: AR target photos sit at `${uid}/${cardId}/…`
   // and editor assets at `${uid}/${cardId}/assets/…`. A failure here must not
-  // fail the delete — the AR model row is already gone. The card's own data is
+  // fail the delete - the AR model row is already gone. The card's own data is
   // untouched.
   try {
     const bucket = supabase.storage.from(AR_BUCKET);
@@ -87,7 +87,7 @@ export async function POST(req: Request) {
     }
     if (paths.length) await bucket.remove(paths);
   } catch {
-    /* ignore — cleanup is best-effort */
+    /* ignore - cleanup is best-effort */
   }
 
   return NextResponse.json({ ok: true });

@@ -212,7 +212,7 @@ export default function Pricing() {
           <span className="section-label">Need More Power</span>
           <h2>Token Top-Up Packs</h2>
           <p>
-            Running low on K-Tokens? Grab a one-time top-up pack anytime to recharge your balance —
+            Running low on K-Tokens? Grab a one-time top-up pack anytime to recharge your balance -
             larger packs cost less per token. Available on any paid plan.
           </p>
         </div>

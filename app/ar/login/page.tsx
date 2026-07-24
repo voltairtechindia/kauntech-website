@@ -8,10 +8,10 @@ import { arAuthConfigured, getArUser } from "@/lib/ar/appAuth";
 export const dynamic = "force-dynamic";
 
 /* The auth callback bounces back here with ?error=missing_code|auth when a
-   link is stale or the code exchange fails — surface it instead of silently
+   link is stale or the code exchange fails - surface it instead of silently
    showing the form again. */
 const AUTH_ERRORS: Record<string, string> = {
-  auth: "That sign-in link didn’t work — it may have expired or already been used. Request a fresh one below.",
+  auth: "That sign-in link didn’t work - it may have expired or already been used. Request a fresh one below.",
   missing_code: "That sign-in link was incomplete. Request a fresh one below and open it on this device.",
 };
 
@@ -31,7 +31,7 @@ export default async function ArLoginPage({
     <>
       <ArHeader />
       <div className="ar-login">
-        {/* Left: what the studio is — the same voice as the marketing site. */}
+        {/* Left: what the studio is - the same voice as the marketing site. */}
         <div className="ar-login-hero">
           <span className="ar-login-kicker">
             <IconSparkle /> AR Card Studio
@@ -40,7 +40,7 @@ export default async function ArLoginPage({
             Your card, <span className="ar-serif">beyond paper</span>.
           </h1>
           <p className="ar-login-lede">
-            Design what appears when someone scans your printed KaunTech card — 3D models, tappable
+            Design what appears when someone scans your printed KaunTech card - 3D models, tappable
             buttons, text and video floating over it in augmented reality.
           </p>
 
@@ -79,7 +79,7 @@ export default async function ArLoginPage({
             </span>
             <div>
               <strong>Same account as the app</strong>
-              <p>Sign in with your KaunTech app email — your printed cards sync here automatically.</p>
+              <p>Sign in with your KaunTech app email - your printed cards sync here automatically.</p>
             </div>
           </li>
           <li className="ar-login-point">
@@ -97,7 +97,7 @@ export default async function ArLoginPage({
             </span>
             <div>
               <strong>Alive on every scan</strong>
-              <p>Anyone who scans your card in the KaunTech app — or its QR — sees your AR scene instantly.</p>
+              <p>Anyone who scans your card in the KaunTech app - or its QR - sees your AR scene instantly.</p>
             </div>
           </li>
         </ul>

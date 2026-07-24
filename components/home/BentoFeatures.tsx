@@ -11,25 +11,25 @@ const HIGHLIGHTS: { icon: LucideIcon; title: string; body: string; big: boolean 
   {
     icon: Cpu,
     title: "Offline-First OCR",
-    body: "Scan and read business cards with zero internet — the OCR engine runs entirely on your device, so it works on the exhibition floor or a basement conference hall.",
+    body: "Scan and read business cards with zero internet - the OCR engine runs entirely on your device, so it works on the exhibition floor or a basement conference hall.",
     big: true,
   },
   {
     icon: ShieldCheck,
     title: "DPDP-Compliant by Design",
-    body: "Scanned cards never leave your phone. AES-256 encrypted local storage meets India's DPDP Act 2023 by data minimisation — cloud backup is optional and you choose what syncs.",
+    body: "Scanned cards never leave your phone. AES-256 encrypted local storage meets India's DPDP Act 2023 by data minimisation - cloud backup is optional and you choose what syncs.",
     big: false,
   },
   {
     icon: Zap,
     title: "30-Second Lead Routing",
-    body: "Capture, enrich, and push a qualified lead to your CRM, Google Sheets, or WhatsApp in under 30 seconds — no manual typing, no data re-entry.",
+    body: "Capture, enrich, and push a qualified lead to your CRM, Google Sheets, or WhatsApp in under 30 seconds - no manual typing, no data re-entry.",
     big: false,
   },
   {
     icon: Brain,
     title: "AI Contact Enrichment",
-    body: "On-device AI — AI Intel, AI Fix, and AI Strategy — fills missing fields, cleans formatting, and scores every lead, powered by K-Tokens you only spend when you use them.",
+    body: "On-device AI - AI Intel, AI Fix, and AI Strategy - fills missing fields, cleans formatting, and scores every lead, powered by K-Tokens you only spend when you use them.",
     big: true,
   },
 ];
@@ -44,7 +44,7 @@ export default function BentoFeatures() {
             Built offline-first for <em>Indian sales teams.</em>
           </SplitHeading>
           <p>
-            An AI business card scanner engineered for privacy, speed, and offline-first operation — from
+            An AI business card scanner engineered for privacy, speed, and offline-first operation - from
             first scan to synced lead.
           </p>
         </div>
@@ -83,7 +83,7 @@ export default function BentoFeatures() {
               <Ic icon={Coins} /> K-Tokens
             </p>
             <p className="k-cell-tokens-line">
-              Scan <b>1 KT</b> · Intel <b>50 KT</b> · Strategy <b>100 KT</b> — spend only when you use.
+              Scan <b>1 KT</b> · Intel <b>50 KT</b> · Strategy <b>100 KT</b> - spend only when you use.
             </p>
           </div>
         </div>

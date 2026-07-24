@@ -30,7 +30,7 @@ export function GET() {
         details: [
           {
             appID: `${TEAM_ID}.${BUNDLE_ID}`,
-            // Only referral invite links open the app — everything else on
+            // Only referral invite links open the app - everything else on
             // kauntech.com stays in the browser.
             paths: ["/r/*"],
           },

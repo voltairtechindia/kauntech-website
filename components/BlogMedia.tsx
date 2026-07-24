@@ -1,5 +1,5 @@
 /**
- * Renders a single blog media item — a photo, a self-hosted video, or an
+ * Renders a single blog media item - a photo, a self-hosted video, or an
  * external embed (YouTube/Vimeo). Pure server component (no client hooks).
  */
 import type { MediaItem } from "@/lib/blog/types";

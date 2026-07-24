@@ -8,7 +8,7 @@ import ComparisonTable from "@/components/sections/ComparisonTable";
 import Ic from "@/components/ui/Icon";
 import { competitors, getCompetitor } from "@/lib/compare/competitors";
 
-// Fully static — the comparison data is a checked-in module, no DB / revalidation.
+// Fully static - the comparison data is a checked-in module, no DB / revalidation.
 export const revalidate = false;
 export const dynamicParams = false;
 
@@ -122,7 +122,7 @@ export default async function ComparePage({
           </h2>
           <p>
             Scan a card, enrich it, and route the lead to your CRM, Google Sheets
-            or WhatsApp in under 30 seconds — 100% on-device.
+            or WhatsApp in under 30 seconds - 100% on-device.
           </p>
           <Link href="/get" className="btn-primary">
             Get Kauntech free

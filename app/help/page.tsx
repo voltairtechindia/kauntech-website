@@ -150,17 +150,17 @@ export default function HelpPage() {
               Kauntech can push every business card you scan or edit to an external destination
               automatically. Open the app, go to{" "}
               <strong>Configs ▸ Webhook</strong>, and choose one of the two tabs below. Both fire on
-              every save — pick whichever fits how you work.
+              every save - pick whichever fits how you work.
             </p>
 
             {/* ───────────── Google Sheets ───────────── */}
             <h2>
-              <Ic icon={Table} /> Google Sheets — without signing in
+              <Ic icon={Table} /> Google Sheets - without signing in
             </h2>
             <p>
               This option sends each lead to a tiny <strong>Google Apps Script</strong> that you
               deploy on your own Google Sheet. Because the script runs inside your account, Kauntech
-              never has to ask you to sign in with Google — you simply paste the script&apos;s Web-app
+              never has to ask you to sign in with Google - you simply paste the script&apos;s Web-app
               URL into the app. Each event gets its own tab, only the columns you pick are written,
               and edits update the same row.
             </p>
@@ -200,7 +200,7 @@ export default function HelpPage() {
             <h3>The Apps Script</h3>
             <p>
               You can also copy this straight from the app (the <strong>Copy Apps Script</strong>{" "}
-              button). It is a generic row-writer — Kauntech sends the tab name, your chosen columns,
+              button). It is a generic row-writer - Kauntech sends the tab name, your chosen columns,
               and the values, so you never have to edit the script when you change your columns.
             </p>
             <pre style={codeBlockStyle}>{APPS_SCRIPT_CODE}</pre>
@@ -215,7 +215,7 @@ export default function HelpPage() {
 
             {/* ───────────── Webhook ───────────── */}
             <h2>
-              <Ic icon={Zap} /> Webhook — POST to your own endpoint
+              <Ic icon={Zap} /> Webhook - POST to your own endpoint
             </h2>
             <p>
               Prefer to send leads to a CRM, Zapier/Make, or your own API? The Webhook tab fires an
@@ -257,7 +257,7 @@ export default function HelpPage() {
                 <code>/exec</code> URL.
               </li>
               <li>
-                <strong>&quot;delivery failing&quot; in the app:</strong> open the URL in a browser —
+                <strong>&quot;delivery failing&quot; in the app:</strong> open the URL in a browser -
                 if you see a Google sign-in page, the access setting is wrong. If you see{" "}
                 <code>{"{ ok: true, ready: true }"}</code>, the script is healthy.
               </li>

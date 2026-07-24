@@ -25,7 +25,7 @@ function detectClientPlatform(): Platform {
   if (/mac/i.test(platform + ua) && touch > 1) return "ios";
 
   // 3. Chrome's "Desktop site" mode rewrites a phone's UA to a desktop Linux
-  //    string AND reports platform "Linux" — so neither signal above fires.
+  //    string AND reports platform "Linux" - so neither signal above fires.
   //    But real Linux/Windows desktops aren't touch-capable, so a touch device
   //    reporting Linux is almost certainly an Android phone in desktop mode
   //    (iPads are handled above as Mac; ChromeOS is excluded).
@@ -57,7 +57,7 @@ export default function RedirectClient({
     setStoreUrl(url);
 
     // Best-effort clipboard write so the app's signup screen can auto-fill the
-    // code after install. Browsers may block this without a gesture — the code
+    // code after install. Browsers may block this without a gesture - the code
     // is shown below as a fallback, and there's a manual Copy button.
     navigator.clipboard?.writeText(code).catch(() => {});
 
@@ -119,7 +119,7 @@ export default function RedirectClient({
         </h1>
         <p style={{ color: "#A1A1AA", fontSize: 14, lineHeight: 1.5, margin: "0 0 24px" }}>
           {storeUrl
-            ? "Taking you to the app store. Your invite code is saved — just sign up to claim your bonus."
+            ? "Taking you to the app store. Your invite code is saved - just sign up to claim your bonus."
             : "We're almost live. Save your invite code below and enter it when you sign up to claim your bonus scans."}
         </p>
 

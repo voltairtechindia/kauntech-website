@@ -35,7 +35,7 @@ function FaqItem({ q, a }: FaqQA) {
   );
 }
 
-/** Client accordion — the interactive shell. Data + JSON-LD are supplied by the
+/** Client accordion - the interactive shell. Data + JSON-LD are supplied by the
  *  server <Faq> parent so the questions can come from the DB. */
 export default function FaqAccordion({ faqs }: { faqs: FaqQA[] }) {
   return (

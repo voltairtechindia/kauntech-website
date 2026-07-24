@@ -36,7 +36,7 @@ export default function CareerForm({
     try {
       const res = await fetch("/api/careers/apply", {
         method: "POST",
-        body: data, // multipart — let the browser set the boundary
+        body: data, // multipart - let the browser set the boundary
       });
       const json = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -58,7 +58,7 @@ export default function CareerForm({
     } catch {
       setStatus({
         kind: "error",
-        text: "Network error — please check your connection and try again.",
+        text: "Network error - please check your connection and try again.",
       });
     }
     setSubmitting(false);
@@ -66,7 +66,7 @@ export default function CareerForm({
 
   return (
     <form ref={formRef} className="career-form" onSubmit={handleSubmit}>
-      {/* Honeypot — hidden from humans; bots that fill it are dropped server-side. */}
+      {/* Honeypot - hidden from humans; bots that fill it are dropped server-side. */}
       <input
         type="text"
         name="website"
@@ -139,7 +139,7 @@ export default function CareerForm({
             id="ap_cover"
             name="cover_note"
             rows={4}
-            placeholder="Anything not in your resume — why you're a great fit, availability, notice period…"
+            placeholder="Anything not in your resume - why you're a great fit, availability, notice period…"
             className="contact-field"
             style={{ resize: "vertical" }}
           />

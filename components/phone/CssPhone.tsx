@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /**
- * Lightweight CSS phone frame — the mobile / reduced-motion / no-WebGL stand-in
+ * Lightweight CSS phone frame - the mobile / reduced-motion / no-WebGL stand-in
  * for the 3D device. `scale` shrinks the native 390×844 screen composition.
  */
 export default function CssPhone({

@@ -21,7 +21,7 @@ export default async function ReferralRedirectPage({
   const { code: raw } = await params;
   const code = (raw || "").toUpperCase();
 
-  // Garbage / probe URLs just go home — no logging, no clipboard.
+  // Garbage / probe URLs just go home - no logging, no clipboard.
   if (!isValidReferralCode(code)) redirect("/");
 
   const h = await headers();

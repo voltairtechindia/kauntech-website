@@ -4,7 +4,7 @@ import type { TokenBreakdown } from "@/lib/ar/db";
  * AR token meter for the dashboard. AR building spends from the same monthly
  * token pool the app's AI features use (profiles.tokens_used_this_month /
  * tokens_limit), so we surface what's LEFT to spend on AR plus how much AR has
- * already used this cycle. Purely presentational — the page passes the numbers.
+ * already used this cycle. Purely presentational - the page passes the numbers.
  */
 const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
 
@@ -45,8 +45,8 @@ export default function TokenMeter({
       <div className="ar-storage-head">
         <span className="ar-storage-label">Tokens left for AR</span>
         <span className="ar-storage-count">
-          <span className="ar-mono">{cap > 0 ? fmt(remaining) : "—"}</span>
-          <span className="ar-storage-of"> / {cap > 0 ? fmt(cap) : "—"}</span>
+          <span className="ar-mono">{cap > 0 ? fmt(remaining) : "-"}</span>
+          <span className="ar-storage-of"> / {cap > 0 ? fmt(cap) : "-"}</span>
         </span>
       </div>
 
@@ -74,8 +74,8 @@ export default function TokenMeter({
       {!compact && !hideHint && (
         <span className="ar-storage-hint">
           {arSpent > 0
-            ? `You've spent ${fmt(arSpent)} on AR cards this cycle. Building uses 60–80, a 3D model 40, a video 100.`
-            : "Building an AR card uses 60–80 tokens, a 3D model 40, a video 100."}
+            ? `You've spent ${fmt(arSpent)} on AR cards this cycle. Building uses 60-80, a 3D model 40, a video 100.`
+            : "Building an AR card uses 60-80 tokens, a 3D model 40, a video 100."}
         </span>
       )}
     </div>

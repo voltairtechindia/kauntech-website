@@ -8,7 +8,7 @@
  *   - optimize models (.glb) in place,
  *   - charge tokens for heavy elements (model / video).
  * Returns the asset's public URL, which the editor stores inside
- * ar_models.scene.elements (saved via /api/ar/upload). Authed — RLS + the
+ * ar_models.scene.elements (saved via /api/ar/upload). Authed - RLS + the
  * ar-models byte-cap trigger enforce the per-plan cloud-storage limit (every
  * file in the bucket counts against profiles.cloud_ar_bytes).
  *
@@ -24,7 +24,7 @@ import { AR_ASSET_LIMITS, AR_BUCKET, contentTypeForExt, isArAssetKind, maxLabel 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 // Optimizing an uploaded .glb (sharp re-encodes textures, meshoptimizer decimates
-// geometry) can take a while — give it headroom so big models aren't killed mid-run.
+// geometry) can take a while - give it headroom so big models aren't killed mid-run.
 export const maxDuration = 60;
 
 function bad(error: string, status = 400) {
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
   }
 
   // Tier gate: custom element uploads (3D model / image / video / audio) are an
-  // ULTRA feature. Pro AR is template-only. Defense-in-depth — sign already gated.
+  // ULTRA feature. Pro AR is template-only. Defense-in-depth - sign already gated.
   const { data: prof } = await supabase
     .from("profiles")
     .select("subscription_tier, trial_ends_at")
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
   // Pull the just-uploaded object back (server -> Storage, not a request body, so
   // the 4.5 MB limit doesn't apply) to validate and, for models, optimize it.
   const { data: blob, error: dlErr } = await bucket.download(path);
-  if (dlErr || !blob) return bad("Upload not found — please retry.", 404);
+  if (dlErr || !blob) return bad("Upload not found - please retry.", 404);
   let bytes: Uint8Array = Buffer.from(await blob.arrayBuffer());
 
   // Authoritative size gate: the signed URL itself does not enforce a max size,
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
     // loads here, at request time, inside the Node function runtime.
     //
     // Wrapped: if the native optimizer (sharp/meshopt) can't load in this runtime,
-    // DON'T fail the upload — keep the raw .glb that's already in Storage. The
+    // DON'T fail the upload - keep the raw .glb that's already in Storage. The
     // model just isn't shrunk; far better than 500-ing the whole upload.
     try {
       const { optimizeGlb } = await import("@/lib/ar/glbOptimize");
@@ -139,7 +139,7 @@ export async function POST(req: Request) {
         console.log(`[ar/asset] model optimized ${(opt.before / 1024).toFixed(0)}KB → ${(opt.after / 1024).toFixed(0)}KB`);
       }
     } catch (e) {
-      console.error("[ar/asset] glb optimize unavailable — storing original:", e instanceof Error ? e.message : e);
+      console.error("[ar/asset] glb optimize unavailable - storing original:", e instanceof Error ? e.message : e);
     }
   }
 
@@ -165,7 +165,7 @@ export async function POST(req: Request) {
   if (needsReplace) {
     await bucket.remove([path]);
     // Long-lived cache: asset paths embed a randomUUID per upload (never reused),
-    // so the bytes at a URL can never change — safe to cache for a year.
+    // so the bytes at a URL can never change - safe to cache for a year.
     const { error: upErr } = await bucket.upload(path, bytes, { contentType, upsert: false, cacheControl: "31536000" });
     if (upErr) {
       if (assetCharge) await refundArTokens(user.id, assetCharge.amount, assetCharge.source);
@@ -180,7 +180,7 @@ export async function POST(req: Request) {
 
 /**
  * Delete ONE scene asset the editor uploaded but the owner then removed before
- * saving — otherwise that file lingers in the bucket counting against cloud
+ * saving - otherwise that file lingers in the bucket counting against cloud
  * storage forever (the save-time cleanup only reclaims assets that were once
  * persisted). The editor calls this on element removal / media replace for
  * session-uploaded files. Deleting fires the storage trigger that decrements
@@ -216,7 +216,7 @@ export async function DELETE(req: Request) {
   if (!card) return bad("Card not found.", 404);
 
   // Resolve the storage key from the public URL and HARD-SCOPE it to this owner's
-  // own assets folder for this card — so a crafted URL can never delete another
+  // own assets folder for this card - so a crafted URL can never delete another
   // user's (or another card's) files. RLS on the bucket is a second layer.
   const marker = `/${AR_BUCKET}/`;
   const idx = url.indexOf(marker);

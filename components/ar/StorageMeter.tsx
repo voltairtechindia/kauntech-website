@@ -1,7 +1,7 @@
 import { formatBytes } from "@/lib/ar/format";
 
 /**
- * AR storage meter — shows how much of the tier's AR storage budget the owner
+ * AR storage meter - shows how much of the tier's AR storage budget the owner
  * has used (profiles.cloud_ar_bytes vs AR_STORAGE_CAPS). Purely presentational
  * (no hooks) so it renders in both server and client trees. The editor passes
  * a live `usedBytes` that ticks up as models are uploaded.

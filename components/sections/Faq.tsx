@@ -10,7 +10,7 @@ import FaqAccordion from "./FaqAccordion";
 /**
  * Marketing FAQ section (server component). Reads the Q&A from the DB-backed
  * `site_faqs` table (admin-editable, falls back to a built-in set), renders the
- * accordion, and — only when `showSchema` is set — emits the FAQPage JSON-LD.
+ * accordion, and - only when `showSchema` is set - emits the FAQPage JSON-LD.
  *
  * The canonical FAQPage schema lives on the dedicated /faq page (showSchema),
  * so the homepage renders a short teaser (limit + seeAllHref) WITHOUT schema to

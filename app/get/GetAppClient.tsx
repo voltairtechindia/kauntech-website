@@ -30,7 +30,7 @@ function detectClientPlatform(): Platform {
   if (/mac/i.test(platform + ua) && touch > 1) return "ios";
 
   // 3. Chrome's "Desktop site" mode rewrites a phone's UA to a desktop Linux
-  //    string AND reports platform "Linux" — so neither signal above fires.
+  //    string AND reports platform "Linux" - so neither signal above fires.
   //    But real Linux/Windows desktops aren't touch-capable, so a touch device
   //    reporting Linux is almost certainly an Android phone in desktop mode
   //    (iPads are handled above as Mac; ChromeOS is excluded).
@@ -59,7 +59,7 @@ export default function GetAppClient({
     setTarget(url);
     // Redirect as soon as the device is known. This effect runs right after the
     // first paint, so the loader is shown for exactly as long as the unavoidable
-    // store-navigation latency — no artificial delay. (There's nothing to wait
+    // store-navigation latency - no artificial delay. (There's nothing to wait
     // for here: /get carries no referral code to copy, unlike /r/[code].)
     window.location.replace(url);
   }, [iosUrl, androidUrl]);

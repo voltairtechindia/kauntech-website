@@ -13,14 +13,14 @@ const SITE_URL = "https://www.kauntech.com";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Blog — Offline Networking, OCR & DPDP Compliance Insights",
+  title: "Blog - Offline Networking, OCR & DPDP Compliance Insights",
   description:
-    "Guides, product updates, and field notes on offline business card scanning, on-device AI enrichment, and India's DPDP Act 2023 — from the Kauntech team.",
+    "Guides, product updates, and field notes on offline business card scanning, on-device AI enrichment, and India's DPDP Act 2023 - from the Kauntech team.",
   alternates: { canonical: "/blog" },
   openGraph: {
     title: "Kauntech Blog",
     description:
-      "Offline networking, on-device OCR, AI contact enrichment, and DPDP compliance — insights from the Kauntech team.",
+      "Offline networking, on-device OCR, AI contact enrichment, and DPDP compliance - insights from the Kauntech team.",
     url: "/blog",
     type: "website",
   },
@@ -63,7 +63,7 @@ export default async function BlogIndexPage() {
       <section className="container">
         {posts.length === 0 ? (
           <p className="blog-empty">
-            No posts yet — check back soon. (New articles publish automatically
+            No posts yet - check back soon. (New articles publish automatically
             from our content pipeline.)
           </p>
         ) : (

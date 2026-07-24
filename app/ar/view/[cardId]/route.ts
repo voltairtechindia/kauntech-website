@@ -1,13 +1,13 @@
 /**
  * Public WebAR viewer. Renders the owner's composed scene (3D models with
  * animation, tappable social icons / images, video) anchored on the printed
- * card via 8th Wall — image targets + World Tracking (SLAM) with IMU fusion, so
+ * card via 8th Wall - image targets + World Tracking (SLAM) with IMU fusion, so
  * content stays glued at all angles and doesn't shimmer. Standalone HTML loaded
  * by the app's WebView. 8th Wall is the ONLY engine (the old MindAR fallback was
  * removed); the viewer + loader are built in lib/ar/eightwallViewer.
  *
  * The image target is built in the browser from whatever target image the card
- * has — preferring the grayscale luminance the editor precompiles
+ * has - preferring the grayscale luminance the editor precompiles
  * (scene.card.eightwall.lumUrl), else the chosen side's photo, so EVERY published
  * card works without a re-save. ?worldtracking=0 forces image-only (no IMU).
  */
@@ -25,7 +25,7 @@ function page(body: string) {
   return new Response(body, {
     headers: {
       "content-type": "text/html; charset=utf-8",
-      // Never cache the viewer HTML — the WebView/CDN must always get the latest
+      // Never cache the viewer HTML - the WebView/CDN must always get the latest
       // (deploys were appearing stale otherwise).
       "cache-control": "no-store, must-revalidate",
     },
@@ -49,7 +49,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
   const m = data as Record<string, any>;
   const isHttp = (u: unknown): u is string => typeof u === "string" && /^https?:\/\//i.test(u);
 
-  // Target image for 8th Wall's PLANAR image target. Track a SINGLE side — the
+  // Target image for 8th Wall's PLANAR image target. Track a SINGLE side - the
   // one the owner chose. Prefer the precompiled grayscale luminance (exact 8th
   // Wall format), else the chosen side's photo, else either side, else the legacy
   // reference image. The viewer reads the image's real dimensions client-side, so
@@ -61,7 +61,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
   const imageUrl =
     [ew.lumUrl, chosenPhoto, sceneCard.frontUrl, sceneCard.backUrl, m.reference_image_path].find(isHttp) ?? null;
   if (!imageUrl) return fallback("This card isn’t set up for AR tracking yet.");
-  // The editor stored the luminance target's pixel size at save time — inline it
+  // The editor stored the luminance target's pixel size at save time - inline it
   // so the viewer doesn't have to download the image just to measure it. Only
   // valid when the target IS the luminance image; other fallbacks are measured
   // client-side as before.
@@ -100,7 +100,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ cardId: string 
         loop: el.loop !== false,
         autoplay: el.autoplay !== false,
         // Video sound: muted (absent → false = the clip's own sound plays),
-        // volume 0–1 (absent → 1), and playback-speed multiplier (absent → 1).
+        // volume 0-1 (absent → 1), and playback-speed multiplier (absent → 1).
         muted: el.muted === true,
         volume: typeof el.volume === "number" ? Math.max(0, Math.min(1, el.volume)) : 1,
         playbackRate: Number(el.playbackRate) > 0 ? Number(el.playbackRate) : 1,

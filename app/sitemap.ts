@@ -42,7 +42,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
   } catch {
-    // swallow — static + careers still ship.
+    // swallow - static + careers still ship.
   }
 
   let careerEntries: MetadataRoute.Sitemap = [];

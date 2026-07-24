@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 // The chat widget (and its react-markdown / remark-gfm dependencies) is the
 // heaviest client bundle on the page, yet the panel starts closed. Loading it
 // eagerly added ~0.7s of main-thread work during hydration, which Lantern (the
-// PSI simulator) scales 4x for CPU throttling — inflating mobile LCP. We defer
+// PSI simulator) scales 4x for CPU throttling - inflating mobile LCP. We defer
 // the whole widget until the browser is idle or the user first interacts, so it
 // never sits on the initial render/hydration critical path. Its scroll-teaser
 // behaviour is preserved (listeners attach once it mounts, ~1.5s in).
@@ -20,7 +20,7 @@ export default function DeferredChatWidget() {
 
     // Load on the first real engagement signal (scroll / tap / key / move).
     // This keeps the chat bundle off the initial load + hydration path entirely
-    // — the widget's own teaser only nudges after ~35% scroll anyway, so users
+    // - the widget's own teaser only nudges after ~35% scroll anyway, so users
     // get it exactly when they start engaging. A long safety timeout guarantees
     // it still appears for a visitor who never interacts.
     const events: (keyof WindowEventMap)[] = [

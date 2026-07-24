@@ -81,7 +81,7 @@ export default function Compare() {
         <div className="detailed-compare reveal">
           <h2>Detailed comparisons</h2>
           <p className="detailed-compare-sub">
-            Go deeper on how Kauntech stacks up against specific alternatives —
+            Go deeper on how Kauntech stacks up against specific alternatives -
             privacy, offline OCR, platforms and lead routing.
           </p>
           <div className="detailed-compare-grid">

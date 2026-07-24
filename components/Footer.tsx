@@ -29,7 +29,7 @@ export default function Footer() {
             <p>
               The only offline-first business card scanner engineered for absolute speed, AI
               enrichment, and strict adherence to India&apos;s DPDP Act 2023. You stay in control of
-              your data — disable cloud backup or delete it anytime.
+              your data - disable cloud backup or delete it anytime.
             </p>
             <span className="footer-sec">
               <Ic icon={ShieldCheck} /> AES-256 Encrypted · On-Device OCR

@@ -2,7 +2,7 @@
  * Save the composed AR scene for one of the owner's cards. The scene is a list
  * of elements (models / images / social icons / video) built in the editor and
  * stored in ar_models.scene; asset files were already uploaded via
- * /api/ar/asset. Authed — RLS + the ar_models cap triggers enforce limits.
+ * /api/ar/asset. Authed - RLS + the ar_models cap triggers enforce limits.
  *
  * POST /api/ar/upload  (multipart/form-data)
  *   card_id, name?, publish, scene (JSON {elements:[...]}), reference_image? (File)
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
   // Tier gate on scene CONTENT: custom 3D model / video elements are an Ultra
   // feature (Pro AR is template-only). A non-Ultra owner may only save model/video
   // elements that are KaunTech-hosted (template / gallery assets on our Supabase
-  // storage) or that were ALREADY on this card (grandfathered) — never a new,
+  // storage) or that were ALREADY on this card (grandfathered) - never a new,
   // externally-hosted .glb/.mp4. Mirrors the /api/ar/asset upload gate and closes
   // the "self-host the file, reference its URL in the scene" bypass.
   if (tier !== "ultra") {
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
       const { error: upErr } = await bucket.upload(path, bytes, { contentType: file.type || "image/jpeg", upsert: true, cacheControl: "31536000" });
       if (upErr) throw new Error(upErr.message);
       // Deterministic path means re-uploads overwrite (no orphaned bytes), but
-      // the public URL is unchanged — bust the CDN/browser cache so a replaced
+      // the public URL is unchanged - bust the CDN/browser cache so a replaced
       // photo actually shows in the editor and the AR viewer.
       return `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
     }
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
   const existingCard = ((existing?.scene as { card?: Record<string, unknown> } | null)?.card) ?? {};
 
   // 8th Wall PLANAR target (premium engine) for the chosen side: a grayscale
-  // luminance image generated in the editor — store when sent, else keep the
+  // luminance image generated in the editor - store when sent, else keep the
   // existing one unless the target side/photo changed.
   let eightwall: { lumUrl: string; w: number; h: number } | null = null;
   const ewFile = form.get("eightwall");
@@ -192,7 +192,7 @@ export async function POST(req: Request) {
     try {
       const path = `${userId}/${cardId}/${modelId}.lum.jpg`;
       const bytes = Buffer.from(await ewFile.arrayBuffer());
-      // Long-lived cache — same ?v= cache-bust story as the card photos above.
+      // Long-lived cache - same ?v= cache-bust story as the card photos above.
       const { error: eErr } = await bucket.upload(path, bytes, { contentType: "image/jpeg", upsert: true, cacheControl: "31536000" });
       if (!eErr) {
         const lumUrl = `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
@@ -201,7 +201,7 @@ export async function POST(req: Request) {
         if (Number.isFinite(w) && w > 0 && Number.isFinite(h) && h > 0) eightwall = { lumUrl, w, h };
       }
     } catch {
-      /* non-fatal — the viewer tracks on the raw card photo instead */
+      /* non-fatal - the viewer tracks on the raw card photo instead */
     }
   } else {
     const targetPhotoChanged = targetSide === "back" ? isSentFile("back_image") : isSentFile("front_image");
@@ -228,7 +228,7 @@ export async function POST(req: Request) {
   const frontOcr = str(form.get("front_ocr")) || null;
   const backOcr = str(form.get("back_ocr")) || null;
   // Don't wipe previously-captured text when a save sends none (e.g. an edit that
-  // didn't re-OCR the photo) — keep whatever the model already had.
+  // didn't re-OCR the photo) - keep whatever the model already had.
   const ocrText = [frontOcr, backOcr].filter(Boolean).join("\n") || existing?.ocr_text || null;
 
   scene.card = {
@@ -257,9 +257,9 @@ export async function POST(req: Request) {
     is_published: publish,
   };
 
-  // Token charge: building a NEW AR card is billed by tier — Pro publishes a
+  // Token charge: building a NEW AR card is billed by tier - Pro publishes a
   // pre-made template card (buildPro), Ultra builds a custom card (buildUltra).
-  // Edits to an existing card are free — only the create event is billed, which
+  // Edits to an existing card are free - only the create event is billed, which
   // also sidesteps the editor's auto-save firing many updates per session. Charge
   // just before the insert; refund if the insert is rejected (cap / storage trigger).
   let buildCharge: { amount: number; source: string } | null = null;

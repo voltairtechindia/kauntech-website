@@ -3,7 +3,7 @@ import SplitHeading from "@/components/motion/SplitHeading";
 import Ic from "@/components/ui/Icon";
 import { ArrowRight, Cpu, Lock, ShieldCheck, ShieldUser } from "lucide-react";
 
-/** DPDP trust band — the privacy story told as architecture, not policy. */
+/** DPDP trust band - the privacy story told as architecture, not policy. */
 export default function ComplianceBand() {
   return (
     <section className="k-vault-section" id="compliance-band">
@@ -34,7 +34,7 @@ export default function ComplianceBand() {
           <p>
             Card processing happens on your device, so scanned images and contact details are never uploaded
             to Kauntech&apos;s servers. AES-256 encrypted local storage, cloud backup that&apos;s strictly
-            opt-in, and a real data-deletion portal — data minimisation by design.
+            opt-in, and a real data-deletion portal - data minimisation by design.
           </p>
           <div className="k-vault-chips">
             <span className="k-mchip">AES-256 encrypted</span>

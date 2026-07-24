@@ -48,11 +48,11 @@ const instrumentSerif = Instrument_Serif({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Offline AI Card Scanner – DPDP Safe | Kauntech",
+    default: "Offline AI Card Scanner - DPDP Safe | Kauntech",
     template: "%s | Kauntech",
   },
   description:
-    "Kauntech is India's offline AI business card scanner. Scan, enrich & sync contacts in 30 seconds. DPDP Act 2023 compliant — your data stays on-device.",
+    "Kauntech is India's offline AI business card scanner. Scan, enrich & sync contacts in 30 seconds. DPDP Act 2023 compliant - your data stays on-device.",
   keywords: [
     "offline business card scanner India",
     "AI visiting card scanner",
@@ -75,13 +75,13 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "Kauntech",
-    title: "Kauntech — The Offline-First Business Card Scanner",
+    title: "Kauntech - The Offline-First Business Card Scanner",
     description:
       "Capture, enrich, and automate contact management in 30 seconds. Offline-first scanning, DPDP Act 2023 compliant.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kauntech — The Offline-First Business Card Scanner",
+    title: "Kauntech - The Offline-First Business Card Scanner",
     description:
       "Capture, enrich, and automate contact management in 30 seconds. Offline-first scanning, DPDP Act 2023 compliant.",
   },
@@ -156,7 +156,7 @@ const organizationLd = {
 
 // Local entity for "Mumbai / India" local-SEO signals. Street address + a real
 // public phone are intentionally omitted (the +91 98765 43210 seen in the app
-// demo is a placeholder, not a support line) — add both here once available.
+// demo is a placeholder, not a support line) - add both here once available.
 const localBusinessLd = {
   "@context": "https://schema.org",
   "@type": "LocalBusiness",

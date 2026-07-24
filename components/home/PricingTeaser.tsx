@@ -4,7 +4,7 @@ import Ic from "@/components/ui/Icon";
 import { ArrowRight, Check, Coins } from "lucide-react";
 
 /**
- * Pricing teaser — numbers mirror the app paywall (source of truth:
+ * Pricing teaser - numbers mirror the app paywall (source of truth:
  * kauntech-app app/(tabs)/plan.tsx). Deep-dive lives on /pricing.
  */
 const PLANS = [

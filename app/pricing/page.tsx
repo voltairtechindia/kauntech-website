@@ -3,12 +3,12 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import Pricing from "@/components/sections/Pricing";
 
 export const metadata: Metadata = {
-  title: "Pricing & Top-Ups — Free, Pro, Ultra & Custom Plans",
+  title: "Pricing & Top-Ups - Free, Pro, Ultra & Custom Plans",
   description:
     "Kauntech pricing: Free (49 scans), Pro (₹499/mo), Ultra (₹1,299/mo), and Custom enterprise tiers. Understand the K-Tokens economy and AI Intel / Fix / Strategy token costs.",
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Kauntech Pricing — Free, Pro, Ultra & Custom",
+    title: "Kauntech Pricing - Free, Pro, Ultra & Custom",
     description:
       "Flexible offline-first scanning plans with K-Tokens for AI Fix, AI Intel, and AI Strategy.",
     url: "/pricing",
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 const pricingLd = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: "Kauntech — Offline Business Card Scanner",
+  name: "Kauntech - Offline Business Card Scanner",
   description:
     "India's offline-first business card scanner with AI enrichment, K-Tokens, and DPDP Act 2023 compliance.",
   brand: {

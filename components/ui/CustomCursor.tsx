@@ -11,7 +11,7 @@ const INTERACTIVE =
  * Minimal custom cursor: a single small dot in blend-mode difference that
  * trails the pointer with a short ease, swells gently over interactive
  * elements and squashes on click. No rings, no glows.
- * Renders nothing on touch devices or for reduced-motion users — the native
+ * Renders nothing on touch devices or for reduced-motion users - the native
  * cursor stays untouched there.
  */
 export default function CustomCursor() {
@@ -57,7 +57,7 @@ export default function CustomCursor() {
 
     const onOver = (e: MouseEvent) => {
       const t = e.target as Element | null;
-      // native cursor takes over inside embeds — fade ours out
+      // native cursor takes over inside embeds - fade ours out
       if (t?.closest?.('iframe, [data-cursor="hide"]')) {
         gsap.to(dot, { opacity: 0, duration: 0.2 });
         return;

@@ -17,12 +17,12 @@ import Ic from "@/components/ui/Icon";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "Kauntech privacy policy — DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle, store, and protect your data.",
+    "Kauntech privacy policy - DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle, store, and protect your data.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     title: "Privacy Policy | Kauntech",
     description:
-      "Kauntech privacy policy — DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle, store, and protect your data.",
+      "Kauntech privacy policy - DPDP Act 2023 compliance, Google API Limited Use disclosures, and how we handle, store, and protect your data.",
     url: "/privacy",
   },
 };
@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                 Kauntech is built on-device-first: your camera images are read and parsed{" "}
                 <strong>locally on your phone</strong> using on-device OCR, and your contacts are
                 kept in an encrypted database on your device. Cloud backup is{" "}
-                <strong>optional</strong> — on free plans everything stays on your device, and on
+                <strong>optional</strong> - on free plans everything stays on your device, and on
                 paid plans you can switch on cloud backup to sync across devices. You choose exactly
                 which categories of data (contacts, notes and tags, AI intelligence, images, and so
                 on) are backed up to your Kauntech account on our secure cloud servers, and{" "}
@@ -95,7 +95,7 @@ export default function PrivacyPage() {
                 markers. Under our secure architecture, we log minimal device telemetry strictly to
                 prevent tampering, quota hacks, or credential theft. This includes a{" "}
                 <strong>one-way hashed, per-install device identifier</strong> (a random value
-                generated on first launch — not your hardware ID, advertising ID, or any cross-app
+                generated on first launch - not your hardware ID, advertising ID, or any cross-app
                 fingerprint) and a <strong>hashed IP address</strong>, used solely to enforce
                 one-free-trial-per-install and to detect fraud. We do not use this data to track you
                 across other apps or for advertising.
@@ -106,7 +106,7 @@ export default function PrivacyPage() {
                 anonymous invite-link click logs (platform, user-agent, and a hashed IP address). We
                 use this only to operate the rewards program and to prevent referral abuse. To save
                 you typing, the sign-up screen may read your clipboard once to auto-fill a referral
-                code you copied from an invite link — iOS shows its standard paste notification, the
+                code you copied from an invite link - iOS shows its standard paste notification, the
                 contents are used solely to detect that code, and nothing is read or stored if no
                 valid code is present. The program is optional and can be ignored at sign-up.
               </li>
@@ -185,8 +185,8 @@ export default function PrivacyPage() {
             <p>
               The Kauntech App provides voluntary integrations with Google APIs (Google Sheets and
               Gmail) to automate follow-up workflows. Connecting these integrations triggers the
-              Google OAuth protocol. The App requests only two API scopes — a file-scoped Google
-              Drive scope (which powers the Google Sheets sync) and a Gmail send scope — plus the
+              Google OAuth protocol. The App requests only two API scopes - a file-scoped Google
+              Drive scope (which powers the Google Sheets sync) and a Gmail send scope - plus the
               basic <code>email</code> and <code>profile</code> scopes used to identify your account
               at sign-in. Below is the precise disclosure of each scope, its specific purpose, and
               our strict Limited Use policies:
@@ -208,12 +208,12 @@ export default function PrivacyPage() {
                     <td><code>.../auth/drive.file</code></td>
                     <td>
                       Powers the Google Sheets sync. Lets the App create a spreadsheet and write,
-                      append, and organize parsed contacts and leads into that sheet — limited to
+                      append, and organize parsed contacts and leads into that sheet - limited to
                       files the App itself created or that you explicitly opened with it.
                     </td>
                     <td>
                       <strong>Constrained, On-Device Direct Transfer:</strong> Access is restricted
-                      strictly to files created by the Kauntech App — it cannot view or access any
+                      strictly to files created by the Kauntech App - it cannot view or access any
                       other files in your Google Drive. Data is pushed directly from the App to the
                       Google API; no Sheet data passes through or is saved on Kauntech servers.
                     </td>

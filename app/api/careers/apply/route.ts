@@ -43,7 +43,7 @@ function str(v: FormDataEntryValue | null): string {
 
 /**
  * Resolve { mime, ext } for an upload. Browsers usually set file.type, but some
- * send an empty/generic type for .docx — fall back to the filename extension so
+ * send an empty/generic type for .docx - fall back to the filename extension so
  * legitimate Word resumes aren't rejected. Returns null for anything else.
  */
 function resolveType(file: File): { mime: string; ext: string } | null {
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
 
   if (!fullName || fullName.length > 200) {
     return NextResponse.json(
-      { detail: "Full name is required (1–200 characters)." },
+      { detail: "Full name is required (1-200 characters)." },
       { status: 400 },
     );
   }
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Per-IP daily cap (only valid applications count) — also throttles the
+  // Per-IP daily cap (only valid applications count) - also throttles the
   // background Gemini resume parse + private-bucket upload each one triggers.
   const daily = await rlHit(
     `apply:day:${istDay()}:${ip}`,

@@ -1,5 +1,5 @@
 /**
- * DELETE /api/ar/templates/:id — remove one of the owner's PERSONAL templates.
+ * DELETE /api/ar/templates/:id - remove one of the owner's PERSONAL templates.
  * RLS (and the is_global=false filter) make it impossible to delete a global
  * "Default" template here; those are managed only from the admin panel.
  */

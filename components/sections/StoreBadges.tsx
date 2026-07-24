@@ -4,7 +4,7 @@ import { appInstall, appStoreInstall } from "@/lib/gtag";
 import Brand from "@/components/ui/BrandIcons";
 
 // Client island for the Hero store badges. Kept separate so Hero stays a server
-// component — only this small interactive bit ships as client JS. The onClick
+// component - only this small interactive bit ships as client JS. The onClick
 // handlers report install-intent conversions to GA4 + Google Ads (lib/gtag.ts).
 export default function StoreBadges() {
   return (

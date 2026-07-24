@@ -8,8 +8,8 @@ import { useKauntechPhone } from "@/components/phone/PhoneCanvas";
 import { ArScreen } from "@/components/phone/Screens";
 
 /**
- * The site's real iPhone 16 GLB — the same model, materials and live-DOM
- * screen mapping as the home page's PhoneCanvas — idling in place with the
+ * The site's real iPhone 16 GLB - the same model, materials and live-DOM
+ * screen mapping as the home page's PhoneCanvas - idling in place with the
  * AR chapter screen on its glass. Decorates the /ar login hero and the
  * Pro/Ultra gate. The sway never turns the glass away from the camera, so
  * no back-face visibility handling is needed here.
@@ -69,7 +69,7 @@ export default function ArPhone() {
         <directionalLight position={[-5, -2, 4]} intensity={0.4} color="#ffd9b0" />
 
         <Environment resolution={64}>
-          {/* studio: white top, warm ember key, cool steel fill — titanium loves contrast */}
+          {/* studio: white top, warm ember key, cool steel fill - titanium loves contrast */}
           <Lightformer intensity={2.4} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[9, 5, 1]} color="#ffffff" />
           <Lightformer intensity={2.6} position={[5, 1, 2]} rotation-y={-Math.PI / 2} scale={[4, 9, 1]} color="#f97316" />
           <Lightformer intensity={1.6} position={[-5, -1, 2]} rotation-y={Math.PI / 2} scale={[4, 9, 1]} color="#b7c4d4" />

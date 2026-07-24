@@ -29,7 +29,7 @@ export default function DeletionForm() {
           scope: data.get("scope"),
           details: data.get("details"),
           consent: data.get("consent") === "on",
-          website: data.get("website"), // honeypot — bots fill this
+          website: data.get("website"), // honeypot - bots fill this
           page_url: typeof location !== "undefined" ? location.href : undefined,
         }),
       });
@@ -77,7 +77,7 @@ export default function DeletionForm() {
           </p>
 
           <form className="deletion-form" onSubmit={handleSubmit}>
-            {/* Honeypot — hidden from real users; bots fill it and get dropped. */}
+            {/* Honeypot - hidden from real users; bots fill it and get dropped. */}
             <input
               type="text"
               name="website"

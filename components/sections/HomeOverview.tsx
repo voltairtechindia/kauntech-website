@@ -2,7 +2,7 @@ import Link from "next/link";
 
 /**
  * Home overview + internal-link hub. Serves three jobs at once:
- *  - AEO: question-phrased H2s with 40–60 word direct-answer paragraphs that
+ *  - AEO: question-phrased H2s with 40-60 word direct-answer paragraphs that
  *    answer engines (AI Overviews, Perplexity, ChatGPT) can lift as a passage.
  *  - SEO: keyword-anchored internal links from the homepage to the key pages.
  *  - Content depth: adds unique body copy so the homepage isn't thin.
@@ -28,7 +28,7 @@ export default function HomeOverview() {
               Kauntech is an offline-first AI business card scanner built for
               Indian sales and field teams. Point your phone at a visiting card
               and it captures every field on-device, enriches the contact with
-              AI, and hands the lead to your CRM, Google Sheets, or WhatsApp — in
+              AI, and hands the lead to your CRM, Google Sheets, or WhatsApp - in
               about 30 seconds, with no data leaving your phone.
             </p>
           </div>
@@ -48,7 +48,7 @@ export default function HomeOverview() {
             <h2>Is Kauntech DPDP Act 2023 compliant?</h2>
             <p>
               Yes. Because card processing happens on your device, scanned images
-              and contact details are never uploaded to Kauntech&apos;s servers —
+              and contact details are never uploaded to Kauntech&apos;s servers -
               meeting the DPDP Act 2023 principle of data minimisation by design.
               Cloud backup is fully optional, and you decide exactly which
               contacts sync.

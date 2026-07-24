@@ -1,5 +1,5 @@
 /**
- * Dynamic /llms.txt — the llmstxt.org manifest that helps LLMs / answer engines
+ * Dynamic /llms.txt - the llmstxt.org manifest that helps LLMs / answer engines
  * (ChatGPT, Perplexity, Google AI Overviews, etc.) understand Kauntech and find
  * the right pages. Marketing pages are static; blog posts and open roles are
  * pulled from the DB so new content shows up automatically (good for GEO/AEO).
@@ -16,13 +16,13 @@ const SITE_URL = "https://www.kauntech.com";
 
 const HEADER = `# Kauntech
 
-> Kauntech is India's offline-first AI business card scanner. Scan, enrich, and sync contacts in 30 seconds — scanning and OCR run fully on-device, so it works without internet and is DPDP Act 2023 compliant (cloud backup is optional; you choose what syncs).
+> Kauntech is India's offline-first AI business card scanner. Scan, enrich, and sync contacts in 30 seconds - scanning and OCR run fully on-device, so it works without internet and is DPDP Act 2023 compliant (cloud backup is optional; you choose what syncs).
 
 ## About
 - Product: Offline-first AI business card / visiting card scanner (Android & iOS)
 - Company: Kauntech Technologies Pvt. Ltd.
 - Key angle: 100% on-device OCR · DPDP Act 2023 compliant · AI contact enrichment
-- Tagline: "Capture, enrich, and automate contact management in 30 seconds — without internet."
+- Tagline: "Capture, enrich, and automate contact management in 30 seconds - without internet."
 
 ## Core pages
 - [Home](${SITE_URL}/): What Kauntech is and who it's for.

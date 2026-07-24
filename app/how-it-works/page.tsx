@@ -3,14 +3,14 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import Workflow from "@/components/sections/Workflow";
 
 export const metadata: Metadata = {
-  title: "How It Works — Capture, Enrich, Automate in 30 Seconds",
+  title: "How It Works - Capture, Enrich, Automate in 30 Seconds",
   description:
     "From physical card to CRM sync in under 30 seconds. See how Kauntech's three-step offline workflow captures, enriches, and automates contact handoff to your favorite tools.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
-    title: "How Kauntech Works — Capture, Enrich, Automate",
+    title: "How Kauntech Works - Capture, Enrich, Automate",
     description:
-      "Capture via OCR/QR/NFC, enrich on-device with AI, automate routing to WhatsApp, Gmail, Sheets, or Webhooks — all in 30 seconds.",
+      "Capture via OCR/QR/NFC, enrich on-device with AI, automate routing to WhatsApp, Gmail, Sheets, or Webhooks - all in 30 seconds.",
     url: "/how-it-works",
   },
 };
@@ -27,13 +27,13 @@ const howToLd = {
       "@type": "HowToStep",
       position: 1,
       name: "Capture",
-      text: "Point your camera at any business card. Kauntech's on-device OCR engine extracts all contact fields — name, phone, email, company, address — without sending data to any server.",
+      text: "Point your camera at any business card. Kauntech's on-device OCR engine extracts all contact fields - name, phone, email, company, address - without sending data to any server.",
     },
     {
       "@type": "HowToStep",
       position: 2,
       name: "Enrich",
-      text: "AI enrichment runs locally on your device to fill missing fields, verify phone formats, and score the lead quality — all offline, all private.",
+      text: "AI enrichment runs locally on your device to fill missing fields, verify phone formats, and score the lead quality - all offline, all private.",
     },
     {
       "@type": "HowToStep",

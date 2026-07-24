@@ -11,12 +11,12 @@ export const revalidate = 300;
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",
   description:
-    "Answers to common questions about Kauntech — the offline-first AI business card scanner: offline OCR, DPDP Act 2023 compliance, where your data is stored, K-Tokens, and pricing.",
+    "Answers to common questions about Kauntech - the offline-first AI business card scanner: offline OCR, DPDP Act 2023 compliance, where your data is stored, K-Tokens, and pricing.",
   alternates: { canonical: "/faq" },
   openGraph: {
-    title: "Kauntech FAQ — Offline Scanning, Privacy & Pricing",
+    title: "Kauntech FAQ - Offline Scanning, Privacy & Pricing",
     description:
-      "How Kauntech's offline card scanning works, DPDP Act 2023 compliance, data storage, K-Tokens, and plans — answered.",
+      "How Kauntech's offline card scanning works, DPDP Act 2023 compliance, data storage, K-Tokens, and plans - answered.",
     url: "/faq",
   },
 };
@@ -30,7 +30,7 @@ export default function FaqPage() {
         headingLevel={1}
         eyebrow="Questions Answered"
         heading="Frequently Asked Questions"
-        subtitle="Everything about Kauntech's offline scanning, on-device privacy, DPDP Act 2023 compliance, K-Tokens, and pricing — in one place."
+        subtitle="Everything about Kauntech's offline scanning, on-device privacy, DPDP Act 2023 compliance, K-Tokens, and pricing - in one place."
       />
     </main>
   );

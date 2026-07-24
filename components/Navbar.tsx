@@ -18,7 +18,7 @@ import Ic from "@/components/ui/Icon";
 import Brand from "@/components/ui/BrandIcons";
 
 // "Product" groups the four single-section product-story pages so the navbar
-// stays clean. The pages still exist as standalone routes (good for SEO) — the
+// stays clean. The pages still exist as standalone routes (good for SEO) - the
 // dropdown just collects them under one top-level item.
 const productLinks: { href: string; label: string; icon: LucideIcon; desc: string }[] = [
   { href: "/features", label: "Features", icon: Zap, desc: "Offline OCR, AI enrichment & automations" },
@@ -34,7 +34,7 @@ const mainLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-// Flat list for the full-screen mobile menu — product pages first, then the rest.
+// Flat list for the full-screen mobile menu - product pages first, then the rest.
 const mobileLinks = [
   ...productLinks.map(({ href, label }) => ({ href, label })),
   ...mainLinks,

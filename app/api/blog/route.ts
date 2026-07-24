@@ -1,5 +1,5 @@
 /**
- * Admin-gated blog endpoint — the n8n target. Writes a post to `blog_posts`
+ * Admin-gated blog endpoint - the n8n target. Writes a post to `blog_posts`
  * AND (when published) ingests it into the RAG store in one call, so the
  * chatbot instantly knows about the new article. Service-role + Gemini keys
  * stay server-side; n8n only needs ADMIN_API_KEY.

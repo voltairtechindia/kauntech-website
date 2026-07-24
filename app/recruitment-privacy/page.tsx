@@ -15,7 +15,7 @@ import Ic from "@/components/ui/Icon";
 
 // Hidden, recruitment-specific privacy notice. Like the main app (which is
 // offline-first with optional, user-controlled cloud backup), resume data is
-// processed server-side — stored in Supabase, parsed by AI, and
+// processed server-side - stored in Supabase, parsed by AI, and
 // embedded for HR shortlisting. This page documents that honestly. It is
 // intentionally kept out of the sitemap/nav and set to noindex; it's reached
 // only from the careers application consent checkbox.
@@ -105,7 +105,7 @@ export default function RecruitmentPrivacyPage() {
             </ul>
             <p>
               AI is used to <strong>assist</strong> human reviewers, not to make automated final
-              hiring decisions. Your resume data is used <strong>only</strong> for recruitment — it
+              hiring decisions. Your resume data is used <strong>only</strong> for recruitment - it
               is never added to our public website chatbot or any customer-facing system.
             </p>
 
@@ -115,7 +115,7 @@ export default function RecruitmentPrivacyPage() {
             <ul>
               <li>
                 Resume files are kept in a <strong>private storage bucket</strong> accessible only
-                to authorised HR staff via short-lived signed links — they are never publicly
+                to authorised HR staff via short-lived signed links - they are never publicly
                 downloadable.
               </li>
               <li>
@@ -150,7 +150,7 @@ export default function RecruitmentPrivacyPage() {
               <Ic icon={Mail} /> 7. Contact
             </h2>
             <p>
-              Kauntech Technologies Pvt. Ltd. — Data Protection contact:{" "}
+              Kauntech Technologies Pvt. Ltd. - Data Protection contact:{" "}
               <a href="mailto:business@voltairtech.com">business@voltairtech.com</a>.
             </p>
           </div>

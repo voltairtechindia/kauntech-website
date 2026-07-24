@@ -174,7 +174,7 @@ export default function Hero() {
                     filter: "drop-shadow(0 0 20px rgba(249, 115, 22, 0.4))",
                   }}
                 />
-                {/* Decorative brand lockup inside the phone mockup — not a
+                {/* Decorative brand lockup inside the phone mockup - not a
                     document heading, so it's a styled <span>, not an <h2>. */}
                 <span
                   style={{

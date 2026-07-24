@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   const resolved = resolveArAsset(kind, contentType, filename);
   if ("error" in resolved) return bad(resolved.error);
 
-  // Fast size gate on the declared size — finalize re-checks the ACTUAL bytes
+  // Fast size gate on the declared size - finalize re-checks the ACTUAL bytes
   // (a signed URL itself does not enforce a max size).
   if (Number.isFinite(size) && size > AR_ASSET_LIMITS[kind]) {
     return bad(`${kind[0].toUpperCase()}${kind.slice(1)} is larger than ${maxLabel(kind)}.`, 413);
@@ -79,13 +79,13 @@ export async function POST(req: Request) {
 
   // Reserve a fresh path under the owner's assets folder and sign it. The random
   // id guarantees the path is new, so the signed upload is a clean INSERT (no
-  // overwrite — keeps the storage byte-cap trigger exact).
+  // overwrite - keeps the storage byte-cap trigger exact).
   const path = `${user.id}/${cardId}/assets/${randomUUID()}.${resolved.ext}`;
   const { data, error } = await supabase.storage.from(AR_BUCKET).createSignedUploadUrl(path);
   if (error || !data) return bad("Could not start the upload. Please retry.", 500);
 
   // Hand back the resolved content-type so the client can stamp it onto the
-  // uploaded Blob — supabase-js's uploadToSignedUrl derives the STORED type from
+  // uploaded Blob - supabase-js's uploadToSignedUrl derives the STORED type from
   // the Blob's own .type (it ignores the contentType option), and browsers report
   // a .glb with an empty / application/octet-stream type. Stamping the correct
   // type keeps the stored object well-typed and safe against a future

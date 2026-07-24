@@ -1,5 +1,5 @@
 /**
- * Kauntech knowledge base — the grounding for the RAG chatbot.
+ * Kauntech knowledge base - the grounding for the RAG chatbot.
  *
  * Every entry is one row in the `documents` table, distinguished by `doc_type`.
  * `content` is the natural-language text that gets embedded and retrieved;
@@ -24,7 +24,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Kauntech is an AI-powered business card scanner app for Android and iOS that works 100% offline. " +
       "It uses on-device OCR to read visiting cards, enriches contacts with AI, and routes leads to your CRM, " +
-      "Google Sheets, Gmail, WhatsApp or Telegram — in under 30 seconds. It is built by Kauntech Technologies " +
+      "Google Sheets, Gmail, WhatsApp or Telegram - in under 30 seconds. It is built by Kauntech Technologies " +
       "Pvt. Ltd. (Mumbai, India). Kauntech is positioned as India's first 100% offline AI business card scanner " +
       "and is fully compliant with India's Digital Personal Data Protection (DPDP) Act 2023. " +
       "Support email: business@voltairtech.com.",
@@ -38,10 +38,10 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "company",
     external_id: "WORKFLOW-01",
-    title: "How Kauntech works — 3 steps in 30 seconds",
+    title: "How Kauntech works - 3 steps in 30 seconds",
     content:
       "Kauntech turns a physical card into a synced, enriched contact in about 30 seconds in three steps. " +
-      "Step 1 CAPTURE: scan a physical card via OCR, scan a QR code, tap NFC, or type manually — works 100% offline " +
+      "Step 1 CAPTURE: scan a physical card via OCR, scan a QR code, tap NFC, or type manually - works 100% offline " +
       "with zero lag. Step 2 ENRICH: Kauntech AI adds company intelligence, lead scoring and personalised icebreakers " +
       "on-device. Step 3 AUTOMATE: instantly route the enriched contact to WhatsApp, an email draft, Google Sheets, " +
       "Telegram or a webhook automatically.",
@@ -54,7 +54,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "FEAT-OFFLINE",
     title: "100% Offline Mode",
     content:
-      "Kauntech is offline-first: scanning, OCR processing and saving contacts all work with zero internet connection — " +
+      "Kauntech is offline-first: scanning, OCR processing and saving contacts all work with zero internet connection - " +
       "ideal for remote sites, basement conference halls and flights. All sensitive contact data stays encrypted on your " +
       "device in local storage. Smart Sync automatically queues changes and backs them up to the cloud the moment the " +
       "network returns. A brief connection is only needed when you choose to sync to a CRM or run an AI feature. You can " +
@@ -119,17 +119,17 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "feature",
     external_id: "FEAT-AR",
-    title: "Augmented reality (AR) business cards — the Kauntech AR studio",
+    title: "Augmented reality (AR) business cards - the Kauntech AR studio",
     content:
       "Kauntech includes an AR studio for creating immersive augmented-reality business cards that can display 3D models, " +
       "custom text, buttons, images, audio and video. How it works in 3 steps: (1) upload a card target image, (2) design " +
-      "your AR scene in the editor, (3) scan & experience — viewers point the Kauntech scanner (or a QR code) at the card to " +
+      "your AR scene in the editor, (3) scan & experience - viewers point the Kauntech scanner (or a QR code) at the card to " +
       "launch the AR experience. AR is a PAID, TIERED feature: the Free plan has no AR (0 AR cards); Pro is pre-made " +
       "templates only; Ultra is the full studio. On Pro you can apply any pre-made template, edit its text, set your card " +
       "photo and publish (60 K-Tokens to publish a template AR card). Ultra adds building a scene from scratch (80 tokens to " +
       "build/publish a custom card), plus custom 3D model / .glb uploads (40 tokens, Ultra only), video uploads (100 tokens, " +
       "Ultra only) and custom image/audio elements (Ultra only); applying a template and adding text or social links is " +
-      "free. AR card limits per plan: Free 0, Pro 1, Ultra 3 — Ultra can buy extra AR card slots for 160 tokens each. Cloud " +
+      "free. AR card limits per plan: Free 0, Pro 1, Ultra 3 - Ultra can buy extra AR card slots for 160 tokens each. Cloud " +
       "storage for AR content is shared with your saved card photos as one per-plan budget: Free 0, Pro 50 MB, Ultra 250 MB. " +
       "AR cards are experienced through the Kauntech scanner or a QR code.",
     metadata: {
@@ -226,7 +226,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "PLAN-BILLING",
     title: "Billing & annual discount",
     content:
-      "Kauntech offers monthly and annual billing. Annual billing saves about 20–23%: Pro is ₹399/month (₹4,788/year, vs " +
+      "Kauntech offers monthly and annual billing. Annual billing saves about 20-23%: Pro is ₹399/month (₹4,788/year, vs " +
       "₹499/month monthly) and Ultra is ₹999/month (₹11,988/year, vs ₹1,299/month monthly) on annual plans. Token top-ups " +
       "are available anytime when you run low.",
     metadata: { tags: ["billing", "annual", "discount", "top-up"] },
@@ -236,12 +236,12 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "feature",
     external_id: "TOKEN-OVERVIEW",
-    title: "K-Tokens — Kauntech's AI credit unit",
+    title: "K-Tokens - Kauntech's AI credit unit",
     content:
       "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features and are only consumed when you actively " +
       "use an AI feature. When a plan's scan limit is exhausted, additional scans can also consume tokens flexibly. " +
-      "The three AI features and their costs are: AI Fix — 1 token per use (Pro tier; automated contact-formatting fixes); " +
-      "AI Intel — 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy — 6 tokens per scan " +
+      "The three AI features and their costs are: AI Fix - 1 token per use (Pro tier; automated contact-formatting fixes); " +
+      "AI Intel - 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy - 6 tokens per scan " +
       "(Ultra tier; comprehensive sales strategies and icebreakers). Example balances: 1,000 K-Tokens can run up to 1,000 " +
       "AI Fixes or enrich up to 500 cards with AI Intel; 3,000 K-Tokens can generate up to 500 AI Strategy outputs.",
     metadata: {
@@ -253,9 +253,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "plan",
     external_id: "TOKEN-TOPUP",
-    title: "K-Token top-up packs (one-time recharge: ₹99–₹1,299)",
+    title: "K-Token top-up packs (one-time recharge: ₹99-₹1,299)",
     content:
-      "When you run low on K-Tokens you can buy one-time top-up packs anytime to recharge your balance — these are " +
+      "When you run low on K-Tokens you can buy one-time top-up packs anytime to recharge your balance - these are " +
       "consumable in-app purchases that do not auto-renew, and larger packs cost less per token. The four packs are: " +
       "200 K-Tokens for ₹99, 600 K-Tokens for ₹249, 1,500 K-Tokens for ₹549, and 4,000 K-Tokens for ₹1,299 (the best " +
       "value per token). Top-up packs are available on any paid plan and are separate from your monthly/annual plan " +
@@ -281,12 +281,12 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "Kauntech is engineered to fully adhere to India's Digital Personal Data Protection (DPDP) Act 2023. Business card " +
       "images are read and parsed on your device, satisfying the DPDP principle of data minimisation by design. By default " +
       "your scanned contacts stay on your device; cloud backup is OPTIONAL (on paid plans) and lets you sync across devices " +
-      "— you choose exactly which categories (contacts, notes and tags, AI intelligence, images, and so on) are backed up to " +
+      "- you choose exactly which categories (contacts, notes and tags, AI intelligence, images, and so on) are backed up to " +
       "your Kauntech account, and anything you don't select never leaves your device. You can turn cloud backup off, wipe " +
       "your cloud data, or delete your account at any time. Key guarantees: Informed Consent Architecture (data is never " +
       "captured or synced without explicit, recorded user consent), On-Device Processing (OCR and card parsing run on your " +
       "smartphone), Enterprise-Grade Encryption (data at rest and in transit secured with AES-256), and Complete User " +
-      "Ownership — Kauntech never sells your data or uses it for advertising, and you can request data deletion or export at " +
+      "Ownership - Kauntech never sells your data or uses it for advertising, and you can request data deletion or export at " +
       "any time. Right to erasure: permanently delete your account in-app at any time (a 30-day grace period applies, after " +
       "which all your data is purged), or use the Data Deletion Request portal on kauntech.com if you no longer have the app.",
     metadata: { tags: ["dpdp", "privacy", "consent", "aes-256", "compliance"] },
@@ -312,7 +312,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
       "By default your scanned contact data is stored on your device only, in AES-256 encrypted local storage. On paid plans " +
       "you can switch on optional cloud backup, which syncs the categories you choose (and card images) to your Kauntech " +
       "account so you can reach them across devices; categories you don't select never leave your device. You stay in " +
-      "control — turn backup off, wipe your cloud data, or delete your account at any time. You can also sync contacts to " +
+      "control - turn backup off, wipe your cloud data, or delete your account at any time. You can also sync contacts to " +
       "your own CRM, Google Sheets or other channels.",
     metadata: { tags: ["storage", "encryption", "privacy", "on-device"] },
   },
@@ -323,7 +323,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "FAQ-OFFLINE",
     title: "Does Kauntech work without internet?",
     content:
-      "Yes. Kauntech is built offline-first — scanning, processing and saving contacts all work with zero internet " +
+      "Yes. Kauntech is built offline-first - scanning, processing and saving contacts all work with zero internet " +
       "connection. A brief connection is only needed when you choose to sync to a CRM or run AI enrichment.",
     metadata: { category: "offline" },
   },

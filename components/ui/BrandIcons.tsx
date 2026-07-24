@@ -1,4 +1,4 @@
-// AUTO-INLINED brand glyphs (24x24, filled) — sourced from simple-icons at
+// AUTO-INLINED brand glyphs (24x24, filled) - sourced from simple-icons at
 // build time so the runtime has zero icon-font / icon-library dependency.
 // Rendered inside the same `i.ic` shell as Lucide icons (see components/ui/Icon.tsx)
 // so font-size-based sizing and currentColor flow through unchanged.

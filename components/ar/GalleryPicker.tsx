@@ -7,12 +7,12 @@ import type { GalleryAsset } from "@/lib/ar/gallery";
 import { IconSearch, IconX } from "./icons";
 
 /**
- * Modal picker for the curated AR gallery — a flat, searchable grid (no
+ * Modal picker for the curated AR gallery - a flat, searchable grid (no
  * categories). Each cell renders the actual .glb in a tiny auto-fitted, slowly
  * orbiting canvas, so what you see is what lands on the card.
  *
  * Each live canvas is its OWN WebGL context, and a browser allows only ~16 at
- * once — so a full gallery (plus the editor's own canvas underneath) would blow
+ * once - so a full gallery (plus the editor's own canvas underneath) would blow
  * that cap and the browser silently kills the OLDEST context (the editor's),
  * taking the whole scene down with a "context lost". `LazyPreview` therefore
  * only mounts a cell's canvas while it's actually scrolled into view and unmounts
@@ -26,7 +26,7 @@ function PreviewModel({ url }: { url: string }) {
 }
 
 // Hard cap on simultaneously-live preview contexts, kept well under the browser's
-// ~16 WebGL limit — the editor's own canvas counts too, and scrolling can briefly
+// ~16 WebGL limit - the editor's own canvas counts too, and scrolling can briefly
 // overlap an outgoing and incoming row. In-view cells over the cap wait for a slot.
 const MAX_LIVE_PREVIEWS = 8;
 let livePreviews = 0;
@@ -48,7 +48,7 @@ function releasePreviewSlot() {
 }
 
 // Mount the (context-owning) <Preview> only while the cell is on screen AND a
-// render slot is free — so the live-context count can never exceed the cap.
+// render slot is free - so the live-context count can never exceed the cap.
 function LazyPreview({ asset }: { asset: GalleryAsset }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [inView, setInView] = useState(false);

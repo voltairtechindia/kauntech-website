@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Kauntech — Offline AI Business Card Scanner",
+    name: "Kauntech - Offline AI Business Card Scanner",
     short_name: "Kauntech",
     description:
       "India's first offline-first AI business card scanner. Scan, enrich, and sync contacts in 30 seconds. DPDP Act 2023 compliant.",

@@ -17,7 +17,7 @@ export default function LeadConversion() {
       submitted = sessionStorage.getItem(LEAD_FLAG) === "1";
       if (submitted) sessionStorage.removeItem(LEAD_FLAG);
     } catch {
-      // storage blocked — skip rather than risk an unearned conversion
+      // storage blocked - skip rather than risk an unearned conversion
     }
     if (submitted) contactForm();
   }, []);

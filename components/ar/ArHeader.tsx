@@ -8,8 +8,8 @@ import StorageMeter from "./StorageMeter";
 import TokenMeter from "./TokenMeter";
 import { useStorageMeter } from "./StorageMeterContext";
 
-/** Brand bar for the /ar section. Shows a sign-out button when authed, or — in
- *  the editor — the live storage meter in place of the account area. */
+/** Brand bar for the /ar section. Shows a sign-out button when authed, or - in
+ *  the editor - the live storage meter in place of the account area. */
 export default function ArHeader({ email }: { email?: string | null }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);

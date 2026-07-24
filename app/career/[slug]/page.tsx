@@ -42,7 +42,7 @@ export async function generateMetadata({
     `Apply for ${job.title} at Kauntech.`;
 
   return {
-    title: `${job.title} — Careers at Kauntech`,
+    title: `${job.title} - Careers at Kauntech`,
     description,
     alternates: { canonical: `/career/${job.slug}` },
     openGraph: {
@@ -164,7 +164,7 @@ export default async function JobDetailPage({
         <div className="job-apply-banner">
           <div>
             <h2>Ready to apply?</h2>
-            <p>Takes a couple of minutes — just your details and a resume.</p>
+            <p>Takes a couple of minutes - just your details and a resume.</p>
           </div>
           <ApplyModal jobSlug={job.slug} jobTitle={job.title} />
         </div>

@@ -28,7 +28,7 @@ const REQUIRED: Record<FieldName, string> = {
 };
 
 // Mirrors the server's EMAIL_RE (app/api/contact/route.ts) but also insists on a
-// dotted TLD — the browser's own type="email" check happily accepts "a@b".
+// dotted TLD - the browser's own type="email" check happily accepts "a@b".
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 const PHONE_CHARS_RE = /^[+\d][\d\s().-]*$/;
 
@@ -74,7 +74,7 @@ export default function Contact() {
   }, [router]);
 
   // Re-validate every field, push each verdict into the element's own validity via
-  // setCustomValidity (so form.checkValidity() — and the button — agree with the
+  // setCustomValidity (so form.checkValidity() - and the button - agree with the
   // messages we render), and recompute whether the form can be submitted.
   const syncValidity = useCallback(() => {
     const form = formRef.current;
@@ -97,7 +97,7 @@ export default function Contact() {
   // Autofill and back-forward restore don't fire input events; check once on mount.
   useEffect(() => syncValidity(), [syncValidity]);
 
-  // Only complain about a field once the user has left it — no yelling mid-type.
+  // Only complain about a field once the user has left it - no yelling mid-type.
   const handleBlur = (e: React.FocusEvent<HTMLFormElement>) => {
     // React types e.target as the form; the real target is whichever control blurred.
     const name = (e.target as unknown as { name?: string }).name as FieldName;
@@ -111,7 +111,7 @@ export default function Contact() {
     setError("");
     const data = new FormData(form);
 
-    // Supabase via our own API route — the single store. Inquiries are read back
+    // Supabase via our own API route - the single store. Inquiries are read back
     // in kauntech-admin (lib/inquiries.ts).
     let ok = false;
     let detail = "";
@@ -125,7 +125,7 @@ export default function Contact() {
           phone: data.get("Phone"),
           email: data.get("Email"),
           message: data.get("Message"),
-          website: data.get("website"), // honeypot — bots fill this
+          website: data.get("website"), // honeypot - bots fill this
           page_url: typeof location !== "undefined" ? location.href : undefined,
         }),
       });
@@ -144,7 +144,7 @@ export default function Contact() {
       try {
         sessionStorage.setItem(LEAD_FLAG, "1");
       } catch {
-        // private mode / storage disabled — the thank-you page still renders,
+        // private mode / storage disabled - the thank-you page still renders,
         // it just won't fire the conversion. Better than blocking the redirect.
       }
       form.reset();
@@ -181,7 +181,7 @@ export default function Contact() {
   };
 
   // Hint under the button. If they've filled everything but something is
-  // malformed, say so — never leave a dead button unexplained.
+  // malformed, say so - never leave a dead button unexplained.
   const anyShownProblem = FIELDS.some((n) => shown(n));
   const allFilled = FIELDS.every((n) => problems[n] !== REQUIRED[n]);
   const hint = canSubmit
@@ -235,19 +235,19 @@ export default function Contact() {
             <li>
               <Ic icon={CirclePlay} />
               <span>
-                <strong>Book a demo</strong> — watch Kauntech scan a stack of cards, fully offline.
+                <strong>Book a demo</strong> - watch Kauntech scan a stack of cards, fully offline.
               </span>
             </li>
             <li>
               <Ic icon={Tag} />
               <span>
-                <strong>Get a price for your team</strong> — bulk seats, K-Token packs, custom plans.
+                <strong>Get a price for your team</strong> - bulk seats, K-Token packs, custom plans.
               </span>
             </li>
             <li>
               <Ic icon={MessagesSquare} />
               <span>
-                <strong>Ask a question</strong> — integrations, DPDP compliance, switching from
+                <strong>Ask a question</strong> - integrations, DPDP compliance, switching from
                 another scanner.
               </span>
             </li>

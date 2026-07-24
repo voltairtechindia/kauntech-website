@@ -36,7 +36,7 @@ function str(v: unknown): string {
 }
 
 function makeTicket(): string {
-  // KNT-DEL-XXXXXXXX (8 hex chars from a UUID) — unique + human-quotable.
+  // KNT-DEL-XXXXXXXX (8 hex chars from a UUID) - unique + human-quotable.
   return `KNT-DEL-${randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()}`;
 }
 
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
 
   if (!fullName || fullName.length > 200) {
     return NextResponse.json(
-      { detail: "Full name is required (1–200 characters)." },
+      { detail: "Full name is required (1-200 characters)." },
       { status: 400 },
     );
   }

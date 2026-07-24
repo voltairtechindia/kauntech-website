@@ -5,7 +5,7 @@
  *   -> { reply, conversation_id, sources }
  *
  * Analytics for the turn run in an `after()` callback so they never add
- * latency to the reply (and never break it — they're best-effort).
+ * latency to the reply (and never break it - they're best-effort).
  */
 import { after, NextResponse } from "next/server";
 
@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const ip = getClientIp(req);
 
-  // Layer 1 — anti-flood burst limit (per IP, counts every request).
+  // Layer 1 - anti-flood burst limit (per IP, counts every request).
   const burst = await rlHit(
     `chat:burst:${ip}`,
     LIMITS.chatBurst.limit,
@@ -60,18 +60,18 @@ export async function POST(req: Request) {
 
   if (!message || message.length > 4000) {
     return NextResponse.json(
-      { detail: "message is required (1–4000 characters)." },
+      { detail: "message is required (1-4000 characters)." },
       { status: 400 },
     );
   }
   if (sessionId.length < 6 || sessionId.length > 128) {
     return NextResponse.json(
-      { detail: "session_id is required (6–128 characters)." },
+      { detail: "session_id is required (6-128 characters)." },
       { status: 400 },
     );
   }
 
-  // Layer 2 — per-visitor daily question quota (only valid questions count).
+  // Layer 2 - per-visitor daily question quota (only valid questions count).
   const daily = await rlHit(
     `chat:day:${istDay()}:${ip}`,
     LIMITS.chatDaily.limit,
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Layer 3 — global daily ceiling on Gemini calls (bill circuit-breaker).
+  // Layer 3 - global daily ceiling on Gemini calls (bill circuit-breaker).
   const global = await rlHit(
     `chat:global:${istDay()}`,
     LIMITS.chatGlobal.limit,

@@ -21,14 +21,14 @@ const SITE_URL = "https://www.kauntech.com";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "Careers — Build the future of offline-first networking at Kauntech",
+  title: "Careers - Build the future of offline-first networking at Kauntech",
   description:
     "Join Kauntech and help build India's first offline-first, DPDP-compliant AI business card scanner. See open roles and apply with your resume.",
   alternates: { canonical: "/career" },
   openGraph: {
     title: "Careers at Kauntech",
     description:
-      "Open roles at Kauntech — building offline-first, privacy-first AI for sales and networking teams.",
+      "Open roles at Kauntech - building offline-first, privacy-first AI for sales and networking teams.",
     url: "/career",
     type: "website",
   },
@@ -80,7 +80,7 @@ export default async function CareersPage() {
         <p>
           We&apos;re a small, fast team making the first offline-first, DPDP-compliant AI
           business card scanner. If you care about on-device intelligence, clean
-          engineering, and real user privacy — we&apos;d love to meet you.
+          engineering, and real user privacy - we&apos;d love to meet you.
         </p>
         {jobs.length > 0 && (
           <div className="career-hero-meta">
@@ -154,7 +154,7 @@ export default async function CareersPage() {
             </h2>
             <p style={{ color: "var(--text-dim)", maxWidth: 560, margin: "0 auto" }}>
               Don&apos;t see the perfect role? Tell us about yourself and attach your
-              resume — our team reviews every application.
+              resume - our team reviews every application.
             </p>
           </div>
           <CareerForm jobs={jobOptions} />

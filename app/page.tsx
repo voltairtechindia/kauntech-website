@@ -22,7 +22,7 @@ export default function HomePage() {
       <ComplianceBand />
       <PricingTeaser />
       <HomeOverview />
-      {/* Short teaser only — the canonical FAQPage schema lives on /faq. */}
+      {/* Short teaser only - the canonical FAQPage schema lives on /faq. */}
       <Faq limit={6} seeAllHref="/faq" />
       <FinalCta />
     </>

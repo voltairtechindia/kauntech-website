@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 /**
- * Ambient "aura field" — a single fixed layer that sits BEHIND all content
+ * Ambient "aura field" - a single fixed layer that sits BEHIND all content
  * (z-index:-1; body background is transparent so it shows through wherever a
  * section isn't opaque). It carries a few slow-breathing orange orbs and one
  * soft orb that eases toward the cursor, so the brand glow is felt on every
- * marketing page — not just the home hero.
+ * marketing page - not just the home hero.
  *
  * Rendered once by SiteChrome (so it inherits the /ar exclusion). Purely
  * decorative + pointer-events:none. On touch or reduced-motion the cursor orb
@@ -16,8 +16,8 @@ import gsap from "gsap";
  */
 export default function AuraField() {
   const cursorRef = useRef<HTMLDivElement>(null);
-  // Deferred mount: the orbs are 50–68vw circles under filter:blur(120px), and
-  // rasterizing them is by far the heaviest part of the very first frame — on
+  // Deferred mount: the orbs are 50-68vw circles under filter:blur(120px), and
+  // rasterizing them is by far the heaviest part of the very first frame - on
   // slow devices it visibly delays first paint (PageSpeed's FCP/LCP). Painting
   // them AFTER first paint (with a CSS fade-in masking the pop) keeps the
   // visual identical while taking them off the critical path. Double-rAF is

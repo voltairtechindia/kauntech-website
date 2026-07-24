@@ -19,12 +19,12 @@ import Ic from "@/components/ui/Icon";
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "Kauntech Terms of Service — eligibility, subscription terms, K-Tokens economy, App Store / Google Play billing, and account deletion.",
+    "Kauntech Terms of Service - eligibility, subscription terms, K-Tokens economy, App Store / Google Play billing, and account deletion.",
   alternates: { canonical: "/terms" },
   openGraph: {
     title: "Terms of Service | Kauntech",
     description:
-      "Kauntech Terms of Service — eligibility, subscription terms, K-Tokens economy, App Store / Google Play billing, and account deletion.",
+      "Kauntech Terms of Service - eligibility, subscription terms, K-Tokens economy, App Store / Google Play billing, and account deletion.",
     url: "/terms",
   },
 };

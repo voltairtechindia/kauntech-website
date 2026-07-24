@@ -4,7 +4,7 @@ import Brand, { type BrandName } from "@/components/ui/BrandIcons";
 import { Check, Globe, Mail, Phone, Table, Workflow, type LucideIcon } from "lucide-react";
 
 /**
- * "One scan, five destinations" — a scanned card node fanning out to the five
+ * "One scan, five destinations" - a scanned card node fanning out to the five
  * integrations over animated SVG beams (pure CSS stroke-dash flow, no JS).
  */
 type Dest = {
@@ -34,7 +34,7 @@ export default function IntegrationsRouter() {
             One scan. <em>Everywhere</em> your team works.
           </SplitHeading>
           <p>
-            Saving a lead fires your whole workflow — no exports, no copy-paste, no &ldquo;I&apos;ll add it
+            Saving a lead fires your whole workflow - no exports, no copy-paste, no &ldquo;I&apos;ll add it
             to the sheet later.&rdquo;
           </p>
         </div>

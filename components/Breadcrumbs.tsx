@@ -1,5 +1,5 @@
 /**
- * BreadcrumbList JSON-LD for sub-pages (SEO/AEO). Schema-only — no visible UI —
+ * BreadcrumbList JSON-LD for sub-pages (SEO/AEO). Schema-only - no visible UI -
  * so it slots into any page without touching layout. "Home" is prepended
  * automatically; pass the trail from Home down to (and including) the current page.
  *

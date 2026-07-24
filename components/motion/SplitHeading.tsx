@@ -20,7 +20,7 @@ export default function SplitHeading({
   id?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
-  // ElementType + dynamic tag defeats JSX's children inference — erase to any.
+  // ElementType + dynamic tag defeats JSX's children inference - erase to any.
   const Comp = Tag as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
   useGSAP(

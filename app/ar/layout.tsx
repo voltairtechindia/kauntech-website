@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * Shell for the gated owner section. Deliberately minimal — the marketing
+ * Shell for the gated owner section. Deliberately minimal - the marketing
  * Navbar/Footer are suppressed for /ar (see components/SiteChrome.tsx) and each
  * page renders its own <ArHeader/>. Individual protected pages call getArUser()
  * and redirect to /ar/login; this layout stays public so /ar/login can render.

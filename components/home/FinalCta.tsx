@@ -1,7 +1,7 @@
 import SplitHeading from "@/components/motion/SplitHeading";
 import StoreBadges from "@/components/sections/StoreBadges";
 
-/** Closing act — the app's own tagline, said loud. */
+/** Closing act - the app's own tagline, said loud. */
 export default function FinalCta() {
   return (
     <section className="k-final" id="download">

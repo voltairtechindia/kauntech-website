@@ -8,12 +8,12 @@ import { PHONE_SCREENS } from "./Screens";
 import { FLIGHT_START, FLIGHT_END } from "./flight";
 
 /**
- * The 3D phone — a real iPhone 16 model (public/models/iphone16.glb, prepared
+ * The 3D phone - a real iPhone 16 model (public/models/iphone16.glb, prepared
  * by scripts/optimize-iphone.mjs) whose display is a LIVE DOM composition
  * (drei <Html transform>), so the app screens on it genuinely animate.
  *
  * Model facts (from the optimizer): body spans x ±3.592, y ±7.369, z ±0.39;
- * the display is the node named "Screen" — a flat rounded plane at z=0.39
+ * the display is the node named "Screen" - a flat rounded plane at z=0.39
  * spanning x ±3.263, y ±7.042. We keep that mesh as powered-off glass (it
  * shows through during edge-on flips) and float the DOM screen just above it.
  * drei Html `transform` scale ratio is distanceFactor/400, so in the model's
@@ -28,7 +28,7 @@ import { FLIGHT_START, FLIGHT_END } from "./flight";
 
 export type PhoneSceneState = {
   pos: number;
-  /** 0→1 as the story unpins — the phone rides up and away with the stage */
+  /** 0→1 as the story unpins - the phone rides up and away with the stage */
   exit: number;
   pointer: { x: number; y: number };
 };
@@ -38,12 +38,12 @@ const PHONE_H = 2.46; // target world height
 
 /** Rest poses: x/y in viewport-width/height fractions from center, rotations in rad. */
 const POSES = [
-  { x: 0.21, y: -0.01, rotY: -0.3, rotZ: -0.05 }, // hero — right side, angled to copy
-  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 1 scan — left
-  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.04 }, // 2 sync — right
-  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.05 }, // 3 intel — left
-  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.05 }, // 4 strategy — right
-  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 5 ar — left
+  { x: 0.21, y: -0.01, rotY: -0.3, rotZ: -0.05 }, // hero - right side, angled to copy
+  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 1 scan - left
+  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.04 }, // 2 sync - right
+  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.05 }, // 3 intel - left
+  { x: 0.23, y: 0.0, rotY: -0.28, rotZ: -0.05 }, // 4 strategy - right
+  { x: -0.23, y: 0.0, rotY: 0.28, rotZ: 0.04 }, // 5 ar - left
 ];
 
 const smooth = (t: number) => t * t * (3 - 2 * t);
@@ -61,9 +61,9 @@ export type PhoneModel = {
 /**
  * The Sketchfab model ships in the teal colorway. Recolor every teal-family
  * material to graphite titanium (hue-free, keep luminance) and fix the screen:
- * its material has emissive 1/1/1, which would glow white — turn it into
+ * its material has emissive 1/1/1, which would glow white - turn it into
  * powered-off glass instead. We also MEASURE the display ("Screen" node) and
- * body bounding boxes rather than trusting authored transforms — the baked
+ * body bounding boxes rather than trusting authored transforms - the baked
  * Sketchfab hierarchy is not origin-centered.
  */
 export function useKauntechPhone(): PhoneModel {
@@ -107,7 +107,7 @@ export function useKauntechPhone(): PhoneModel {
     });
 
     // recenter the body on the origin (the baked Sketchfab hierarchy isn't),
-    // so the rig's rotations pivot through the phone — then measure the display
+    // so the rig's rotations pivot through the phone - then measure the display
     cloned.updateMatrixWorld(true);
     const bodyBox = new THREE.Box3().setFromObject(cloned);
     const bodySize = bodyBox.getSize(new THREE.Vector3());
@@ -144,7 +144,7 @@ function PhoneRig({
 
     const viewport = state.viewport.getCurrentViewport(state.camera, new THREE.Vector3(0, 0, 0));
     const { pos, pointer, exit } = sceneState.current;
-    // mid-story (re)mount — e.g. scrolling back up into the story after the
+    // mid-story (re)mount - e.g. scrolling back up into the story after the
     // canvas was killed: skip the hero intro and snap straight to the pose
     const midMount = !booted.current && pos > 0.5;
     booted.current = true;
@@ -152,7 +152,7 @@ function PhoneRig({
 
     const i = Math.min(Math.floor(pos), POSES.length - 2);
     // dwell on the pose while the chapter is read, then fly across during the
-    // text-swap gap — windows shared with the GSAP timeline via flight.ts
+    // text-swap gap - windows shared with the GSAP timeline via flight.ts
     const frac = smooth(
       THREE.MathUtils.clamp(
         (THREE.MathUtils.clamp(pos - i, 0, 1) - FLIGHT_START) / (FLIGHT_END - FLIGHT_START),
@@ -180,7 +180,7 @@ function PhoneRig({
       THREE.MathUtils.lerp(a.y, b.y, frac) * viewport.height +
       Math.sin(t * 1.3) * 0.05 + // idle float
       (1 - inE) * -0.7 + // intro rise
-      exit * viewport.height * 1.1; // story exit — ride up with the unpinning stage
+      exit * viewport.height * 1.1; // story exit - ride up with the unpinning stage
     const targetZ = arc * 0.55;
     const targetRotY =
       THREE.MathUtils.lerp(a.rotY, b.rotY, frac) +
@@ -216,7 +216,7 @@ function PhoneRig({
 
   const { Screen } = PHONE_SCREENS[chapter] ?? PHONE_SCREENS[0];
 
-  // rig-local (≈world) units — Html lives directly in the rig group, exactly
+  // rig-local (≈world) units - Html lives directly in the rig group, exactly
   // like the proven procedural-phone setup, so drei's transform math is 1:1
   const screenW = phone.screenSize.x * phone.scale;
   const sc = phone.screenCenter;
@@ -267,7 +267,7 @@ export default function PhoneCanvas({
         <directionalLight position={[-5, -2, 4]} intensity={0.4} color="#ffd9b0" />
 
         <Environment resolution={64}>
-          {/* studio: white top, warm ember key, cool steel fill — titanium loves contrast */}
+          {/* studio: white top, warm ember key, cool steel fill - titanium loves contrast */}
           <Lightformer intensity={2.4} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[9, 5, 1]} color="#ffffff" />
           <Lightformer intensity={2.6} position={[5, 1, 2]} rotation-y={-Math.PI / 2} scale={[4, 9, 1]} color="#f97316" />
           <Lightformer intensity={1.6} position={[-5, -1, 2]} rotation-y={Math.PI / 2} scale={[4, 9, 1]} color="#b7c4d4" />

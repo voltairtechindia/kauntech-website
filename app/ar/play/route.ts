@@ -75,7 +75,7 @@ export async function GET() {
       fail('Camera needs a secure (https) connection.');
       return;
     }
-    // Try the back camera first, then fall back to any camera — some WebViews
+    // Try the back camera first, then fall back to any camera - some WebViews
     // and emulators reject the strict facingMode constraint.
     var attempts = [
       { video: { facingMode: { ideal: 'environment' } }, audio: false },

@@ -357,7 +357,7 @@ export default function ChatWidget() {
   const goTo = useCallback(
     (path: string) => {
       router.push(path);
-      // Keep the panel open — the widget lives in the root layout, so the
+      // Keep the panel open - the widget lives in the root layout, so the
       // conversation survives the client-side navigation.
     },
     [router],

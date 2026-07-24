@@ -6,7 +6,7 @@
  *
  * Submissions land in the `contact_submissions` table via the server-side
  * service-role client (RLS-protected; the browser never touches Supabase).
- * `website` is a honeypot — real users never see it, so a filled value is a bot
+ * `website` is a honeypot - real users never see it, so a filled value is a bot
  * and we accept-and-drop (return 200 without storing) to avoid tipping it off.
  */
 import { NextResponse } from "next/server";
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
   if (!name || name.length > 200) {
     return NextResponse.json(
-      { detail: "name is required (1–200 characters)." },
+      { detail: "name is required (1-200 characters)." },
       { status: 400 },
     );
   }
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   }
   if (!message || message.length > 5000) {
     return NextResponse.json(
-      { detail: "message is required (1–5000 characters)." },
+      { detail: "message is required (1-5000 characters)." },
       { status: 400 },
     );
   }

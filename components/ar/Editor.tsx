@@ -42,7 +42,7 @@ function readCard(model: ArModel | null): SceneCard {
 }
 const isHttp = (u?: string | null): u is string => !!u && /^https?:\/\//i.test(u);
 
-// A public URL pointing at one of OUR uploaded scene assets — they live under
+// A public URL pointing at one of OUR uploaded scene assets - they live under
 // `<ar-models bucket>/<uid>/<card>/assets/`. Card photos (no `/assets/`) and
 // gallery models (different bucket) never match, so the orphan-cleanup below
 // can't touch them.
@@ -62,7 +62,7 @@ function trackTier(score: number | null): { label: string; color: string } | nul
 let _n = 0;
 const uid = () => `el_${Date.now().toString(36)}_${(_n++).toString(36)}`;
 
-// Parse a response body as JSON without ever throwing on a non-JSON payload —
+// Parse a response body as JSON without ever throwing on a non-JSON payload -
 // e.g. a platform-level "Request Entity Too Large" plain-text 413. Returns a
 // friendly { ok:false } shape so callers surface a clean message instead of an
 // "Unexpected token … is not valid JSON" crash.
@@ -75,11 +75,11 @@ async function readJson(res: Response): Promise<{ ok?: boolean; error?: string; 
 }
 
 // 3D models are authored Y-up to stand on flat ground. The printed card, laid
-// down to be scanned, IS that ground — so a model dropped in with no tilt has its
+// down to be scanned, IS that ground - so a model dropped in with no tilt has its
 // up-axis lying in the card plane and ends up on its side ("sleeping"). Standing
 // it up means turning the model's +Y to point out of the card face (+Z): a +90°
 // pitch about X. This is a CODE-level baseline (stored in the element's
-// baseRotationX, like baseScale), NOT a user value — so the Tilt slider starts at
+// baseRotationX, like baseScale), NOT a user value - so the Tilt slider starts at
 // 0 (upright) and is a clean offset on top of it. Effective tilt = baseRotationX +
 // rotationX, applied in both the editor preview and the viewer.
 const MODEL_STAND_TILT_X = Math.PI / 2;
@@ -87,7 +87,7 @@ const MODEL_STAND_TILT_X = Math.PI / 2;
 // Measure a glb and return the scale that makes its largest dimension ≈ TARGET
 // card-width units, so an icon and a giant car both land at a usable size. This
 // becomes the element's baseScale; the user's Scale slider is a multiplier on it.
-// Best-effort — returns 1 on any failure (then the slider still works).
+// Best-effort - returns 1 on any failure (then the slider still works).
 const AUTO_FIT_TARGET = 0.3;
 async function fitScaleFor(url: string): Promise<number> {
   try {
@@ -110,7 +110,7 @@ async function fitScaleFor(url: string): Promise<number> {
 // On-device OCR of a card photo via Tesseract.js (dynamically imported so it
 // never weighs down the initial editor bundle). Accepts a File (freshly cropped)
 // or an image URL (an already-saved photo). Returns trimmed text, or "" on any
-// failure — callers must treat it as best-effort.
+// failure - callers must treat it as best-effort.
 async function ocrImageSrc(src: File | string): Promise<string> {
   try {
     const Tesseract = (await import("tesseract.js")).default;
@@ -122,7 +122,7 @@ async function ocrImageSrc(src: File | string): Promise<string> {
 }
 
 // Read a flat asset's true aspect ratio (width / height) so its AR plane keeps
-// the media's real shape instead of being squashed into a square. Best-effort —
+// the media's real shape instead of being squashed into a square. Best-effort -
 // returns a sensible default on any failure (the plane still works).
 function imageAspect(src: string): Promise<number> {
   return new Promise((resolve) => {
@@ -133,7 +133,7 @@ function imageAspect(src: string): Promise<number> {
   });
 }
 // True for a file we host (uploaded to our own storage bucket) vs. a link the
-// owner pasted. We hide the raw bucket URL for hosted files — it's long, ugly,
+// owner pasted. We hide the raw bucket URL for hosted files - it's long, ugly,
 // and confusing to see; the Replace / Delete buttons cover any change they need.
 function isHostedAsset(url?: string | null): boolean {
   return !!url && url.includes("/storage/v1/object/public/");
@@ -182,22 +182,22 @@ const TYPE_ICON: Record<ArElementType, ReactNode> = {
   audio: <IconAudio />,
 };
 
-/** Icon for a layer row — brand glyph for socials, type glyph otherwise. */
+/** Icon for a layer row - brand glyph for socials, type glyph otherwise. */
 function elementIcon(el: ArElement): ReactNode {
   return el.type === "social" ? socialIcon(el.platform) : TYPE_ICON[el.type];
 }
 
-// Social is intentionally NOT an asset tab anymore — social icons are now picked
+// Social is intentionally NOT an asset tab anymore - social icons are now picked
 // as real 3D models from the KaunTech gallery (the flat social billboards are
 // gone). The `social` element type is kept in scene.ts only so cards published
 // before this change still render.
 type AssetTab = "model" | "image" | "video" | "audio" | "text";
 const ASSET_TABS: { key: AssetTab; label: string; hint: string; icon: ReactNode }[] = [
-  { key: "model", label: "3D model", hint: "3D model — pick from the gallery or upload a .glb", icon: <IconBox /> },
-  { key: "image", label: "Image", hint: "Image — a photo or logo shown flat on the card", icon: <IconImage /> },
-  { key: "video", label: "Video", hint: "Video — play a clip on the card (upload or .mp4 link)", icon: <IconVideo /> },
-  { key: "audio", label: "Audio", hint: "Audio — play a sound when the card is scanned", icon: <IconAudio /> },
-  { key: "text", label: "Text", hint: "Text — a line of text in any colour", icon: <IconText /> },
+  { key: "model", label: "3D model", hint: "3D model - pick from the gallery or upload a .glb", icon: <IconBox /> },
+  { key: "image", label: "Image", hint: "Image - a photo or logo shown flat on the card", icon: <IconImage /> },
+  { key: "video", label: "Video", hint: "Video - play a clip on the card (upload or .mp4 link)", icon: <IconVideo /> },
+  { key: "audio", label: "Audio", hint: "Audio - play a sound when the card is scanned", icon: <IconAudio /> },
+  { key: "text", label: "Text", hint: "Text - a line of text in any colour", icon: <IconText /> },
 ];
 
 // Collapsible sidebar section: a header button that toggles its body. Used to
@@ -290,11 +290,11 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   const router = useRouter();
   // Live AR storage budget. Seeded from the server and kept fresh: it ticks up
   // optimistically the moment a model/image uploads, then reconciles against the
-  // authoritative DB total (profiles.cloud_ar_bytes) via /api/ar/usage — so the
+  // authoritative DB total (profiles.cloud_ar_bytes) via /api/ar/usage - so the
   // owner can see what's left before picking another, bigger model.
   const [usedBytes, setUsedBytes] = useState(storageUsedBytes);
   const [capBytes, setCapBytes] = useState(storageCapBytes);
-  // Live AR token pool — seeded from the server and refreshed alongside storage,
+  // Live AR token pool - seeded from the server and refreshed alongside storage,
   // since building/uploading spends tokens too. Shown next to the storage meter
   // in the navbar so the owner sees what's left before another build.
   const [tokUsed, setTokUsed] = useState(tokensUsed);
@@ -338,7 +338,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   const [name, setName] = useState(model?.name ?? card.name ?? "");
   const [sidebarTab, setSidebarTab] = useState<"setup" | "assets" | "layers">("setup");
   const [propsTab, setPropsTab] = useState<"settings" | "layout">("layout");
-  // Cards always publish on save — there's no draft state anymore. Adding or
+  // Cards always publish on save - there's no draft state anymore. Adding or
   // changing the card photo auto-saves (below), so a card goes live the moment it
   // has a photo, with no manual publish step.
   const publish = true;
@@ -347,13 +347,13 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedOnce, setSavedOnce] = useState(!!model);
-  // "Preview on phone" QR sheet — hands the live viewer URL to a phone camera.
+  // "Preview on phone" QR sheet - hands the live viewer URL to a phone camera.
   const [previewOpen, setPreviewOpen] = useState(false);
 
   // Auto-save when a card photo is added or changed: the cropper queues a save
   // (wantAutoSaveRef), and the photo's OCR effect bumps autoSaveTick once the
   // printed text has been read, so the save persists the photo + its OCR text and
-  // publishes — no manual click. saveRef (set further down) holds the latest
+  // publishes - no manual click. saveRef (set further down) holds the latest
   // save() so the queued run sees the freshly-read OCR text, not a stale closure.
   const wantAutoSaveRef = useRef(false);
   const [autoSaveTick, setAutoSaveTick] = useState(0);
@@ -387,8 +387,8 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   const [backScore, setBackScore] = useState<number | null>(null);
   // Identity of the CHOSEN target side's photo (a file by size+mtime, an unchanged
   // side by its url) plus which side is the target. When this differs from what the
-  // current .mind was built from — the target photo changed, or the user switched
-  // which side is the target — the next save recompiles. The non-target side's
+  // current .mind was built from - the target photo changed, or the user switched
+  // which side is the target - the next save recompiles. The non-target side's
   // photo is irrelevant (we only track one side).
   const targetSig = useMemo(() => {
     const src =
@@ -422,7 +422,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   // Dirty tracking: the Save button only appears when the savable state differs
   // from what was last persisted. A freshly cropped photo (frontFile/backFile)
   // or an added/removed side url counts as a change. OCR text is intentionally
-  // excluded — it's captured in the background, not a user edit.
+  // excluded - it's captured in the background, not a user edit.
   const savableSnapshot = useMemo(
     () => JSON.stringify({ elements, lighting, name, publish, target, frontUrl, backUrl }),
     [elements, lighting, name, publish, target, frontUrl, backUrl],
@@ -487,7 +487,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
   // Existing saved photo with no captured text yet → backfill OCR once on load
   // (older cards, or cards set up before OCR existed) so a re-save captures it.
-  // frontOcr is intentionally not a dep — it's the guard, not a trigger.
+  // frontOcr is intentionally not a dep - it's the guard, not a trigger.
   useEffect(() => {
     if (frontFile || !frontUrl || frontOcr) return;
     let alive = true;
@@ -560,7 +560,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
   // Best-effort delete of a session-uploaded asset the owner removed before it
   // was ever saved, so it doesn't linger in the bucket counting against cloud
   // storage. Never touches already-persisted assets (the save-time cleanup owns
-  // those) — so a locally-removed-but-not-saved persisted asset is left intact
+  // those) - so a locally-removed-but-not-saved persisted asset is left intact
   // and the published card keeps working until the removal is actually saved.
   function deleteAsset(url: string) {
     void fetch("/api/ar/asset", {
@@ -638,7 +638,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     setSelectedId(null);
     setSidebarTab("layers");
     // Persist + publish right away when the card already has its photo. Without a
-    // target photo, save() would just error — so leave it placed and let the
+    // target photo, save() would just error - so leave it placed and let the
     // normal post-photo auto-save pick it up once they add one.
     if (hasTarget) {
       wantAutoSaveRef.current = true;
@@ -687,11 +687,11 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     // upload starts (the finalize route re-checks the real bytes authoritatively).
     const maxBytes = AR_ASSET_LIMITS[kind];
     if (file.size > maxBytes) {
-      setError(`That ${kind} is ${formatBytes(file.size)}. The limit is ${formatBytes(maxBytes)} — compress or trim it first.`);
+      setError(`That ${kind} is ${formatBytes(file.size)}. The limit is ${formatBytes(maxBytes)} - compress or trim it first.`);
       return null;
     }
     // Pre-check against the live budget so the owner gets an instant, specific
-    // message ("needs X, only Y left") instead of a generic server rejection —
+    // message ("needs X, only Y left") instead of a generic server rejection -
     // and we don't waste a multi-MB upload the trigger will refuse anyway.
     if (capBytes > 0 && usedBytes + file.size > capBytes) {
       setError(
@@ -706,7 +706,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       // 1) Authorize + sign a direct-to-Storage upload. The file never passes
       //    through our Function, so Vercel's 4.5 MB request-body limit (which used
       //    to reject big .glb models with a 413 the client mis-parsed as JSON) no
-      //    longer applies — these per-kind maxima are the only ceiling.
+      //    longer applies - these per-kind maxima are the only ceiling.
       const signRes = await fetch("/api/ar/asset/sign", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -719,7 +719,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       //    supabase-js derives the STORED content-type from the Blob's own .type
       //    (it ignores the contentType option), and browsers hand a .glb over with
       //    an empty / application/octet-stream type. Re-wrap the bytes with the
-      //    type the server resolved so the object is always correctly typed — and
+      //    type the server resolved so the object is always correctly typed - and
       //    won't 400 if this bucket is ever locked to allowed_mime_types the way
       //    the curated ar-gallery bucket is.
       const storedType = typeof sign.content_type === "string" && sign.content_type ? sign.content_type : file.type;
@@ -728,7 +728,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       const { error: upErr } = await supabase.storage
         .from(AR_BUCKET)
         // cacheControl: paths embed a per-upload randomUUID (never reused), so the
-        // bytes at a URL can't change — cache for a year. Without this Supabase
+        // bytes at a URL can't change - cache for a year. Without this Supabase
         // defaults to max-age=3600 and the AR viewer re-fetches big videos/models
         // every hour.
         .uploadToSignedUrl(sign.path, sign.token, body, { contentType: storedType || undefined, cacheControl: "31536000" });
@@ -797,7 +797,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
     }
   }
   function addAudio() {
-    // Audio is an invisible, card-gated soundtrack — nothing shows on the card in
+    // Audio is an invisible, card-gated soundtrack - nothing shows on the card in
     // AR; it just plays while the card is in view. Paste a direct audio URL or
     // upload a file in its properties (which has an editor-only preview player).
     add({ type: "audio", url: "", loop: true, autoplay: true, scale: 1, rotationY: 0, position: [0, 0.3, 0.06] });
@@ -837,7 +837,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       rotationY: 0,
       position: [0, 0.22, 0.12],
       // Social "coin" models carry their platform so the link field offers the
-      // right handle prefix — same UX as a flat social icon, but actually 3D.
+      // right handle prefix - same UX as a flat social icon, but actually 3D.
       ...(a.platform ? { platform: a.platform, link: "" } : {}),
     });
   }
@@ -899,7 +899,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
       // Re-baseline to exactly what's now persisted so the Save button hides
       // until the next real change.
       baselineRef.current = JSON.stringify({ elements, lighting, name, publish, target, frontUrl: newFront, backUrl: newBack });
-      // Everything in the scene we just saved is now persisted — so a later
+      // Everything in the scene we just saved is now persisted - so a later
       // removal of any of these reverts to the save-time cleanup path, never the
       // immediate delete (which is only for never-saved session uploads).
       persistedAssetsRef.current = new Set(elements.map((e) => e.url).filter(isOurUploadedAsset));
@@ -924,7 +924,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
   // Run the queued auto-save (after a photo was added/changed) once its OCR has
   // completed and bumped autoSaveTick. Goes through saveRef so it calls the latest
-  // save() — capturing the just-read OCR text and the new photo, not stale state.
+  // save() - capturing the just-read OCR text and the new photo, not stale state.
   const saveRef = useRef(save);
   saveRef.current = save;
   useEffect(() => {
@@ -1155,7 +1155,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
           {sidebarTab === "assets" && (
             <div className="ar-sidebar-tab-content fade-in">
-              {/* Templates — one-tap layouts (admin "Default" + the owner's own,
+              {/* Templates - one-tap layouts (admin "Default" + the owner's own,
                   reusable across all their cards). Sits above the Asset Library. */}
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-sm)" }}>
                 <div className="ar-row ar-between">
@@ -1204,7 +1204,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                 {tplLoading && <span className="ar-muted" style={{ fontSize: "12px" }}>Loading templates…</span>}
               </div>
 
-              {/* Assets — add models, images, video, text or social, by category */}
+              {/* Assets - add models, images, video, text or social, by category */}
               {isUltra ? (
               <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-md)" }}>
                 <span className="ar-label" style={{ margin: 0 }}>Asset Library</span>
@@ -1231,7 +1231,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-asset-cta-ico" aria-hidden><IconBox /></span>
                         <span className="ar-asset-cta-text">
                           <span className="ar-asset-cta-title">Choose from KaunTech gallery</span>
-                          <span className="ar-asset-cta-sub">Ready-made 3D models — pick &amp; place instantly</span>
+                          <span className="ar-asset-cta-sub">Ready-made 3D models - pick &amp; place instantly</span>
                         </span>
                         <span className="ar-asset-cta-arrow" aria-hidden><IconChevron /></span>
                       </button>
@@ -1246,11 +1246,11 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </>
                   ) : assetTab === "image" ? (
                     <>
-                      <button className="ar-tab ar-asset-add" title="Add a photo or logo (PNG, JPG or WebP) — counts toward cloud storage" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
+                      <button className="ar-tab ar-asset-add" title="Add a photo or logo (PNG, JPG or WebP) - counts toward cloud storage" onClick={() => imageInput.current?.click()} disabled={!!uploading}>
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         {uploading === "image" ? "Uploading…" : "Add image"}
                       </button>
-                      <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card — up to 8 MB.</span>
+                      <span className="ar-muted ar-asset-hint">A PNG or JPG shown as a flat plane on the card - up to 8 MB.</span>
                     </>
                   ) : assetTab === "video" ? (
                     <>
@@ -1280,15 +1280,15 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         Add audio by URL
                       </button>
-                      <span className="ar-muted ar-asset-hint">Plays automatically while the card is in view — nothing shows on the card. Upload a file or paste a direct audio link.</span>
+                      <span className="ar-muted ar-asset-hint">Plays automatically while the card is in view - nothing shows on the card. Upload a file or paste a direct audio link.</span>
                     </>
                   ) : (
                     <>
-                      <button className="ar-tab ar-asset-add" title="Add a line of text — edit the words and colour in its properties" onClick={addText}>
+                      <button className="ar-tab ar-asset-add" title="Add a line of text - edit the words and colour in its properties" onClick={addText}>
                         <span className="ar-tab-ico" aria-hidden><IconPlus /></span>
                         Add text
                       </button>
-                      <span className="ar-muted ar-asset-hint">A line of text — edit the words and colour in its properties.</span>
+                      <span className="ar-muted ar-asset-hint">A line of text - edit the words and colour in its properties.</span>
                     </>
                   )}
                 </div>
@@ -1297,7 +1297,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                 <div className="ar-card ar-stack" style={{ gap: "var(--ar-sp-sm)" }}>
                   <span className="ar-label" style={{ margin: 0 }}>Custom assets</span>
                   <span className="ar-muted" style={{ fontSize: "12px", lineHeight: 1.5 }}>
-                    Your own 3D models, video, images and audio — and building a scene from scratch — are the Ultra studio. On Pro you can apply any template above, edit its text, set your card photo, and publish. Upgrade to Ultra in the app to unlock the full AR studio.
+                    Your own 3D models, video, images and audio - and building a scene from scratch - are the Ultra studio. On Pro you can apply any template above, edit its text, set your card photo, and publish. Upgrade to Ultra in the app to unlock the full AR studio.
                   </span>
                 </div>
               )}
@@ -1360,14 +1360,14 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
           )}
         </div>
 
-        {/* Right: properties — appears when a layer is selected */}
+        {/* Right: properties - appears when a layer is selected */}
         <aside className={`ar-props ${selected ? "is-open" : ""}`}>
           {selected ? (
             <div className="ar-card ar-stack">
               <div className="ar-row ar-between" style={{ borderBottom: "1px solid var(--ar-border)", paddingBottom: "12px" }}>
                 <span className="ar-label" style={{ margin: 0 }}>{typeLabel(selected)} Properties</span>
                 {/* Closes the bottom sheet on small screens (deselects the layer).
-                    Hidden on desktop via CSS — the side panel needs no close there. */}
+                    Hidden on desktop via CSS - the side panel needs no close there. */}
                 <button
                   type="button"
                   className="ar-icon-btn ar-props-close"
@@ -1453,13 +1453,13 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                               const url = e.target.value.trim();
                               update(selected.id, { url });
                               // Read the clip's real aspect so its plane isn't forced to a
-                              // shape — keeps the preview and AR matching the actual video.
+                              // shape - keeps the preview and AR matching the actual video.
                               if (url) videoAspect(url).then((a) => update(selected.id, { aspect: a }));
                             }}
                           />
                           {selected.url && isStreamingPageUrl(selected.url) ? (
                             <span className="ar-target-warn" style={{ marginTop: 6, display: "block" }}>
-                              YouTube / Vimeo links don’t play in AR — they’re web pages, not video files. Upload the clip above, or paste a direct .mp4/.webm file link.
+                              YouTube / Vimeo links don’t play in AR - they’re web pages, not video files. Upload the clip above, or paste a direct .mp4/.webm file link.
                             </span>
                           ) : selected.url && !isDirectVideoUrl(selected.url) ? (
                             <span className="ar-muted" style={{ fontSize: "11px", marginTop: 6, display: "block", color: "var(--ar-orange-deep)" }}>
@@ -1472,7 +1472,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           )}
                         </>
                       )}
-                      {/* Editor-only preview player — scrub / fast-forward to check
+                      {/* Editor-only preview player - scrub / fast-forward to check
                           the clip while composing. Editor-only: it has nothing to do
                           with the AR view and never ships there. */}
                       {selected.url && !isStreamingPageUrl(selected.url) && (
@@ -1496,7 +1496,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         <span style={{ fontSize: "14px" }}>Loop the video</span>
                       </label>
 
-                      {/* Sound controls — mute, volume, and playback speed. */}
+                      {/* Sound controls - mute, volume, and playback speed. */}
                       <span className="ar-label" style={{ marginTop: 14, display: "block" }}>Sound</span>
                       <label className="ar-row" style={{ gap: 8, cursor: "pointer", marginBottom: 10 }}>
                         <input type="checkbox" checked={selected.muted ?? false}
@@ -1531,7 +1531,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                         ))}
                       </div>
 
-                      {/* Tap Action — open a link when the video is tapped in AR. */}
+                      {/* Tap Action - open a link when the video is tapped in AR. */}
                       <div className="ar-row ar-between" style={{ marginTop: 14, marginBottom: 4 }}>
                         <label className="ar-label" style={{ margin: 0 }}>Tap Action (redirect link)</label>
                         {selected.link && (
@@ -1571,7 +1571,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                       )}
                       {isHostedAsset(selected.url) ? (
                         <span className="ar-muted" style={{ fontSize: "11px", marginTop: 2, display: "block" }}>
-                          Your clip plays automatically while the card is in view. Nothing shows on the card — use the player below to check it.
+                          Your clip plays automatically while the card is in view. Nothing shows on the card - use the player below to check it.
                         </span>
                       ) : (
                         <>
@@ -1594,7 +1594,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                           )}
                         </>
                       )}
-                      {/* Editor-only preview player — lets you check the clip here
+                      {/* Editor-only preview player - lets you check the clip here
                           while composing. Has nothing to do with the AR view (where
                           audio is invisible and just plays); it never ships to AR. */}
                       {selected.url && !isStreamingPageUrl(selected.url) && (
@@ -1645,7 +1645,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </div>
                   )}
 
-                  {/* Behaviours — audio has no visible body to spin, so it's skipped. */}
+                  {/* Behaviours - audio has no visible body to spin, so it's skipped. */}
                   {selected.type !== "audio" && (
                   <div className="ar-stack" style={{ gap: 8 }}>
                     <span className="ar-label" style={{ margin: 0 }}>Behaviour Settings</span>
@@ -1704,7 +1704,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
               {propsTab === "layout" && (
                 <div className="ar-properties-tab-content fade-in ar-stack">
-                  {/* Position — left/right, up/down, depth. Drag the dots in the 3D
+                  {/* Position - left/right, up/down, depth. Drag the dots in the 3D
                       view or type exact values. */}
                   <div className="ar-transform-group">
                     <span className="ar-label">Position Alignment</span>
@@ -1731,7 +1731,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </span>
                   </div>
 
-                  {/* Rotation — tilt (X), turn (Y), roll (Z) in degrees. */}
+                  {/* Rotation - tilt (X), turn (Y), roll (Z) in degrees. */}
                   <div className="ar-transform-group">
                     <span className="ar-label">Rotation Alignment</span>
                     <TransformSlider
@@ -1754,7 +1754,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
                     </span>
                   </div>
 
-                  {/* Scale — a multiplier of the auto-fit size (1× = fitted). */}
+                  {/* Scale - a multiplier of the auto-fit size (1× = fitted). */}
                   <div className="ar-transform-group">
                     <span className="ar-label">Size Scale</span>
                     <TransformSlider
@@ -1778,7 +1778,7 @@ export default function Editor({ card, model, galleryAssets = [], tier, storageU
 
 /* ── "Preview on phone" sheet ─────────────────────────────────────────────
    A QR of the card's public WebAR viewer URL: scan it with the phone camera
-   and the published experience opens right there — the classic 3D-studio
+   and the published experience opens right there - the classic 3D-studio
    handoff. Pure UI: nothing about the save/publish flow changes. */
 function PhonePreviewSheet({ cardId, dirty, onClose }: { cardId: string; dirty: boolean; onClose: () => void }) {
   const [qrPng, setQrPng] = useState<string | null>(null);
@@ -1821,7 +1821,7 @@ function PhonePreviewSheet({ cardId, dirty, onClose }: { cardId: string; dirty: 
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      /* clipboard unavailable — the visible link row still allows manual copy */
+      /* clipboard unavailable - the visible link row still allows manual copy */
     }
   }
 
@@ -1832,7 +1832,7 @@ function PhonePreviewSheet({ cardId, dirty, onClose }: { cardId: string; dirty: 
           <div>
             <h3 className="ar-share-title">Preview on your phone</h3>
             <p className="ar-share-sub">
-              Point your phone camera at the QR — your card&apos;s live AR experience opens in the browser.
+              Point your phone camera at the QR - your card&apos;s live AR experience opens in the browser.
               Have the printed card (or its photo on a second screen) ready to scan.
             </p>
           </div>
@@ -1852,7 +1852,7 @@ function PhonePreviewSheet({ cardId, dirty, onClose }: { cardId: string; dirty: 
 
         {dirty ? (
           <p className="ar-muted" style={{ margin: 0, textAlign: "center" }}>
-            You have unsaved changes — the phone shows the last published version.
+            You have unsaved changes - the phone shows the last published version.
           </p>
         ) : null}
 

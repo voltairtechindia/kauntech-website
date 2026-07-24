@@ -35,10 +35,10 @@ interface Props {
 }
 
 /**
- * The composer canvas — a Kivicube-style "land": the card lies FLAT on a floor
+ * The composer canvas - a Kivicube-style "land": the card lies FLAT on a floor
  * and you arrange 3D content standing on it, viewed from a 3/4 angle you can orbit
  * and pan around. The stored scene is still card-relative (card in its own XY
- * plane, content floating out along +Z — the SAME convention the WebAR viewer uses
+ * plane, content floating out along +Z - the SAME convention the WebAR viewer uses
  * on the image-target anchor); a single stage group rotated -90° about X lays that
  * plane down as ground, so card +Z (float-out) reads as world +Y (up). Stored
  * coordinates are untouched, so the published viewer is unaffected.
@@ -52,7 +52,7 @@ export default function SceneViewport({
 }: Props) {
   const stageRef = useRef<THREE.Group>(null);
   // Re-frame the camera only when the *set* of visible content changes (a model
-  // added / removed / swapped / un-hidden) — NOT on every slider tweak, so tuning
+  // added / removed / swapped / un-hidden) - NOT on every slider tweak, so tuning
   // position or scale never yanks the view you've set up.
   const framingKey = useMemo(
     () => elements.filter((e) => !e.hidden).map((e) => `${e.id}:${e.url ?? ""}`).join("|"),
@@ -66,7 +66,7 @@ export default function SceneViewport({
       <directionalLight position={[2, 3, 5]} intensity={1.2} castShadow />
       <directionalLight position={[-3, 1, 2]} intensity={0.4} />
 
-      {/* Premium image-based lighting — mirrors the AR viewer's in-memory studio
+      {/* Premium image-based lighting - mirrors the AR viewer's in-memory studio
           environment so glossy / metallic models (car bodies, chrome, glass) show
           the same soft reflections here as on the card. Built once from a few light
           panels (frames={1}, no network fetch / no HDR download). */}
@@ -78,11 +78,11 @@ export default function SceneViewport({
 
       {/* The "land": a horizontal floor the card sits on. A faint ground plane
           (receives shadows) under a grid, so the card reads as resting on a real
-          surface you look ACROSS — not a poster you orbit. World XZ plane, y≈0.
+          surface you look ACROSS - not a poster you orbit. World XZ plane, y≈0.
 
           The ground + grid are a REFERENCE surface, NOT a wall: they render first and
           DON'T write depth, so a model placed below the card (e.g. a stand "holding"
-          the card, whose base sits under the surface) is never hidden by the floor —
+          the card, whose base sits under the surface) is never hidden by the floor -
           you can see it from the top, or any angle. Before this, the opaque plane
           sliced through and occluded anything below y≈0. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.014, 0]} receiveShadow renderOrder={-2}>
@@ -91,13 +91,13 @@ export default function SceneViewport({
       </mesh>
       <gridHelper args={[3, 24, "#cfccc5", "#e4e1dc"]} position={[0, -0.012, 0]} renderOrder={-1} material-depthWrite={false} />
 
-      {/* Ground stage. The stored scene is card-relative — the card lives in its own
+      {/* Ground stage. The stored scene is card-relative - the card lives in its own
           XY plane with content floating out along +Z. Rotating the whole stage -90°
           about X LAYS THE CARD DOWN FLAT like ground: card +Z (float-out) becomes
           world +Y (up), so a model tilted to stand on the card now stands UPRIGHT on
           the land, exactly like the real scan of a card lying on a table. card +X
           stays world +X (left/right) and card +Y becomes world -Z (forward/back on
-          the ground). Stored coordinates are untouched — only how we view them. */}
+          the ground). Stored coordinates are untouched - only how we view them. */}
       <group ref={stageRef} rotation={[-Math.PI / 2, 0, 0]}>
         {/* The card (tracking target) */}
         <CardBase referenceImageUrl={referenceImageUrl} cardColor={cardColor} onSelect={onSelect} />
@@ -113,7 +113,7 @@ export default function SceneViewport({
 
       {/* Keeps the orbit pivot on the CENTRE of whatever you've placed and fits the
           camera to it, so a big model (e.g. one "holding" the card) stays centred and
-          easy to circle instead of pivoting around the card at the floor — which swung
+          easy to circle instead of pivoting around the card at the floor - which swung
           tall models out of frame and left no way to zoom out far enough. It only acts
           on load / when the content set changes, and bails the instant you touch the
           camera, so it never fights a manual orbit. target + min/max distance are
@@ -123,8 +123,8 @@ export default function SceneViewport({
       {/* Orbit/pan/zoom around the land, Kivicube-style. Left-drag circles the
           content (full 360° horizontally), right-drag (or two-finger) pans across the
           ground, wheel zooms. enableDamping keeps it smooth. The vertical range is now
-          almost the whole sphere, so you can inspect the model from ANY direction —
-          top-down, level, or from underneath — not just down to the card. */}
+          almost the whole sphere, so you can inspect the model from ANY direction -
+          top-down, level, or from underneath - not just down to the card. */}
       <OrbitControls
         makeDefault
         enablePan
@@ -151,7 +151,7 @@ type FrameControls = {
   removeEventListener: (type: "start", cb: () => void) => void;
 };
 
-// ~1.6s of settling frames after a content change — long enough to catch an async
+// ~1.6s of settling frames after a content change - long enough to catch an async
 // .glb that pops into the scene a beat after the element is added, so the model (not
 // just the empty card) is what gets framed.
 const SETTLE_FRAMES = 100;
@@ -159,7 +159,7 @@ const SETTLE_FRAMES = 100;
 /**
  * Auto-frame: parks the OrbitControls pivot on the centre of the placed content and
  * pulls the camera back to fit it. Without this the pivot sat at the card on the
- * floor, so a large model — e.g. one "holding" the card — swung out of frame the
+ * floor, so a large model - e.g. one "holding" the card - swung out of frame the
  * moment you orbited, couldn't be zoomed out far enough (old maxDistance was 8, but
  * scale goes to 40×), and couldn't be seen from every side. This measures the live
  * scene each frame for a short window after the content set changes (catching async
@@ -232,7 +232,7 @@ function AutoFrame({
     controls.maxDistance = Math.max(8, fitDist * 4);
 
     // Reposition the camera on the first solid measure, and again if the box grows
-    // (an async model just streamed in) — always keeping the current view angle.
+    // (an async model just streamed in) - always keeping the current view angle.
     if (maxDim > framedMax.current * 1.02) {
       dir.copy(camera.position).sub(center);
       if (dir.lengthSq() < 1e-6) dir.set(0, 1.1, 1.85);
@@ -258,7 +258,7 @@ function CardBase({
 }) {
   const W = 1;
   // Exact business-card aspect (3.5×2in → 1/1.75), matching the cropper's frame
-  // and the MindAR target's normalized width=1 — so element X/Y placed here lands
+  // and the MindAR target's normalized width=1 - so element X/Y placed here lands
   // in the same spot when scanned.
   const H = 1 / 1.75;
   const usable = referenceImageUrl && /^https?:\/\//i.test(referenceImageUrl);
@@ -281,7 +281,7 @@ function CardBase({
   );
 }
 
-// Elements are positioned/rotated/scaled entirely from the right-panel sliders —
+// Elements are positioned/rotated/scaled entirely from the right-panel sliders -
 // there's no in-viewport gizmo. Clicking an element just selects it (and shows the
 // selection box); a click on an already-selected element offers to open its link.
 function ElementNode({
@@ -300,7 +300,7 @@ function ElementNode({
     // published AR viewer, or multi-axis rotations diverge between the editor and
     // AR (tilt/turn looked inverted). A-Frame applies rotation in 'YXZ' order, so
     // the editor preview is given the explicit 'YXZ' order too (the array's 4th
-    // element). Single-axis rotations are identical in any order — which is why this
+    // element). Single-axis rotations are identical in any order - which is why this
     // only surfaced once a model used all three. (YXZ = the intuitive turn→tilt→roll
     // order for the sliders anyway.) The viewer is unchanged, so no published card's
     // AR look shifts; the editor just becomes WYSIWYG for AR.
@@ -313,7 +313,7 @@ function ElementNode({
   );
 }
 
-// Selection highlight: a tight wireframe box around whatever is selected — model,
+// Selection highlight: a tight wireframe box around whatever is selected - model,
 // text, image, video, social or audio. Re-measured each frame in the element's
 // OWN local frame (so it tracks animation / rotation / scale), and drawn on top
 // (depthTest off) so it stays legible against any content. No fill, no ground disc.
@@ -390,8 +390,8 @@ function ElementBody({
     const placeholder = <ModelPlaceholder />;
     return (
       <group onClick={click}>
-        {/* A model that fails to load or decode — a huge file, a per-GPU texture/
-            material/shadow limit, a corrupt .glb — falls back to a neutral stand-in
+        {/* A model that fails to load or decode - a huge file, a per-GPU texture/
+            material/shadow limit, a corrupt .glb - falls back to a neutral stand-in
             instead of throwing and taking the WHOLE canvas down with it. Images and
             video already had this net; models were the one type left without it, so
             one bad gallery model could blank the entire editor. */}
@@ -416,7 +416,7 @@ function ElementBody({
     return (
       <group onClick={click}>
         {/* A broken image (bad URL / load failure) falls back to a neutral plane
-            instead of throwing and blanking the whole canvas — same safety net as
+            instead of throwing and blanking the whole canvas - same safety net as
             video. */}
         <MediaErrorBoundary key={element.url} fallback={placeholder}>
           <Suspense fallback={placeholder}>
@@ -440,7 +440,7 @@ function ElementBody({
         >
           {element.text || "Text"}
           {/* Double-sided so the text is still readable when the card is viewed
-              from behind in AR — matches the viewer's side:double a-text. */}
+              from behind in AR - matches the viewer's side:double a-text. */}
           <meshBasicMaterial side={THREE.DoubleSide} color={element.color || "#18181b"} toneMapped={false} />
         </Text>
       </group>
@@ -461,7 +461,7 @@ function ElementBody({
     );
   }
 
-  // Audio is an invisible, card-gated soundtrack — nothing is drawn on the card
+  // Audio is an invisible, card-gated soundtrack - nothing is drawn on the card
   // (matching the AR view, which shows no chip either). It's added, selected,
   // previewed and edited entirely from the side panels (Layers list + Audio
   // Properties), never as an on-card element.
@@ -470,8 +470,8 @@ function ElementBody({
   }
 
   // Video: render the REAL clip (aspect-correct, double-sided) so the editor is
-  // WYSIWYG with the published AR. Until a URL is pasted — or if a cross-origin
-  // mp4 can't be used as a texture — fall back to the labelled placeholder.
+  // WYSIWYG with the published AR. Until a URL is pasted - or if a cross-origin
+  // mp4 can't be used as a texture - fall back to the labelled placeholder.
   if (element.type === "video") {
     const [w, h] = flatPlaneSize(element.aspect, FLAT_BASE.video);
     const placeholder = <VideoPlaceholder w={w} h={h} />;
@@ -494,7 +494,7 @@ function ElementBody({
 }
 
 // A flat image plane: the texture's true aspect (no square crop) and double-sided
-// so it's visible from behind the card — the published a-image now matches.
+// so it's visible from behind the card - the published a-image now matches.
 function ImagePlane({ url, aspect }: { url: string; aspect?: number }) {
   const tex = useTexture(url);
   const [w, h] = flatPlaneSize(aspect, FLAT_BASE.image);
@@ -512,7 +512,7 @@ function ImagePlane({ url, aspect }: { url: string; aspect?: number }) {
 function VideoPlane({ url, w, h, rate }: { url: string; w: number; h: number; rate?: number }) {
   const tex = useVideoTexture(url, { muted: true, loop: true, start: true, playsInline: true, crossOrigin: "anonymous" });
   // Mirror the AR clip's playback speed so the editor preview matches what plays.
-  // (Sound stays muted in the editor — preview only, no surprise audio.)
+  // (Sound stays muted in the editor - preview only, no surprise audio.)
   useEffect(() => {
     const v = tex.image as HTMLVideoElement | undefined;
     if (v) v.playbackRate = Number(rate) > 0 ? Number(rate) : 1;
@@ -594,7 +594,7 @@ function GlbModel({
   const { scene, animations } = useGLTF(url);
   const groupRef = useRef<THREE.Group>(null);
 
-  // Use SkeletonUtils.clone() — it preserves bone/skeleton bindings that skinned
+  // Use SkeletonUtils.clone() - it preserves bone/skeleton bindings that skinned
   // meshes (animated avatars, characters, creatures) depend on. The naive
   // scene.clone() severs these references, causing animated models to render as
   // distorted blobs or disappear entirely. Also cache original material colors

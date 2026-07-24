@@ -5,8 +5,8 @@ import type { TokenBreakdown } from "@/lib/ar/db";
 
 /**
  * Lets the editor publish its LIVE storage + token figures (which tick up as
- * assets are uploaded / cards are built) so the navbar — rendered above the
- * editor in the tree — can show them. Pages that render <ArHeader/> without this
+ * assets are uploaded / cards are built) so the navbar - rendered above the
+ * editor in the tree - can show them. Pages that render <ArHeader/> without this
  * provider (the /ar dashboard, login) just get `null` and keep their normal
  * account area.
  */
@@ -25,7 +25,7 @@ const Ctx = createContext<StorageMeterCtx | null>(null);
 export function StorageMeterProvider({ children }: { children: ReactNode }) {
   const [meter, setMeter] = useState<Snapshot>(null);
   const [tokens, setTokens] = useState<TokenSnapshot>(null);
-  // Equality-guarded so re-publishing the same figure is a no-op — avoids a
+  // Equality-guarded so re-publishing the same figure is a no-op - avoids a
   // publish → re-render → publish loop with the editor's effect.
   const publish = useCallback((used: number, cap: number, label: string) => {
     setMeter((prev) =>

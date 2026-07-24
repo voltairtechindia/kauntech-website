@@ -23,12 +23,12 @@ export interface DashItem {
   phone: string | null;
   email: string | null;
   website: string | null;
-  /** Card accent (#RRGGBB) — drives the gradient border, like the app card. */
+  /** Card accent (#RRGGBB) - drives the gradient border, like the app card. */
   accent: string;
   avatarUrl: string | null;
   isDefault: boolean;
   /** The vCard payload the card's QR encodes (built server-side, same as the
-   *  app) — powers the Share sheet's .vcf download and high-res QR. */
+   *  app) - powers the Share sheet's .vcf download and high-res QR. */
   vcard: string;
 }
 
@@ -66,7 +66,7 @@ export default function CardsDashboard({
   const [error, setError] = useState<string | null>(null);
   // Card whose Share sheet is open (QR download / .vcf / AR link).
   const [shareItem, setShareItem] = useState<DashItem | null>(null);
-  // Cards whose AR we just removed — optimistically flip them to idle ("Set up
+  // Cards whose AR we just removed - optimistically flip them to idle ("Set up
   // AR") until the server refetch lands. We never hide the card itself: removing
   // AR on the web keeps the underlying business card (cards are app-only).
   const [unArmedIds, setUnArmedIds] = useState<Set<string>>(new Set());
@@ -81,7 +81,7 @@ export default function CardsDashboard({
   // Active first, then cards waiting to have AR added.
   const ordered = [...visible].sort((a, b) => Number(b.status !== "none") - Number(a.status !== "none"));
 
-  // Re-pull the server state whenever the tab regains focus — so coming back
+  // Re-pull the server state whenever the tab regains focus - so coming back
   // from the editor (or the app) reflects new/edited AR cards without a manual
   // reload. The page is force-dynamic, so this just re-runs the server render.
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function CardsDashboard({
             </li>
             <li>
               AR building spends from your monthly token pool, shared with the app&apos;s AI
-              features: a build uses 60–80 tokens, a 3D model 40, a video 100.
+              features: a build uses 60-80 tokens, a 3D model 40, a video 100.
             </li>
           </ul>
         </details>
@@ -196,7 +196,7 @@ export default function CardsDashboard({
                 className={`ar-tile ar-cardtile ${active ? "" : "ar-tile-idle"}`}
                 style={{ ["--tile-accent" as string]: item.accent }}
               >
-                {/* App-style business card face — dark, accent gradient border,
+                {/* App-style business card face - dark, accent gradient border,
                     QR hero, identity, contact rows and the KAUNTECH wordmark. */}
                 <div className="ar-cardface">
                   {active ? (
@@ -227,7 +227,7 @@ export default function CardsDashboard({
                         <span className="ar-cardface-monogram">{initialOf(item.name)}</span>
                       )}
                       {item.qrSrc && item.qrGenerated ? (
-                        // Center K badge — only on QRs we generate, matching the app.
+                        // Center K badge - only on QRs we generate, matching the app.
                         // A user's custom QR image is shown untouched.
                         // eslint-disable-next-line @next/next/no-img-element
                         <img className="ar-cardface-qrlogo" src="/assets/logo-mark.png" alt="" />
@@ -313,7 +313,7 @@ export default function CardsDashboard({
                         <IconExternal /> View AR
                       </a>
                     ) : null}
-                    <button className="ar-icon-btn-bordered" title="Share — QR, contact file & AR link" aria-label="Share this card" onClick={() => setShareItem(item)}>
+                    <button className="ar-icon-btn-bordered" title="Share - QR, contact file & AR link" aria-label="Share this card" onClick={() => setShareItem(item)}>
                       <IconShare />
                     </button>
                     <button className="ar-icon-btn-bordered ar-icon-danger" title="Remove the AR from this card (keeps the card)" onClick={() => setConfirmId(item.id)}>
@@ -331,7 +331,7 @@ export default function CardsDashboard({
                         <IconPlus /> Set up AR
                       </Link>
                     )}
-                    <button className="ar-icon-btn-bordered" title="Share — QR & contact file" aria-label="Share this card" onClick={() => setShareItem(item)}>
+                    <button className="ar-icon-btn-bordered" title="Share - QR & contact file" aria-label="Share this card" onClick={() => setShareItem(item)}>
                       <IconShare />
                     </button>
                   </div>
@@ -350,8 +350,8 @@ export default function CardsDashboard({
 /* ── Share sheet ──────────────────────────────────────────────────────────
    Everything the owner needs to hand their card around, generated fully
    client-side: a high-res contact QR (same vCard payload + center K badge as
-   the app's generated QR), a downloadable .vcf, and — when the AR is
-   published — the public viewer link a phone opens straight into. */
+   the app's generated QR), a downloadable .vcf, and - when the AR is
+   published - the public viewer link a phone opens straight into. */
 function ShareSheet({ item, onClose }: { item: DashItem; onClose: () => void }) {
   const [qrPng, setQrPng] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -368,7 +368,7 @@ function ShareSheet({ item, onClose }: { item: DashItem; onClose: () => void }) 
   }, [onClose]);
 
   // Build the QR lazily (dynamic import keeps `qrcode` out of the page chunk),
-  // then overlay the K badge on a canvas — errorCorrectionLevel M leaves room
+  // then overlay the K badge on a canvas - errorCorrectionLevel M leaves room
   // for a ~26% centre logo, exactly like the app's QRGenerator.
   useEffect(() => {
     let alive = true;
@@ -443,7 +443,7 @@ function ShareSheet({ item, onClose }: { item: DashItem; onClose: () => void }) 
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      /* clipboard unavailable — the visible link row still allows manual copy */
+      /* clipboard unavailable - the visible link row still allows manual copy */
     }
   }
 

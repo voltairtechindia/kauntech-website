@@ -11,7 +11,7 @@ import LeadConversion from "@/components/LeadConversion";
 import Ic from "@/components/ui/Icon";
 
 export const metadata: Metadata = {
-  title: "Thanks — we've got your message",
+  title: "Thanks - we've got your message",
   description: "Your message has reached the Kauntech team. We'll reply within one business day.",
   // A conversion landing page has no search value and must never be indexed.
   robots: { index: false, follow: false },
@@ -39,7 +39,7 @@ export default function ContactThankYouPage() {
           >
             <Ic icon={CircleCheck} className="thankyou-icon" />
             <h1 className="contact-heading" style={{ marginTop: 20 }}>
-              Thanks — your message is in
+              Thanks - your message is in
             </h1>
             <p
               style={{
@@ -60,7 +60,7 @@ export default function ContactThankYouPage() {
                 <li>
                   <Ic icon={Smartphone} />
                   <span>
-                    <Link href="/">Download the app</Link> and scan your first card free — no account
+                    <Link href="/">Download the app</Link> and scan your first card free - no account
                     needed.
                   </span>
                 </li>

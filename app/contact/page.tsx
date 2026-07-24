@@ -3,7 +3,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import Contact from "@/components/sections/Contact";
 
 export const metadata: Metadata = {
-  title: "Contact Us — Book a Demo or Get a Price",
+  title: "Contact Us - Book a Demo or Get a Price",
   description:
     "Message the Kauntech team to book a demo, get pricing for your team, or ask about integrations and DPDP compliance. We reply within one business day.",
   alternates: { canonical: "/contact" },

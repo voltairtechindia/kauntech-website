@@ -19,7 +19,7 @@ const PhoneCanvas = dynamic(() => import("@/components/phone/PhoneCanvas"), { ss
  * One persistent 3D iPhone (fixed canvas overlay) flies from the hero into the
  * story, crossing the viewport and flipping between chapters while its live
  * screen swaps to the real app screen being narrated. Mobile / reduced-motion
- * get a stacked story with self-animating CSS phones instead — same content.
+ * get a stacked story with self-animating CSS phones instead - same content.
  * Chapter names & feature strings mirror the actual app (kauntech-app repo).
  */
 
@@ -41,10 +41,10 @@ const CHAPTERS: Chapter[] = [
         Point. It reads the card <em>before you blink.</em>
       </>
     ),
-    body: "The OCR engine lives on your phone — not on a server. Auto-capture locks on, reads the card and saves the contact with zero internet. Basement expo hall, airplane mode: doesn't matter.",
+    body: "The OCR engine lives on your phone - not on a server. Auto-capture locks on, reads the card and saves the contact with zero internet. Basement expo hall, airplane mode: doesn't matter.",
     bullets: [
       "Offline-first, on-device OCR",
-      "Paper cards, QR codes & NFC tap — one scanner",
+      "Paper cards, QR codes & NFC tap - one scanner",
       "Auto-capture with front + back dual scan",
     ],
     screen: 1,
@@ -61,7 +61,7 @@ const CHAPTERS: Chapter[] = [
     bullets: [
       "Sheets · WhatsApp · Gmail · Telegram · Webhooks",
       "Under 30 seconds, scan to synced",
-      "Your CRM via webhook — no lock-in",
+      "Your CRM via webhook - no lock-in",
     ],
     screen: 2,
   },
@@ -73,11 +73,11 @@ const CHAPTERS: Chapter[] = [
         A company dossier, <em>while you shake hands.</em>
       </>
     ),
-    body: "Deep AI Intel Scan reads their website, latest news and growth signals — then hands you personalization hooks, decision power and the engagement angle that opens the door.",
+    body: "Deep AI Intel Scan reads their website, latest news and growth signals - then hands you personalization hooks, decision power and the engagement angle that opens the door.",
     bullets: [
       "Company dossier + latest news & moves",
       "Decision power & personalization hooks",
-      "50 tokens per dossier — pay per use",
+      "50 tokens per dossier - pay per use",
     ],
     screen: 3,
   },
@@ -89,7 +89,7 @@ const CHAPTERS: Chapter[] = [
         The dossier becomes <em>a playbook.</em>
       </>
     ),
-    body: "AI Sales Strategy reads the intel and calls the deal — pursue, nurture or pass — then arms you with the opener, the objection to expect and your next move. Your pipeline keeps score in Hot, Warm and Cold.",
+    body: "AI Sales Strategy reads the intel and calls the deal - pursue, nurture or pass - then arms you with the opener, the objection to expect and your next move. Your pipeline keeps score in Hot, Warm and Cold.",
     bullets: [
       "Deal Verdict with a confidence score",
       "Openers, objections & next moves",
@@ -105,7 +105,7 @@ const CHAPTERS: Chapter[] = [
         Your card <em>comes alive</em> in their camera.
       </>
     ),
-    body: "Build an AR twin of your V-Card in the kauntech.com/ar studio — 3D logo, intro video, voice note. When someone scans your card with Kauntech, it lifts off the paper. That's the card they remember.",
+    body: "Build an AR twin of your V-Card in the kauntech.com/ar studio - 3D logo, intro video, voice note. When someone scans your card with Kauntech, it lifts off the paper. That's the card they remember.",
     bullets: [
       "3D models, video & audio on your card",
       "Design in the browser at kauntech.com/ar",
@@ -133,11 +133,11 @@ export default function HomeExperience() {
   const [canvasOn, setCanvasOn] = useState(false); // capability gate (desktop + webgl + motion ok)
   const [canvasLive, setCanvasLive] = useState(true); // lifecycle within the page
 
-  // Capability gate — only mount WebGL on motion-friendly desktops with REAL
-  // GPU acceleration. Software renderers (SwiftShader/llvmpipe — headless
+  // Capability gate - only mount WebGL on motion-friendly desktops with REAL
+  // GPU acceleration. Software renderers (SwiftShader/llvmpipe - headless
   // browsers, GPU-less VMs, Lighthouse bots) technically expose WebGL but run
   // the whole scene on the CPU main thread (~10 s of blocking time), so they
-  // get the CssPhone fallback instead — same content, designed for exactly
+  // get the CssPhone fallback instead - same content, designed for exactly
   // this case.
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
@@ -173,7 +173,7 @@ export default function HomeExperience() {
   }, [canvasOn]);
 
   // Hero glow leans toward the cursor. The hero background is opaque, so the
-  // global AuraField orb can't show through here — instead the whole glow field
+  // global AuraField orb can't show through here - instead the whole glow field
   // drifts a few px toward the pointer while each aurora keeps its own breathe.
   useEffect(() => {
     const bg = heroBgRef.current;
@@ -265,7 +265,7 @@ export default function HomeExperience() {
             snap: {
               snapTo: (value: number) => {
                 const seg = value * STORY_SPAN;
-                if (seg < 0.12 || seg > SEGMENTS + 0.32) return value; // entering/leaving — don't yank
+                if (seg < 0.12 || seg > SEGMENTS + 0.32) return value; // entering/leaving - don't yank
                 const i = Math.min(Math.max(Math.round(seg - 0.25), 0), SEGMENTS);
                 return (i + 0.25) / STORY_SPAN;
               },
@@ -284,7 +284,7 @@ export default function HomeExperience() {
 
         // Beat sheet per segment (see components/phone/flight.ts): the outgoing
         // text is fully gone BEFORE the incoming one starts, and both are hidden
-        // while the phone crosses the middle — nothing ever overlaps.
+        // while the phone crosses the middle - nothing ever overlaps.
         texts.forEach((el, i) => {
           if (i > 0) {
             tl.fromTo(
@@ -354,7 +354,7 @@ export default function HomeExperience() {
               Never lose a <em>business&nbsp;card</em> again.
             </h1>
             <p className="k-hero-sub">
-              Kauntech is India&apos;s first offline-first AI business card scanner — capture, enrich and
+              Kauntech is India&apos;s first offline-first AI business card scanner - capture, enrich and
               route leads to your CRM in 30 seconds, with every scan processed on your phone. Private by
               architecture, DPDP Act 2023 compliant.
             </p>
@@ -382,7 +382,7 @@ export default function HomeExperience() {
           </div>
 
           <div className="k-hero-stage" aria-hidden="true">
-            {/* mobile / no-WebGL phone — the 3D one takes over on desktop */}
+            {/* mobile / no-WebGL phone - the 3D one takes over on desktop */}
             {!canvasOn && (
               <CssPhone className="k-hero-cssphone" scale={0.66}>
                 <CardScreen />
