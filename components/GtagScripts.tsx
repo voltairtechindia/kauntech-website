@@ -1,31 +1,37 @@
 import Script from "next/script";
-import { GA_ID, ADS_ID } from "@/lib/gtag";
+import { TAG_ID, ADS_ID } from "@/lib/gtag";
 
-// Loads Google Analytics 4 (gtag.js) ONCE, then configures BOTH the GA4 property
-// and the Google Ads conversion account on the same tag, and wires lightweight
-// scroll-depth + outbound-link tracking. Rendered a single time from
-// app/layout.tsx (do not also inline gtag elsewhere or pageviews double-count).
-// CSP allowances for every Google origin used here live in next.config.ts.
+// Loads the Kauntech Google tag (gtag.js) ONCE, then configures BOTH that tag
+// (which routes to GA4 G-128KNMQQRX) and the Google Ads conversion account, and
+// wires lightweight scroll-depth + outbound-link tracking. Rendered a single
+// time from app/layout.tsx (do not also inline gtag elsewhere or pageviews
+// double-count). CSP allowances for every Google origin live in next.config.ts.
 //
-// strategy="lazyOnload": gtag.js + the Ads container it chains are ~370 KB of
-// JS with 300 ms+ of main-thread tasks - loading them during the load window
-// was the site's single largest "unused JavaScript" / long-task source on
-// PageSpeed. Post-load loading loses no data: page_view fires when gtag.js
-// processes the queued config, and events fired before that sit in the
-// dataLayer queue (see lib/gtag.ts).
+// Configure TAG_ID only — GA_ID is the same tag's other ID, so configuring both
+// would send two page_views per pageview. See the note in lib/gtag.ts.
+//
+// strategy="afterInteractive": gtag.js is heavy (~370 KB with the Ads container
+// it chains), so this used to be lazyOnload for PageSpeed. That cost more than
+// it saved: the tag only mounted after load + idle, which (a) left Google's
+// installation check reporting the tag as not connected, and (b) stranded
+// conversions - a store-button click queues its event in dataLayer, and if the
+// visitor leaves for the store before gtag.js arrives the queue dies with the
+// page. Conversion delivery outranks the TBT saving, especially with Ads
+// bidding driven by these signals. Only the engagement listeners below stay
+// lazy; they fire long after load anyway.
 export default function GtagScripts() {
   return (
     <>
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-        strategy="lazyOnload"
+        src={`https://www.googletagmanager.com/gtag/js?id=${TAG_ID}`}
+        strategy="afterInteractive"
       />
-      <Script id="gtag-init" strategy="lazyOnload">
+      <Script id="gtag-init" strategy="afterInteractive">
         {`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
-          gtag('config', '${GA_ID}');
+          gtag('config', '${TAG_ID}');
           gtag('config', '${ADS_ID}');
         `}
       </Script>
