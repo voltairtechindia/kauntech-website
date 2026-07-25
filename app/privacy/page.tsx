@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         <div className="legal-card">
           <h1 className="grad-text">Privacy Policy</h1>
           <span className="last-updated">
-            <Ic icon={CalendarDays} /> Last Updated: June 30, 2026
+            <Ic icon={CalendarDays} /> Last Updated: July 25, 2026
           </span>
 
           <div className="legal-body">
@@ -66,8 +66,10 @@ export default function PrivacyPage() {
                 which categories of data (contacts, notes and tags, AI intelligence, images, and so
                 on) are backed up to your Kauntech account on our secure cloud servers, and{" "}
                 <strong>anything you don&apos;t select never leaves your device</strong>. You can
-                turn cloud backup off, wipe your cloud data, or delete your account at any time. We
-                never sell your data and never use it for advertising.
+                turn cloud backup off, wipe your cloud data, or delete your account at any time.{" "}
+                <strong>We never sell your data, and we never show ads inside Kauntech.</strong> We
+                use Google Analytics to see how the app is used and whether our own ads are working.
+                It records that a card was saved - never what was on it. See section 1.C.
               </p>
             </div>
 
@@ -97,8 +99,8 @@ export default function PrivacyPage() {
                 <strong>one-way hashed, per-install device identifier</strong> (a random value
                 generated on first launch - not your hardware ID, advertising ID, or any cross-app
                 fingerprint) and a <strong>hashed IP address</strong>, used solely to enforce
-                one-free-trial-per-install and to detect fraud. We do not use this data to track you
-                across other apps or for advertising.
+                one-free-trial-per-install and to detect fraud. This particular identifier is never
+                used for advertising and is separate from the analytics described in section 1.C.
               </li>
               <li>
                 <strong>Referral program data:</strong> If you join via or share an invite, we store
@@ -159,6 +161,51 @@ export default function PrivacyPage() {
                 servers located outside India.
               </li>
             </ul>
+
+            <h3 id="analytics">C. App Analytics &amp; Advertising Measurement</h3>
+            <p>
+              From version 1.1.10 the Kauntech App includes{" "}
+              <strong>Google Analytics for Firebase</strong>, which we have linked to our own Google
+              Ads account so we can tell whether the ads we pay for actually bring us people who
+              find Kauntech useful. <strong>Your cards are not part of this.</strong> The scanning
+              itself still happens on your phone, and nothing you scan is sent to Google.
+            </p>
+            <ul>
+              <li>
+                <strong>What is recorded:</strong> a small, fixed set of app events - the app being
+                opened for the first time, an account being created, a sign-in, and{" "}
+                <strong>that</strong> a card was saved, along with how it was captured (camera, QR
+                code, or typed in). Standard technical context such as your device model, operating
+                system, app version, and approximate country is recorded alongside them.
+              </li>
+              <li>
+                <strong>What is never recorded:</strong> the contents of your scanned cards. No
+                name, phone number, email address, company, photo, note, or any other field from a
+                contact is ever sent to the analytics service. The event says a card was saved; it
+                never says whose.
+              </li>
+              <li>
+                <strong>Advertising identifier:</strong> on Android this includes your
+                device&apos;s <strong>advertising ID</strong>, which is what allows Google Ads to
+                connect an ad you saw to an install. You can reset or delete this ID at any time in
+                your device settings (Android: Settings → Privacy → Ads; iOS: Settings → Privacy
+                &amp; Security → Tracking).
+              </li>
+              <li>
+                <strong>What we do not do:</strong> we do not show advertisements inside Kauntech,
+                we do not sell this data, and we have{" "}
+                <strong>not enabled personalised advertising</strong> on this link - the data is
+                used to measure our own campaigns, not to build advertising audiences from you.
+              </li>
+            </ul>
+            <p style={{ marginBottom: 0 }}>
+              This processing is carried out by Google and may occur on servers outside India.
+              Google&apos;s handling of it is governed by the{" "}
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+                Google Privacy Policy
+              </a>
+              .
+            </p>
 
             <h2>
               <Ic icon={RefreshCw} /> 2. Legitimate Purposes &amp; DPDP Notice
