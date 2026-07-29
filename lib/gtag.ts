@@ -6,17 +6,22 @@
 // google-analytics, googleadservices, doubleclick, www.google.com) live in
 // next.config.ts — keep them in sync if you add a new endpoint.
 
-// The Google tag for kauntech.com. GT-55JP2X3S and G-128KNMQQRX are two IDs for
-// the SAME tag, not two tags — fetching googletagmanager.com/gtag/js?id=<either>
-// returns the same bootstrap listing both. So the base tag is loaded and
-// configured with the canonical GT- ID exactly once (that is the ID Google's
-// console and Tag Assistant look for when reporting "connected").
-export const TAG_ID = "GT-55JP2X3S";
+// The Google tag for kauntech.com — GA4 property 543623669 ("Kauntech React").
+//
+// GT-55JP2X3S and G-128KNMQQRX are two IDs for the SAME tag, not two tags:
+// fetching googletagmanager.com/gtag/js?id=<either> returns the same container,
+// which declares G-128KNMQQRX as its GA4 destination. We load and configure the
+// G- measurement ID because that is what Google's own install snippet uses, so
+// it is greppable in view-source — the GT- form left audits and third-party
+// checkers reporting the tag as missing even though hits were flowing.
+//
+// Configure this ONE id. Adding a second `gtag('config', GOOGLE_TAG_ID)` would
+// configure the same destination twice and every page_view would double-count.
+export const TAG_ID = "G-128KNMQQRX";
 
-// GA4 destination of TAG_ID — property 543623669 ("Kauntech React").
-// Reference only: NEVER also `gtag('config', GA_ID)`, that is the same
-// destination configured twice and every page_view would double-count.
-export const GA_ID = "G-128KNMQQRX";
+// The same tag's "Google tag" (GT-) name, as shown in the Google tag console and
+// Tag Assistant. Reference only — never load or config it alongside TAG_ID.
+export const GOOGLE_TAG_ID = "GT-55JP2X3S";
 
 // Google Ads conversion account, shared with voltairtech.com. Configured
 // separately because it is its own destination, not one of TAG_ID's.

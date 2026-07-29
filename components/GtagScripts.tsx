@@ -2,13 +2,14 @@ import Script from "next/script";
 import { TAG_ID, ADS_ID } from "@/lib/gtag";
 
 // Loads the Kauntech Google tag (gtag.js) ONCE, then configures BOTH that tag
-// (which routes to GA4 G-128KNMQQRX) and the Google Ads conversion account, and
-// wires lightweight scroll-depth + outbound-link tracking. Rendered a single
-// time from app/layout.tsx (do not also inline gtag elsewhere or pageviews
+// (GA4 G-128KNMQQRX) and the Google Ads conversion account, and wires
+// lightweight scroll-depth + outbound-link tracking. Rendered a single time
+// from app/layout.tsx (do not also inline gtag elsewhere or pageviews
 // double-count). CSP allowances for every Google origin live in next.config.ts.
 //
-// Configure TAG_ID only — GA_ID is the same tag's other ID, so configuring both
-// would send two page_views per pageview. See the note in lib/gtag.ts.
+// Configure TAG_ID only — GOOGLE_TAG_ID (GT-55JP2X3S) is the same tag's other
+// ID, so configuring both would send two page_views per pageview. See the note
+// in lib/gtag.ts.
 //
 // strategy="afterInteractive": gtag.js is heavy (~370 KB with the Ads container
 // it chains), so this used to be lazyOnload for PageSpeed. That cost more than
