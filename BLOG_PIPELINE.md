@@ -179,3 +179,12 @@ curl -sS -X POST https://www.kauntech.com/api/blog \
 - Publishing also embeds the post into the RAG store (`documents.doc_type='blog'`,
   `external_id=slug`), so the chat widget can answer from it. Un-publishing or
   deleting removes it from RAG too.
+- **The chatbot only knows the 20 most recent published posts.** Retrieval takes
+  a handful of top-K documents, so an unbounded archive would crowd out the
+  product/pricing KB. Every blog write reconciles the window
+  ([lib/blog/rag-sync.ts](lib/blog/rag-sync.ts)): posts that fall out get their
+  document deleted, and a post that comes back in (because a newer one was
+  deleted or unpublished) is re-embedded. Pruned posts stay fully live — `/blog`,
+  the sitemap and `/llms.txt` are untouched; they just stop being chat context.
+  Tune with `BLOG_RAG_WINDOW`; force a reconcile with
+  `POST /api/ingest {"syncBlog": true}` (`X-Admin-Key`).

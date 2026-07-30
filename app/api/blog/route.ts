@@ -4,6 +4,10 @@
  * chatbot instantly knows about the new article. Service-role + Gemini keys
  * stay server-side; n8n only needs ADMIN_API_KEY.
  *
+ * The RAG store mirrors only the newest BLOG_RAG_WINDOW (20) published posts —
+ * every write rolls that window, so older articles drop out of the chatbot's
+ * context while staying live on /blog. See lib/blog/rag-sync.ts.
+ *
  * Auth: header  X-Admin-Key: <ADMIN_API_KEY>
  *
  * POST /api/blog
@@ -31,14 +35,9 @@ import { NextResponse } from "next/server";
 
 import { isAdmin } from "@/lib/admin-auth";
 import { upsertPost } from "@/lib/blog/db";
-import type { BlogPost, BlogUpsert, FaqItem, MediaItem } from "@/lib/blog/types";
-import {
-  estimateReadingMinutes,
-  markdownToPlainText,
-  slugify,
-} from "@/lib/blog/util";
-import { deleteDocument } from "@/lib/rag/db";
-import { ingest } from "@/lib/rag/ingest";
+import { syncBlogWindow } from "@/lib/blog/rag-sync";
+import type { BlogUpsert, FaqItem, MediaItem } from "@/lib/blog/types";
+import { estimateReadingMinutes, slugify } from "@/lib/blog/util";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -138,40 +137,6 @@ function normalize(
   };
 }
 
-/** Mirror a stored post into the RAG store (or remove it if not published). */
-async function syncRag(post: BlogPost): Promise<void> {
-  if (post.status !== "published") {
-    await deleteDocument("blog", post.slug);
-    return;
-  }
-  const url = `${SITE_URL}/blog/${post.slug}`;
-  const faqText = (post.faq ?? [])
-    .map((f) => `Q: ${f.q}\nA: ${f.a}`)
-    .join("\n\n");
-  const parts = [
-    post.title,
-    post.excerpt ?? "",
-    markdownToPlainText(post.body_md),
-    faqText,
-  ].filter(Boolean);
-  await ingest([
-    {
-      doc_type: "blog",
-      external_id: post.slug,
-      title: post.title,
-      content: parts.join("\n\n"),
-      metadata: {
-        slug: post.slug,
-        url,
-        tags: post.tags,
-        author: post.author,
-        published_at: post.published_at,
-        cover_image: post.cover_image?.url ?? null,
-      },
-    },
-  ]);
-}
-
 export async function POST(req: Request) {
   if (!isAdmin(req)) {
     return NextResponse.json(
@@ -197,6 +162,7 @@ export async function POST(req: Request) {
   }
 
   const results: { slug: string; status: string; url: string }[] = [];
+  const touched: string[] = [];
   try {
     for (const item of raw) {
       const parsed = normalize(item);
@@ -204,13 +170,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ detail: parsed.error }, { status: 400 });
       }
       const stored = await upsertPost(parsed.row);
-      await syncRag(stored);
+      touched.push(stored.slug);
       results.push({
         slug: stored.slug,
         status: stored.status,
         url: `${SITE_URL}/blog/${stored.slug}`,
       });
     }
+    // Re-embed what we just wrote and roll the window: a new post in means the
+    // oldest one drops out of the chatbot's context. Unpublished/archived posts
+    // fall out of the window too, so this covers the un-publish path.
+    await syncBlogWindow({ force: touched });
   } catch (err) {
     console.error("[blog] upsert failed", err);
     return NextResponse.json(
@@ -267,7 +237,8 @@ export async function DELETE(req: Request) {
     const sb = getSupabase();
     const { error } = await sb.from("blog_posts").delete().eq("slug", slug);
     if (error) throw error;
-    await deleteDocument("blog", slug);
+    // Drops the post's document and pulls the next-newest post into the window.
+    await syncBlogWindow();
     return NextResponse.json({ ok: true, slug });
   } catch (err) {
     console.error("[blog] delete failed", err);

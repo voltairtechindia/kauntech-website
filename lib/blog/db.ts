@@ -37,6 +37,25 @@ export async function listPublishedSlugs(): Promise<string[]> {
   return ((data ?? []) as { slug: string }[]).map((r) => r.slug);
 }
 
+/**
+ * The newest `limit` published posts, in full — the rolling window the RAG
+ * store mirrors (see ./rag-sync). Unlike the listing queries this keeps
+ * future-dated posts, so a scheduled post is still chatbot-known on write.
+ * Undated legacy rows sort last so they can't squat at the top of the window.
+ */
+export async function listWindowPosts(limit: number): Promise<BlogPost[]> {
+  const sb = getSupabase();
+  const { data, error } = await sb
+    .from("blog_posts")
+    .select("*")
+    .eq("status", "published")
+    .order("published_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as BlogPost[];
+}
+
 /** A single published post by slug, or null if missing / not yet published. */
 export async function getPublishedPost(slug: string): Promise<BlogPost | null> {
   const sb = getSupabase();
