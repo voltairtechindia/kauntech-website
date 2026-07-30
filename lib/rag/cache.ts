@@ -98,3 +98,29 @@ export async function clearChatCache(): Promise<void> {
     console.error("[rag] cache clear failed (ignoring)", err);
   }
 }
+
+/**
+ * Drop only the entries that cited a given doc_type.
+ *
+ * The blog changes daily; the marketing KB rarely does. Wiping the whole cache
+ * on every post would mean the widget's preset chips are never served from
+ * cache for more than a day, which is most of the reason the cache exists. An
+ * answer that never cited a blog post can't have been made wrong by one, so
+ * only blog-citing rows need to go.
+ *
+ * The trade: a cached KB answer won't pick up a *newly published* post that
+ * might now be a better match, until its 7-day TTL expires. Preset chips are
+ * product questions (pricing, DPDP, offline behaviour) that the KB answers, so
+ * this is the right side of the trade — and `clearChatCache()` is still there
+ * for KB/prompt changes, where every answer really is suspect.
+ */
+export async function clearChatCacheForType(docType: string): Promise<void> {
+  try {
+    await getSupabase()
+      .from("chat_cache")
+      .delete()
+      .contains("sources", [{ doc_type: docType }]);
+  } catch (err) {
+    console.error("[rag] scoped cache clear failed (ignoring)", err);
+  }
+}

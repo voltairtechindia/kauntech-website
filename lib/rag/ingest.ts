@@ -1,5 +1,5 @@
 /** Document ingestion: embed content and upsert into the pgvector store. */
-import { clearChatCache } from "./cache";
+import { clearChatCache, clearChatCacheForType } from "./cache";
 import { upsertDocuments } from "./db";
 import { embed } from "./gemini";
 import type { IngestDocument } from "./types";
@@ -30,8 +30,15 @@ export async function ingest(
 
   await upsertDocuments(rows);
 
-  // KB changed → drop cached chat answers so they can't go stale.
-  await clearChatCache();
+  // Store changed → drop cached answers that could now be stale. A blog-only
+  // ingest (the daily case) evicts just the blog-citing entries; anything
+  // touching the KB invalidates everything.
+  const types = Object.keys(counts);
+  if (types.length === 1 && types[0] === "blog") {
+    await clearChatCacheForType("blog");
+  } else {
+    await clearChatCache();
+  }
 
   return counts;
 }

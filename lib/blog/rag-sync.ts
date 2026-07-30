@@ -18,7 +18,7 @@
  * Run after every blog write (publish / unpublish / delete) and on demand via
  * POST /api/ingest { "pruneBlog": true }.
  */
-import { clearChatCache } from "@/lib/rag/cache";
+import { clearChatCacheForType } from "@/lib/rag/cache";
 import { ingest } from "@/lib/rag/ingest";
 import { getSupabase } from "@/lib/rag/supabase";
 import type { IngestDocument } from "@/lib/rag/types";
@@ -126,8 +126,8 @@ export async function syncBlogWindow(
         .is("external_id", null);
       if (error) throw error;
     }
-    // Store changed → cached answers may cite a post we just dropped.
-    await clearChatCache();
+    // Cached answers may cite a post we just dropped — evict only those.
+    await clearChatCacheForType("blog");
   }
 
   // In: posts in the window with no document yet, plus any forced re-embed.
