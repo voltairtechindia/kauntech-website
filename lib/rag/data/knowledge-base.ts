@@ -22,11 +22,11 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "ABOUT-01",
     title: "What is Kauntech?",
     content:
-      "Kauntech is an AI-powered business card scanner app for Android and iOS that works 100% offline. " +
+      "Kauntech is an offline-first AI-powered business card scanner app for Android and iOS. " +
       "It uses on-device OCR to read visiting cards, enriches contacts with AI, and routes leads to your CRM, " +
-      "Google Sheets, Gmail, WhatsApp or Telegram - in under 30 seconds. It is built by Kauntech Technologies " +
-      "Pvt. Ltd. (Mumbai, India). Kauntech is positioned as India's first 100% offline AI business card scanner " +
-      "and is fully compliant with India's Digital Personal Data Protection (DPDP) Act 2023. " +
+      "Google Sheets, Gmail, WhatsApp or Telegram - in under 30 seconds. Scanning, OCR and saving work with no " +
+      "connection at all; AI enrichment, CRM sync and cloud backup need one. It is built by Kauntech Technologies " +
+      "Pvt. Ltd. (Mumbai, India) and is fully compliant with India's Digital Personal Data Protection (DPDP) Act 2023. " +
       "Support email: business@voltairtech.com.",
     metadata: {
       company: "Kauntech Technologies Pvt. Ltd.",
@@ -41,8 +41,8 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "How Kauntech works - 3 steps in 30 seconds",
     content:
       "Kauntech turns a physical card into a synced, enriched contact in about 30 seconds in three steps. " +
-      "Step 1 CAPTURE: scan a physical card via OCR, scan a QR code, tap NFC, or type manually - works 100% offline " +
-      "with zero lag. Step 2 ENRICH: Kauntech AI adds company intelligence, lead scoring and personalised icebreakers " +
+      "Step 1 CAPTURE: scan a physical card via OCR, scan a QR code, tap NFC, or type manually - works with no " +
+      "internet connection and zero lag. Step 2 ENRICH: Kauntech AI adds company intelligence, lead scoring and personalised icebreakers " +
       "on-device. Step 3 AUTOMATE: instantly route the enriched contact to WhatsApp, an email draft, Google Sheets, " +
       "Telegram or a webhook automatically.",
     metadata: { steps: ["capture", "enrich", "automate"] },
@@ -52,7 +52,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "feature",
     external_id: "FEAT-OFFLINE",
-    title: "100% Offline Mode",
+    title: "Offline-first mode",
     content:
       "Kauntech is offline-first: scanning, OCR processing and saving contacts all work with zero internet connection - " +
       "ideal for remote sites, basement conference halls and flights. All sensitive contact data stays encrypted on your " +
@@ -155,7 +155,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "Free plan: ₹0 forever. For individual professionals exploring offline business card scanning. Includes 49 scans " +
       "per month, 100 K-Tokens per month, 1 VCard, 2 Products and 2 Templates, QR code & NFC scanning, CSV export, " +
-      "Webhook & WhatsApp Sync, and 100% Offline Mode.",
+      "Webhook & WhatsApp Sync, and offline-first scanning.",
     metadata: {
       name: "Free",
       price_monthly: "₹0",
@@ -341,7 +341,7 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "FAQ-GET-STARTED",
     title: "How do I get started with Kauntech?",
     content:
-      "Download the Kauntech app on Android or iOS and start on the Free plan (49 scans, 100 K-Tokens, 100% offline). You " +
+      "Download the Kauntech app on Android or iOS and start on the Free plan (49 scans, 100 K-Tokens, offline-first scanning). You " +
       "can upgrade to Pro or Ultra anytime for more scans, K-Tokens and AI features. For enterprise needs (white-labeling, " +
       "on-premise storage, custom LLMs), contact the team at business@voltairtech.com.",
     metadata: { category: "get_started" },

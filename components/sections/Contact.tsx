@@ -235,7 +235,7 @@ export default function Contact() {
             <li>
               <Ic icon={CirclePlay} />
               <span>
-                <strong>Book a demo</strong> - watch Kauntech scan a stack of cards, fully offline.
+                <strong>Book a demo</strong> - watch Kauntech scan a stack of cards with the network off.
               </span>
             </li>
             <li>

@@ -181,7 +181,7 @@ export interface PageContext {
 
 const DEFAULT_CONTEXT: PageContext = {
   topic: "Kauntech",
-  nudge: "New to Kauntech? I can explain how we scan business cards 100% offline.",
+  nudge: "New to Kauntech? I can explain how we scan business cards with no internet at all.",
   presets: [
     "How does offline scanning work?",
     "What are the pricing plans?",
@@ -226,7 +226,7 @@ const CONTEXT_BY_PATH: Record<string, PageContext> = {
     topic: "how Kauntech compares",
     nudge: "Weighing your options? I can explain what sets Kauntech apart.",
     presets: [
-      "Why does 100% offline matter?",
+      "Why does offline-first matter?",
       "What makes Kauntech different?",
       "Is my data safer with Kauntech?",
     ],

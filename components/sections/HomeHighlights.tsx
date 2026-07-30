@@ -10,7 +10,7 @@ import Ic from "@/components/ui/Icon";
 const HIGHLIGHTS: { icon: LucideIcon; title: string; body: string }[] = [
   {
     icon: Cpu,
-    title: "100% Offline OCR",
+    title: "Offline-First OCR",
     body: "Scan and read business cards with zero internet - the OCR engine runs entirely on your device, so it works on the exhibition floor or a basement conference hall.",
   },
   {

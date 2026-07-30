@@ -57,16 +57,16 @@ export const competitors: Competitor[] = [
     oneLiner:
       "On-device, DPDP-aligned scanning versus a cloud-centric contact manager.",
     intro:
-      "CamCard, from INTSIG (the company behind CamScanner), is a mature, cloud-centric business card scanner and contact manager. Kauntech takes the opposite approach: every card is read 100% on your device and is never uploaded. If data residency, offline capability and DPDP Act 2023 alignment matter to your team, here is how the two compare.",
+      "CamCard, from INTSIG (the company behind CamScanner), is a mature, cloud-centric business card scanner and contact manager. Kauntech takes the opposite approach: every card is read on your device and is never uploaded. If data residency, offline capability and DPDP Act 2023 alignment matter to your team, here is how the two compare.",
     rows: [
       {
         dimension: "OCR & processing",
-        kauntech: "100% offline, on-device",
+        kauntech: "On-device, never uploaded",
         competitor:
           "Cloud-centric — cards are saved to CamCard's cloud servers and run through a cloud proofreading step",
       },
       {
-        dimension: "Works fully offline",
+        dimension: "Scans without internet",
         kauntech: "Yes — no internet needed",
         competitor: "No — built around cloud storage and sync",
       },
@@ -106,7 +106,7 @@ export const competitors: Competitor[] = [
       },
     ],
     kauntechWins: [
-      "100% offline, on-device OCR — cards are never uploaded, versus CamCard's cloud storage and cloud proofreading.",
+      "On-device OCR that needs no connection — cards are never uploaded, versus CamCard's cloud storage and cloud proofreading.",
       "No forced account or cloud upload — start scanning without signing in.",
       "DPDP Act 2023 aligned with on-device, India-resident data. CamCard is a China-headquartered vendor (INTSIG) whose cloud server locations include China.",
       "Native routing to your CRM, Google Sheets and WhatsApp in under 30 seconds.",
@@ -149,7 +149,7 @@ export const competitors: Competitor[] = [
     rows: [
       {
         dimension: "OCR & processing",
-        kauntech: "100% offline, on-device",
+        kauntech: "On-device, never uploaded",
         competitor:
           "On-device OCR; offline recognition available (a genuine privacy plus)",
       },
@@ -212,7 +212,7 @@ export const competitors: Competitor[] = [
       },
       {
         q: "Does ABBYY Business Card Reader do offline OCR like Kauntech?",
-        a: "Yes — this is one area where ABBYY is genuinely similar to Kauntech. ABBYY processes images on the device and offers offline recognition, and you can disable the account so cards aren't transferred over the internet. Kauntech is 100% offline on-device by default and adds AES-256 local storage plus a DPDP Act 2023 posture.",
+        a: "Yes — this is one area where ABBYY is genuinely similar to Kauntech. ABBYY processes images on the device and offers offline recognition, and you can disable the account so cards aren't transferred over the internet. Kauntech scans on-device by default and adds AES-256 local storage plus a DPDP Act 2023 posture.",
       },
       {
         q: "Can ABBYY Business Card Reader send leads to WhatsApp?",
@@ -241,7 +241,7 @@ export const competitors: Competitor[] = [
       },
       {
         dimension: "OCR & processing",
-        kauntech: "100% offline, on-device AI OCR",
+        kauntech: "On-device AI OCR, never uploaded",
         competitor:
           "Legacy engine on a tethered PC, or human typing (manual entry)",
       },
