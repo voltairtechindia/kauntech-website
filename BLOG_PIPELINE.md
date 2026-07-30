@@ -179,12 +179,20 @@ curl -sS -X POST https://www.kauntech.com/api/blog \
 - Publishing also embeds the post into the RAG store (`documents.doc_type='blog'`,
   `external_id=slug`), so the chat widget can answer from it. Un-publishing or
   deleting removes it from RAG too.
-- **The chatbot only knows the 20 most recent published posts.** Retrieval takes
-  a handful of top-K documents, so an unbounded archive would crowd out the
-  product/pricing KB. Every blog write reconciles the window
-  ([lib/blog/rag-sync.ts](lib/blog/rag-sync.ts)): posts that fall out get their
-  document deleted, and a post that comes back in (because a newer one was
-  deleted or unpublished) is re-embedded. Pruned posts stay fully live — `/blog`,
-  the sitemap and `/llms.txt` are untouched; they just stop being chat context.
-  Tune with `BLOG_RAG_WINDOW`; force a reconcile with
-  `POST /api/ingest {"syncBlog": true}` (`X-Admin-Key`).
+- **The blog can't take over the chatbot.** The marketing KB is a fixed ~23
+  documents and the blog grows daily, so two bounds apply:
+  - *Per retrieval:* at most `RAG_BLOG_MAX` (2) of the 6 top-K slots may be blog
+    posts ([lib/rag/retriever.ts](lib/rag/retriever.ts)), so pricing and feature
+    questions keep being answered from the `plan` / `feature` documents no
+    matter how large the archive grows. Needs migration
+    [0018](supabase/migrations/0018_match_documents_exclude.sql).
+  - *In storage:* only the newest `BLOG_RAG_WINDOW` (60 — about two months at a
+    post a day) published posts stay embedded
+    ([lib/blog/rag-sync.ts](lib/blog/rag-sync.ts)). Every blog write reconciles
+    the window: posts that fall out get their document deleted, and a post that
+    comes back in (because a newer one was deleted or unpublished) is
+    re-embedded. Force a reconcile with `POST /api/ingest {"syncBlog": true}`
+    (`X-Admin-Key`).
+
+  Pruned posts stay fully live — `/blog`, the sitemap and `/llms.txt` are
+  untouched; they just stop being chat context.

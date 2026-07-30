@@ -31,6 +31,10 @@ export const config = {
   ragTopK: num(process.env.RAG_TOP_K, 6),
   ragMinSimilarity: num(process.env.RAG_MIN_SIMILARITY, 0.3),
   historyWindow: num(process.env.HISTORY_WINDOW, 12),
+  // Most blog documents allowed in one retrieval. The blog grows daily and the
+  // marketing KB doesn't, so without this the archive would own every slot.
+  // 0 keeps the blog out of chat answers entirely.
+  ragBlogMax: num(process.env.RAG_BLOG_MAX, 2),
 
   // --- Security (protects POST/GET /api/ingest) ---
   adminApiKey: process.env.ADMIN_API_KEY ?? "",

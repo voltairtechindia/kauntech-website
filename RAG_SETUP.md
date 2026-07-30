@@ -18,6 +18,10 @@ Create a Supabase project. In the **SQL editor**, run the two migrations **in or
 1. `supabase/migrations/0001_init.sql`  (pgvector, `documents`, `match_documents`, logging tables)
 2. `supabase/migrations/0002_rls.sql`   (locks all tables; only the service key has access)
 
+…then the rest of `supabase/migrations/` in numeric order. `0018_match_documents_exclude.sql`
+is required for the per-retrieval blog cap — without it the chatbot logs a
+`capped retrieval failed` error and falls back to uncapped search.
+
 Grab `Project Settings → API`: the **Project URL** and the **service_role / secret key**.
 
 ### 2. Environment variables

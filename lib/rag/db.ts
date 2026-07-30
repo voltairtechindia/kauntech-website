@@ -18,14 +18,20 @@ export async function matchDocuments(
   matchCount: number,
   filterType: string | null,
   minSimilarity: number,
+  excludeTypes: string[] | null = null,
 ): Promise<RetrievedDoc[]> {
   const sb = getSupabase();
-  const { data, error } = await sb.rpc("match_documents", {
+  const args: Record<string, unknown> = {
     query_embedding: queryEmbedding,
     match_count: matchCount,
     filter_type: filterType,
     min_similarity: minSimilarity,
-  });
+  };
+  // exclude_types needs migration 0018; only send it when it's actually used
+  // so unfiltered calls keep working on an un-migrated database.
+  if (excludeTypes?.length) args.exclude_types = excludeTypes;
+
+  const { data, error } = await sb.rpc("match_documents", args);
   if (error) throw error;
   return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
     doc_type: String(r.doc_type),

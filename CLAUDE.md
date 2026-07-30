@@ -101,12 +101,21 @@ The site **never authors** posts — n8n creates them and POSTs to the site, whi
   by `X-Admin-Key`. Upserts by `slug` AND (when `status:"published"`) embeds the post into
   the RAG store (`doc_type:"blog"`), so the chatbot can cite it. `DELETE /api/blog?slug=`
   removes both. Admin auth shared via [lib/admin-auth.ts](lib/admin-auth.ts).
-- **Rolling RAG window:** the chatbot only knows the newest **20** published posts
-  ([lib/blog/rag-sync.ts](lib/blog/rag-sync.ts), `BLOG_RAG_WINDOW` env). Every blog write
-  (and any blog ingest through `/api/ingest`) runs `syncBlogWindow()`: embeds posts that
-  are in the window but missing, deletes documents for everything else. Older posts stay
-  live on `/blog` + sitemap + `/llms.txt` — they only leave chat context. Manual
-  reconcile: `POST /api/ingest {"syncBlog":true}`.
+- **Two bounds keep the daily blog from swamping the chatbot** (the marketing KB is a
+  fixed ~23 docs; the blog is not):
+  1. *Per-retrieval cap* — at most `RAG_BLOG_MAX` (2) blog documents may occupy the 6
+     top-K slots ([lib/rag/retriever.ts](lib/rag/retriever.ts)). One embedding, two
+     bounded queries (best blog / best non-blog via `exclude_types`), merged by
+     similarity. **Requires migration
+     [0018](supabase/migrations/0018_match_documents_exclude.sql)** — without it the
+     retriever logs `capped retrieval failed` and degrades to uncapped search.
+     This is the guarantee that holds at any archive size.
+  2. *Rolling storage window* — only the newest `BLOG_RAG_WINDOW` (60) published posts
+     stay embedded ([lib/blog/rag-sync.ts](lib/blog/rag-sync.ts)). Every blog write (and
+     any blog ingest through `/api/ingest`) runs `syncBlogWindow()`: embeds posts in the
+     window that are missing, deletes documents for everything else. Manual reconcile:
+     `POST /api/ingest {"syncBlog":true}`.
+  Pruned posts stay live on `/blog` + sitemap + `/llms.txt` — they only leave chat context.
 - FAQ: each post carries a `faq` JSONB array (migration `0015`) — Q&A pairs that
   render as a "Frequently asked questions" accordion + **FAQPage JSON-LD** on
   `/blog/<slug>` (AEO/GEO), are edited in the kauntech-admin `PostEditor`, can be

@@ -2,11 +2,15 @@
  * Rolling blog window for the RAG store.
  *
  * The chatbot should stay grounded in the *current* blog, not the whole
- * archive: retrieval only takes top-K docs, so every extra post dilutes the
- * pool and makes it likelier that a stale article outranks the marketing KB.
- * So exactly the newest `BLOG_RAG_WINDOW` published posts get a `documents`
- * row — older ones are pruned, and a post that re-enters the window (because
- * a newer one was deleted or unpublished) is re-embedded.
+ * archive: an unbounded store means unbounded embedding churn and a growing
+ * tail of stale posts contradicting current pricing. So exactly the newest
+ * `BLOG_RAG_WINDOW` published posts get a `documents` row — older ones are
+ * pruned, and a post that re-enters the window (because a newer one was
+ * deleted or unpublished) is re-embedded.
+ *
+ * This is the *storage* bound. The one that actually protects answer quality
+ * is the per-retrieval cap in lib/rag/retriever.ts, which limits how many blog
+ * documents can occupy the top-K slots no matter how big the archive gets.
  *
  * Pruning only touches the RAG store: the posts stay live on /blog, in the
  * sitemap and in /llms.txt. They just stop being chatbot context.
@@ -25,8 +29,16 @@ import { markdownToPlainText } from "./util";
 
 const SITE_URL = "https://www.kauntech.com";
 
-/** How many recent published posts the chatbot is allowed to know about. */
-export const BLOG_RAG_WINDOW = Number(process.env.BLOG_RAG_WINDOW) || 20;
+/**
+ * How many recent published posts the chatbot is allowed to know about.
+ *
+ * At a post a day this is roughly two months of archive. It can be generous
+ * because it is no longer the thing protecting the marketing KB from being
+ * crowded out — `config.ragBlogMax` caps blog documents per retrieval, so a
+ * bigger window widens what the chatbot *can* cite without letting the blog
+ * take over what it *does* cite.
+ */
+export const BLOG_RAG_WINDOW = Number(process.env.BLOG_RAG_WINDOW) || 60;
 
 export interface WindowSync {
   kept: string[]; // slugs the chatbot knows about, newest first
