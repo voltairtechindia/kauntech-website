@@ -17,6 +17,17 @@
 # repointing the domain.
 [build]
   command = "npm run build"
+  publish = ".next"
+
+# ⚠️ DECLARE THIS EXPLICITLY — do not rely on auto-detection.
+# Netlify detects the framework (deploys report framework: "next") but that is
+# NOT the same as installing the runtime, and a CI build reported
+# plugins: "none" while succeeding: it published the raw .next directory as flat
+# static files, so every route 404'd on a green build with no error anywhere.
+# A local `netlify deploy --build` does NOT reproduce it — the CLI applies the
+# plugin itself, so local deploys worked while CI served 404s.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [build.environment]
   NODE_OPTIONS = "--max-old-space-size=6144"
