@@ -16,8 +16,12 @@ import { formatDate } from "@/lib/blog/util";
 
 const SITE_URL = "https://www.kauntech.com";
 
-// ISR: render once, refresh every 5 min so edits/new posts go live without deploy.
-export const revalidate = 300;
+// ISR: render once, then refresh on a slow window. 30 min rather than 5 because
+// this page is a paid-traffic landing surface and every post was regenerating up
+// to 288x/day, which is host CPU spent on content that had not changed. Edits do
+// NOT wait it out — the admin pings /api/revalidate with the post's path on save,
+// so publishing and corrections still go live immediately, without a deploy.
+export const revalidate = 1800;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {

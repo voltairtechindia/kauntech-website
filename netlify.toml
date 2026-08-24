@@ -1,0 +1,22 @@
+# Netlify build config — Next.js 15 App Router site (migrated off Vercel).
+#
+# `npm run build` (not a bare `next build`) so the package.json script's inline
+# NODE_OPTIONS=--max-old-space-size=6144 is applied — this app's build is
+# memory-hungry (three.js + AR + native image deps). It's also pinned below so it
+# holds even if the command changes.
+#
+# The Next runtime (@netlify/plugin-nextjs) is auto-installed; headers, CSP and
+# redirects from next.config.ts carry over. The sharp/meshoptimizer/tesseract
+# routes run on Netlify Functions (Node/Lambda, linux-x64) — the same target the
+# outputFileTracingIncludes in next.config.ts already bundles the linux-x64 sharp
+# binary for, so /api/ar/asset works unchanged.
+#
+# WARNING: Netlify's free build image may not have 6 GB free. If the build OOMs,
+# that is the one thing likely to fail here — options are to trim the build or
+# keep just this app on a paid builder. Test the *.netlify.app deploy before
+# repointing the domain.
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NODE_OPTIONS = "--max-old-space-size=6144"
