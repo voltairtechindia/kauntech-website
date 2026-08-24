@@ -10,3 +10,9 @@ next-env.d.ts
 .mcp.json
 rag-chatbot-kauntech/
 .env*
+
+# Local Netlify folder
+.netlify
+
+# Netlify edge functions run on Deno; this lockfile is a build artifact.
+deno.lock
