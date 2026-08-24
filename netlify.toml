@@ -20,3 +20,6 @@
 
 [build.environment]
   NODE_OPTIONS = "--max-old-space-size=6144"
+  # Pinned because the local machine runs Node 26, which Netlify's build image
+  # does not offer. 22 is LTS and is what Next 15 targets.
+  NODE_VERSION = "22"
