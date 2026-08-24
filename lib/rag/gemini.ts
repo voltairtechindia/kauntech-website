@@ -7,6 +7,19 @@ import { GoogleGenAI } from "@google/genai";
 
 import { config } from "./config";
 
+/**
+ * Google's public Gemini endpoint, pinned rather than left to the SDK default.
+ *
+ * With `httpOptions.baseUrl` unset the SDK falls back to GOOGLE_GEMINI_BASE_URL from
+ * the environment, and Netlify's AI Gateway injects exactly that variable into every
+ * function it runs. Our own key then travels to Netlify's gateway instead of Google
+ * and comes back as an empty-message 401 — which takes out embeddings and generation
+ * together, so the widget answers from FALLBACK_REPLY with no sources. Setting
+ * GOOGLE_API_KEY stops the gateway injecting a *key*, but not the base URL; passing
+ * it here is what actually wins (getBaseUrl prefers httpOptions over the env).
+ */
+const GEMINI_BASE_URL = "https://generativelanguage.googleapis.com";
+
 let ai: GoogleGenAI | null = null;
 
 function client(): GoogleGenAI {
@@ -14,10 +27,23 @@ function client(): GoogleGenAI {
     if (!config.googleApiKey) {
       throw new Error("GOOGLE_API_KEY must be set (see .env.local.example).");
     }
-    ai = new GoogleGenAI({ apiKey: config.googleApiKey });
+    ai = new GoogleGenAI({
+      apiKey: config.googleApiKey,
+      httpOptions: { baseUrl: GEMINI_BASE_URL },
+    });
   }
   return ai;
 }
+
+/**
+ * The one thing we say when generation could not produce an answer.
+ *
+ * Exported because chat.ts must be able to RECOGNISE it: a fallback must never
+ * be written to the response cache, or a provider outage pins its own apology to
+ * every popular question long after the outage is over.
+ */
+export const FALLBACK_REPLY =
+  "I'm sorry, I couldn't put together a response just now. Could you rephrase that?";
 
 export type ChatTurn = { role: "user" | "model"; text: string };
 
@@ -121,7 +147,7 @@ export async function generate(
   );
   const text = (res.text ?? "").trim();
   if (!text) {
-    return "I'm sorry, I couldn't put together a response just now. Could you rephrase that?";
+    return FALLBACK_REPLY;
   }
   return text;
 }

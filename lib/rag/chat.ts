@@ -20,7 +20,7 @@ import {
   getOrCreateConversation,
   getRecentMessages,
 } from "./db";
-import { generate, type ChatTurn } from "./gemini";
+import { FALLBACK_REPLY, generate, type ChatTurn } from "./gemini";
 import { SYSTEM_PROMPT, buildChatTurn } from "./prompts";
 import { buildContext, search } from "./retriever";
 import type { ChatResponseBody, SourceDoc } from "./types";
@@ -111,8 +111,7 @@ export async function handleChat(args: {
     reply = await generate(SYSTEM_PROMPT, history);
   } catch (err) {
     console.error("[rag] generation failed (returning fallback)", err);
-    reply =
-      "I'm sorry, I couldn't put together a response just now. Could you rephrase that?";
+    reply = FALLBACK_REPLY;
   }
 
   // 4. Persist the transcript (best-effort).
@@ -143,7 +142,13 @@ export async function handleChat(args: {
   }));
 
   // Cache the fresh answer for next time (best-effort, non-blocking).
-  if (cacheable) {
+  //
+  // Never cache a fallback. During the Netlify AI Gateway outage every reply was
+  // the apology, and each one was written to chat_cache — so the popular questions
+  // kept answering with it even after generation was working again, with no error
+  // anywhere to explain why. `generate` also returns the fallback WITHOUT throwing
+  // when the model comes back empty, so compare the reply rather than catching.
+  if (cacheable && reply !== FALLBACK_REPLY) {
     void putCachedReply(hash, args.message, { reply, sources });
   }
 
