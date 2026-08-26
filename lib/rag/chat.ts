@@ -21,7 +21,7 @@ import {
   getRecentMessages,
 } from "./db";
 import { FALLBACK_REPLY, generate, type ChatTurn } from "./gemini";
-import { SYSTEM_PROMPT, buildChatTurn } from "./prompts";
+import { OFF_TOPIC_REPLY, SYSTEM_PROMPT, buildChatTurn } from "./prompts";
 import { buildContext, search } from "./retriever";
 import type { ChatResponseBody, SourceDoc } from "./types";
 
@@ -70,16 +70,63 @@ export async function handleChat(args: {
     }
   }
 
-  // 1. Retrieve grounded knowledge. Best-effort: if the embed/match step fails
-  // (after its own retries), degrade to an ungrounded reply rather than 500-ing
-  // the user. The system prompt handles an empty context gracefully ("say
-  // you're not sure and suggest emailing the team").
+  // 1. Retrieve grounded knowledge.
   let docs: Awaited<ReturnType<typeof search>> = [];
+  let retrievalFailed = false;
   try {
     docs = await search(args.message);
   } catch (err) {
-    console.error("[rag] retrieval failed (answering ungrounded)", err);
+    retrievalFailed = true;
+    console.error("[rag] retrieval failed", err);
   }
+
+  // 1b. NO-GROUNDING GATE.
+  //
+  // If retrieval returned NOTHING, we know nothing about the question — so
+  // answer from the canned redirect rather than generating. Previously an empty
+  // context still went to the model, which is how the widget ended up writing
+  // JavaScript tutorials: an ungrounded generation is both the most expensive
+  // call and the one most likely to wander off-brand.
+  //
+  // This catches only the unambiguous case. It is NOT the off-topic defence —
+  // see the measured overlap in config.ragAnswerMinSimilarity: off-topic
+  // questions routinely retrieve documents at 0.5-0.7, so "has matches" and "is
+  // about Kauntech" are not the same question. Scope is enforced by rules 7/7a
+  // of the system prompt.
+  //
+  // We deliberately do NOT fall back to an ungrounded generation when retrieval
+  // errors either — it's honest to say we're having trouble rather than improvise.
+  const bestSimilarity = docs.reduce((m, d) => Math.max(m, d.similarity), 0);
+  const ungrounded =
+    docs.length === 0 || bestSimilarity < config.ragAnswerMinSimilarity;
+  if (retrievalFailed || ungrounded) {
+    const reply = retrievalFailed ? FALLBACK_REPLY : OFF_TOPIC_REPLY;
+    // Still log the turn (Supabase only, no LLM): out-of-scope traffic is worth
+    // seeing, and history stays coherent if the visitor then asks something real.
+    let conversationId: string | null = null;
+    try {
+      conversationId = await getOrCreateConversation(args.sessionId);
+      await addMessages(conversationId, [
+        { role: "user", content: args.message },
+        {
+          role: "assistant",
+          content: reply,
+          metadata: {
+            gated: retrievalFailed ? "retrieval_failed" : "off_topic",
+            best_similarity: Math.round(bestSimilarity * 1000) / 1000,
+          },
+        },
+      ]);
+    } catch (err) {
+      console.error("[rag] gated-turn persist failed (continuing)", err);
+    }
+    return {
+      response: { reply, conversation_id: conversationId, sources: [] },
+      // No analytics: there's no product intent in an out-of-scope turn.
+      analytics: null,
+    };
+  }
+
   const context = buildContext(docs);
 
   // 2. Load conversation history (best-effort).
