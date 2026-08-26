@@ -1,0 +1,44 @@
+# Push-to-deploy: every push to main ships to Vercel production.
+#
+# Uses a Vercel token rather than the Vercel GitHub App, because these repos are
+# owned by `voltairtechindia` while the Vercel account is a separate one — the
+# App can't bridge that, but a token can. Source is uploaded and BUILT ON VERCEL,
+# so the project's env vars (set via `vercel env add`) apply automatically and
+# nothing secret needs to live in GitHub beyond the token itself.
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never let two deploys race; a newer push supersedes an in-flight one.
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Vercel CLI
+        run: npm i -g vercel@latest
+
+      - name: Deploy to production
+        id: deploy
+        run: |
+          url=$(vercel deploy --prod --yes --token="$VERCEL_TOKEN" 2>&1 | tee /dev/stderr | grep -oE 'https://[a-zA-Z0-9.-]+\.vercel\.app' | tail -1)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $url" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
