@@ -16,3 +16,6 @@ rag-chatbot-kauntech/
 
 # Netlify edge functions run on Deno; this lockfile is a build artifact.
 deno.lock
+
+# CodeGraph index — local only (contains a unix socket, breaks tarballs)
+.codegraph/

@@ -30,9 +30,13 @@ export function GET() {
         details: [
           {
             appID: `${TEAM_ID}.${BUNDLE_ID}`,
-            // Only referral invite links open the app - everything else on
-            // kauntech.com stays in the browser.
-            paths: ["/r/*"],
+            // Referral invites, and card links (/card/<uuid>) — the URL an
+            // NFC tag written by the app carries in record 0. iOS's background
+            // tag reader only launches an app for a URI that matches an
+            // associated domain, so this path is what makes a tapped tag open
+            // KaunTech on iPhone at all. Everything else on kauntech.com stays
+            // in the browser.
+            paths: ["/r/*", "/card/*"],
           },
         ],
       },
