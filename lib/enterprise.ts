@@ -37,27 +37,6 @@ export function sanitizeNeeds(input: unknown): string[] {
 export const SEATS = { min: 5, max: 500, step: 5, default: 25 } as const;
 export const SCANS = { min: 1000, max: 20000, step: 500, default: 4000 } as const;
 
-/**
- * Indicative annual total, in whole rupees. Enterprise is invoiced direct with
- * no store cut, and the floor that holds an 80% margin at p90 AI cost is
- * ₹4,500 per seat per year — see the `pricing` skill. Volume steps down from
- * there and never below ₹3,600, which is where 80% stops holding.
- *
- * This is deliberately a range anchor, not a quote: the page labels it as
- * indicative and the real number comes back from sales.
- */
-export function indicativeAnnualInr(seats: number, scansPerUser: number): number {
-  const perSeat =
-    seats >= 250 ? 3600 :
-    seats >= 100 ? 3900 :
-    seats >= 50  ? 4200 :
-                   4500;
-  // Heavy scanning costs us more OCR, so it nudges the per-seat figure up a
-  // little rather than being free.
-  const scanUplift = Math.max(0, scansPerUser - SCANS.default) * 0.02;
-  return Math.round((perSeat + scanUplift) * seats);
-}
-
 export interface EnterpriseEnquiry {
   name: string;
   work_email: string;

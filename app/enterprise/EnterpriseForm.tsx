@@ -1,13 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import {
-  ENTERPRISE_NEEDS,
-  SCANS,
-  SEATS,
-  indicativeAnnualInr,
-} from "@/lib/enterprise";
+import { ENTERPRISE_NEEDS, SCANS, SEATS } from "@/lib/enterprise";
 
 /**
  * Phone-first Enterprise quote form.
@@ -18,12 +13,13 @@ import {
  * scroll, and 16px inputs because anything smaller makes iOS zoom on focus and
  * leaves the user stranded at 1.4× with the rest of the form off-screen.
  *
- * The price shown is indicative and labelled as such — it exists to qualify the
- * lead and set an expectation, not to be a quote. The server recomputes it from
- * the submitted sliders, so editing it in the console changes nothing.
+ * No price is shown. Enterprise is quoted by a person against the seats and
+ * volume captured here, and putting a number on the page would set an
+ * expectation sales then has to argue with.
+ *
+ * Submit stays disabled until name, work email and company are filled — a
+ * quote request without a way to reply is just noise in the queue.
  */
-
-const inr = (n: number) => "₹" + n.toLocaleString("en-IN");
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -31,11 +27,19 @@ export default function EnterpriseForm() {
   const [seats, setSeats] = useState<number>(SEATS.default);
   const [scans, setScans] = useState<number>(SCANS.default);
   const [needs, setNeeds] = useState<string[]>([]);
+  // Gated on the three fields a follow-up is impossible without. Controlled
+  // rather than leaning on `required`, so the button visibly cannot be pressed
+  // instead of failing validation after the tap.
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [company, setCompany] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string>("");
 
-  const annual = useMemo(() => indicativeAnnualInr(seats, scans), [seats, scans]);
-  const perSeat = useMemo(() => Math.round(annual / seats), [annual, seats]);
+  const canSubmit =
+    name.trim().length > 0 &&
+    company.trim().length > 0 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   function toggleNeed(key: string) {
     setNeeds((cur) =>
@@ -45,7 +49,7 @@ export default function EnterpriseForm() {
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (status === "sending") return;
+    if (status === "sending" || !canSubmit) return;
     setStatus("sending");
     setError("");
 
@@ -141,15 +145,6 @@ export default function EnterpriseForm() {
           </div>
         </div>
 
-        {/* ── Indicative price ────────────────────────────────────── */}
-        <div className="ent-quote" aria-live="polite">
-          <span className="ent-quote-k">Indicative</span>
-          <strong>{inr(annual)}<span> / year</span></strong>
-          <span className="ent-quote-sub">
-            about {inr(perSeat)} per user · final price confirmed by our team
-          </span>
-        </div>
-
         {/* ── Needs ───────────────────────────────────────────────── */}
         <div className="ent-field">
           <span className="ent-legend">What do you need?</span>
@@ -173,18 +168,21 @@ export default function EnterpriseForm() {
         {/* ── Details ─────────────────────────────────────────────── */}
         <div className="ent-field">
           <label htmlFor="name">Your name</label>
-          <input id="name" name="name" className="ent-input" autoComplete="name" required />
+          <input id="name" name="name" className="ent-input" autoComplete="name"
+            value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="ent-field">
           <label htmlFor="work_email">Work email</label>
           <input
             id="work_email" name="work_email" type="email" inputMode="email"
             className="ent-input" autoComplete="email" required
+            value={email} onChange={(e) => setEmail(e.target.value)}
           />
         </div>
         <div className="ent-field">
           <label htmlFor="company">Company</label>
-          <input id="company" name="company" className="ent-input" autoComplete="organization" required />
+          <input id="company" name="company" className="ent-input" autoComplete="organization"
+            value={company} onChange={(e) => setCompany(e.target.value)} required />
         </div>
         <div className="ent-field">
           <label htmlFor="phone">Phone <span className="ent-opt">optional</span></label>
@@ -203,11 +201,17 @@ export default function EnterpriseForm() {
 
         {status === "error" && <p className="ent-error" role="alert">{error}</p>}
 
-        <button type="submit" className="ent-submit" disabled={status === "sending"}>
+        <button
+          type="submit"
+          className="ent-submit"
+          disabled={status === "sending" || !canSubmit}
+        >
           {status === "sending" ? "Sending…" : "Request a quote"}
         </button>
         <p className="ent-fine">
-          We reply within one business day. Minimum {SEATS.min} users.
+          {canSubmit
+            ? `We reply within one business day. Minimum ${SEATS.min} users.`
+            : "Add your name, work email and company to continue."}
         </p>
       </form>
       <Styles />
@@ -274,15 +278,6 @@ function Styles() {
       }
       .ent-range:focus-visible{outline:2px solid #F97316;outline-offset:4px;border-radius:8px}
 
-      .ent-quote{
-        display:flex;flex-direction:column;gap:2px;
-        padding:14px 16px;border-radius:12px;
-        background:rgba(249,115,22,.10);border:1px solid rgba(249,115,22,.28);
-      }
-      .ent-quote-k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#FDBA74}
-      .ent-quote strong{font-size:28px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-      .ent-quote strong span{font-size:14px;font-weight:600;color:#A1A1AA}
-      .ent-quote-sub{font-size:12px;color:#A1A1AA}
 
       .ent-chips{display:flex;flex-wrap:wrap;gap:8px}
       .ent-chip{

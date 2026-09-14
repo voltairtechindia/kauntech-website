@@ -97,4 +97,10 @@ export const LIMITS = {
   // Job application (also triggers a Gemini resume parse + file upload).
   applyBurst: { limit: 3, windowSeconds: 300 },
   applyDaily: { limit: 8, windowSeconds: DAY },
+
+  // Enterprise quote form. Tighter than the contact form: a real team sends one
+  // of these, so anything past a handful a day from one address is a bot
+  // filling the sales queue with rubbish.
+  enterpriseBurst: { limit: 2, windowSeconds: 300 },
+  enterpriseDaily: { limit: 5, windowSeconds: DAY },
 } as const;
