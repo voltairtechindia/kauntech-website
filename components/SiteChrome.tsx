@@ -11,14 +11,21 @@ import AuraField from "@/components/ui/AuraField";
 /**
  * Renders the marketing chrome (Navbar / Footer / chat widget) around the page,
  * EXCEPT on the gated /ar owner section, which ships its own light, app-flavoured
- * shell (see app/ar/layout.tsx). Keeping this in one client component avoids
- * restructuring every marketing page into a route group.
+ * shell (see app/ar/layout.tsx), and /enterprise, which is opened inside the
+ * mobile app and must read as one focused form — no nav to wander off into, no
+ * footer, and no chat widget covering the submit button on a phone. Keeping
+ * this in one client component avoids restructuring every marketing page into
+ * a route group.
  */
 export default function SiteChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAr = pathname === "/ar" || pathname?.startsWith("/ar/");
+  const isBare =
+    pathname === "/ar" ||
+    pathname?.startsWith("/ar/") ||
+    pathname === "/enterprise" ||
+    pathname?.startsWith("/enterprise/");
 
-  if (isAr) return <>{children}</>;
+  if (isBare) return <>{children}</>;
 
   return (
     <>
