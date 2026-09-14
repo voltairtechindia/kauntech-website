@@ -848,7 +848,7 @@ export function ConfigsScreen() {
 /* ---------------------------------- 6 · PLAN -----------------------------------
    app/(tabs)/plan.tsx - YOUR PLAN header, Overview/K-Tokens/Upgrade tabs,
    token balance with usage bar, real token costs (AI Fix 1 · AI Intel 50 ·
-   AI Strategy 100) and the RECOMMENDED Pro card at ₹399/mo billed annually. */
+   AI Strategy 100) and the RECOMMENDED Pro card at ₹1,499 a year. */
 
 const TOKEN_COSTS = [
   { icon: ic.sparkles, name: "AI Fix", cost: "1", tint: "#D97706" },
@@ -909,11 +909,11 @@ export function PlanScreen() {
         <div className="kps-plancard-row">
           <b>Pro</b>
           <span>
-            ₹399<i>/mo billed annually</i>
+            ₹1,499<i>/year</i>
           </span>
         </div>
         <ul>
-          <li>{ic.check(11)} 1,000 tokens · 500 scans per month</li>
+          <li>{ic.check(11)} 1,000 tokens a month · 2,000 scans a year</li>
           <li>{ic.check(11)} AI Intel (50 tokens / scan)</li>
           <li>{ic.check(11)} Google Sheets · Gmail · Telegram automation</li>
           <li>{ic.check(11)} AR template cards · 3 VCards</li>

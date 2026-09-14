@@ -5,7 +5,8 @@ import { ArrowRight, Check, Coins } from "lucide-react";
 
 /**
  * Pricing teaser - numbers mirror the app paywall (source of truth:
- * kauntech-app app/(tabs)/plan.tsx). Deep-dive lives on /pricing.
+ * kauntech-app constants/plans.ts + app/(tabs)/plan.tsx). Plans bill yearly
+ * only. Deep-dive lives on /pricing.
  */
 const PLANS = [
   {
@@ -17,17 +18,17 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "₹399",
-    per: "/mo billed annually · ₹499 monthly",
+    price: "₹1,499",
+    per: "/year · $12.99",
     tag: "Recommended",
-    feats: ["1,000 K-Tokens + 500 scans /mo", "AI Intel & AR template cards", "Google Sheets · Gmail · Telegram"],
+    feats: ["1,000 K-Tokens /mo · 2,000 scans /yr", "AI Intel & AR template cards", "Google Sheets · Gmail · Telegram"],
   },
   {
     name: "Ultra",
-    price: "₹999",
-    per: "/mo billed annually · ₹1,299 monthly",
+    price: "₹2,499",
+    per: "/year · $19.99",
     tag: "Everything",
-    feats: ["3,000 K-Tokens · unlimited scans", "AI Strategy + full AR studio", "Team access · 250 MB cloud"],
+    feats: ["3,000 K-Tokens /mo · 2,500 scans /yr", "AI Strategy + full AR studio", "Team access · 250 MB cloud"],
   },
 ];
 

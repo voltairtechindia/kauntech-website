@@ -3,12 +3,12 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import Pricing from "@/components/sections/Pricing";
 
 export const metadata: Metadata = {
-  title: "Pricing & Top-Ups - Free, Pro, Ultra & Custom Plans",
+  title: "Pricing & Top-Ups - Free, Pro, Ultra & Enterprise Plans",
   description:
-    "Kauntech pricing: Free (49 scans), Pro (₹499/mo), Ultra (₹1,299/mo), and Custom enterprise tiers. Understand the K-Tokens economy and AI Intel / Fix / Strategy token costs.",
+    "Kauntech pricing: Free (49 scans a month), Pro (₹1,499/year), Ultra (₹2,499/year), and Enterprise priced per user. Understand the K-Tokens economy and AI Intel / Fix / Strategy token costs.",
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "Kauntech Pricing - Free, Pro, Ultra & Custom",
+    title: "Kauntech Pricing - Free, Pro, Ultra & Enterprise",
     description:
       "Flexible offline-first scanning plans with K-Tokens for AI Fix, AI Intel, and AI Strategy.",
     url: "/pricing",
@@ -44,14 +44,14 @@ const pricingLd = {
     {
       "@type": "Offer",
       name: "Pro Plan",
-      price: "499",
+      price: "1499",
       priceCurrency: "INR",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
-        price: "499",
+        price: "1499",
         priceCurrency: "INR",
         billingIncrement: 1,
-        unitCode: "MON",
+        unitCode: "ANN",
       },
       availability: "https://schema.org/InStock",
       url: "https://www.kauntech.com/pricing",
@@ -59,14 +59,14 @@ const pricingLd = {
     {
       "@type": "Offer",
       name: "Ultra Plan",
-      price: "1299",
+      price: "2499",
       priceCurrency: "INR",
       priceSpecification: {
         "@type": "UnitPriceSpecification",
-        price: "1299",
+        price: "2499",
         priceCurrency: "INR",
         billingIncrement: 1,
-        unitCode: "MON",
+        unitCode: "ANN",
       },
       availability: "https://schema.org/InStock",
       url: "https://www.kauntech.com/pricing",

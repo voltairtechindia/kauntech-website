@@ -1275,7 +1275,7 @@ section {
 }
 
 .price-card.ultra::before {
-  content: 'ENTERPRISE AI';
+  content: 'BEST PLAN';
   position: absolute;
   top: -14px;
   left: 50%;
@@ -1318,7 +1318,7 @@ section {
 }
 
 .price-amount .annual-price {
-  display: none;
+  display: block;
   font-size: 1rem;
   color: var(--gold);
   font-weight: 600;

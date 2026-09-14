@@ -36,7 +36,7 @@ export default function TermsPage() {
         <div className="legal-card">
           <h1 className="grad-text">Terms of Service</h1>
           <span className="last-updated">
-            <Ic icon={CalendarDays} /> Last Updated: May 28, 2026
+            <Ic icon={CalendarDays} /> Last Updated: September 14, 2026
           </span>
 
           <div className="legal-body">
@@ -123,7 +123,7 @@ export default function TermsPage() {
                 <thead>
                   <tr>
                     <th>Subscription Tier</th>
-                    <th>Scan Quota / Month</th>
+                    <th>Scan Quota</th>
                     <th>Included K-Tokens / Month</th>
                     <th>AI Capabilities Included</th>
                   </tr>
@@ -131,25 +131,25 @@ export default function TermsPage() {
                 <tbody>
                   <tr>
                     <td><strong>Free</strong></td>
-                    <td>49 scans</td>
+                    <td>49 scans / month</td>
                     <td>100 tokens</td>
                     <td>Standard OCR &amp; Basic Custom Fields</td>
                   </tr>
                   <tr>
                     <td><strong>Pro</strong></td>
-                    <td>500 scans</td>
+                    <td>2,000 scans / year</td>
                     <td>1,000 tokens</td>
                     <td>On-Device AI Fix, AI Intel Enrichment</td>
                   </tr>
                   <tr>
                     <td><strong>Ultra</strong></td>
-                    <td>Unlimited</td>
+                    <td>2,500 scans / year</td>
                     <td>3,000 tokens</td>
                     <td>AI Strategy, Team Collaboration &amp; Cloud Backup</td>
                   </tr>
                   <tr>
-                    <td><strong>Custom</strong></td>
-                    <td>Unlimited</td>
+                    <td><strong>Enterprise</strong></td>
+                    <td>4,000 scans / year per user</td>
                     <td>Custom Agreement</td>
                     <td>Dedicated models &amp; on-premises storage</td>
                   </tr>
@@ -176,7 +176,7 @@ export default function TermsPage() {
               </li>
             </ul>
             <p>
-              Subscribers are billed in advance on a recurring monthly or annual billing cycle. All
+              Subscribers are billed in advance on a recurring annual billing cycle. All
               payments are securely processed by authorized third-party PSPs (payment service
               providers) and bank rails. Subscriptions automatically renew unless canceled at
               least 24 hours prior to the next billing cycle. All purchases and token top-ups are
@@ -194,8 +194,8 @@ export default function TermsPage() {
 
             <ul>
               <li>
-                <strong>Auto-renewal:</strong> Kauntech subscriptions (Pro and Ultra, monthly or
-                annual) are auto-renewing. Your account will be charged for renewal within 24 hours
+                <strong>Auto-renewal:</strong> Kauntech subscriptions (Pro and Ultra, billed
+                yearly) are auto-renewing. Your account will be charged for renewal within 24 hours
                 prior to the end of the current period at the price of the plan you selected,
                 unless you cancel auto-renewal at least 24 hours before the end of the current
                 period.

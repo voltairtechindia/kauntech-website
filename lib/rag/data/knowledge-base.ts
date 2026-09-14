@@ -169,19 +169,18 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "plan",
     external_id: "PLAN-PRO",
-    title: "Pro plan (₹499 / month, ₹399 / month annual)",
+    title: "Pro plan (₹1,499 / year)",
     content:
-      "Pro plan: ₹499 per month, or ₹399 per month on annual billing (₹4,788 billed annually). For active sales " +
-      "professionals who want AI enrichment and CRM automations. Includes 500 scans per month, 1,000 K-Tokens per month, " +
+      "Pro plan: ₹1,499 per year ($12.99 per year), billed yearly. For active sales " +
+      "professionals who want AI enrichment and CRM automations. Includes 2,000 scans per year, 1,000 K-Tokens per month, " +
       "AI Intel (2 tokens per scan), AI Fix (1 token per fix), AR template cards (60 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
       "sync, Telegram bot integration, Webhook & WhatsApp automation, the ability to unlock more VCard/Product/Template " +
       "slots with tokens, and 50 MB of cloud storage (one budget shared by your card photos and AR content).",
     metadata: {
       name: "Pro",
-      price_monthly: "₹499",
-      price_annual_monthly: "₹399",
-      price_annual_total: "₹4,788",
-      scans: 500,
+      price_yearly: "₹1,499",
+      price_yearly_usd: "$12.99",
+      scans_per_year: 2000,
       k_tokens: 1000,
       vcards: 3,
       products: 4,
@@ -191,18 +190,17 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "plan",
     external_id: "PLAN-ULTRA",
-    title: "Ultra plan (₹1,299 / month, ₹999 / month annual)",
+    title: "Ultra plan (₹2,499 / year)",
     content:
-      "Ultra plan: ₹1,299 per month, or ₹999 per month on annual billing (₹11,988 billed annually). The top tier, with " +
-      "everything in Pro included. Adds unlimited scans, 3,000 K-Tokens per month, AI Strategy (6 tokens per scan, Ultra " +
+      "Ultra plan: ₹2,499 per year ($19.99 per year), billed yearly. The top self-serve tier, with " +
+      "everything in Pro included. Adds 2,500 scans per year, 3,000 K-Tokens per month, AI Strategy (6 tokens per scan, Ultra " +
       "only), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
       "storage, Multi-User Team Collaboration (team group access), and Dedicated VIP Support.",
     metadata: {
       name: "Ultra",
-      price_monthly: "₹1,299",
-      price_annual_monthly: "₹999",
-      price_annual_total: "₹11,988",
-      scans: "unlimited",
+      price_yearly: "₹2,499",
+      price_yearly_usd: "$19.99",
+      scans_per_year: 2500,
       k_tokens: 3000,
       vcards: 5,
       products: 8,
@@ -213,23 +211,23 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
   {
     doc_type: "plan",
     external_id: "PLAN-CUSTOM",
-    title: "Custom / Enterprise plan (Let's talk)",
+    title: "Enterprise plan (priced per user, 5 user minimum)",
     content:
-      "Custom plan: contact sales (\"Let's Talk\" pricing). For large corporations needing white-labeling, custom LLMs or " +
-      "massive event capacity. Includes Unlimited Scans & Tokens, On-Premise Storage options, Custom Hardware " +
-      "Integrations, an Advanced Analytics Dashboard, a dedicated Account Manager, and complete White Labeling. " +
-      "Contact business@voltairtech.com to discuss.",
-    metadata: { name: "Custom", price: "custom" },
+      "Enterprise plan: priced per user with a 5 user minimum. Talk to the team for a customized plan, through the " +
+      "contact form at kauntech.com/contact or at business@voltairtech.com. Includes 4,000 scans per user per year and " +
+      "everything in Ultra, plus On-Premise Storage options, Custom Hardware Integrations, an Advanced Analytics " +
+      "Dashboard, a dedicated Account Manager, and complete White Labeling.",
+    metadata: { name: "Enterprise", price: "custom", min_users: 5, scans_per_year: 4000 },
   },
   {
     doc_type: "plan",
     external_id: "PLAN-BILLING",
-    title: "Billing & annual discount",
+    title: "Billing: yearly plans",
     content:
-      "Kauntech offers monthly and annual billing. Annual billing saves about 20-23%: Pro is ₹399/month (₹4,788/year, vs " +
-      "₹499/month monthly) and Ultra is ₹999/month (₹11,988/year, vs ₹1,299/month monthly) on annual plans. Token top-ups " +
-      "are available anytime when you run low.",
-    metadata: { tags: ["billing", "annual", "discount", "top-up"] },
+      "Kauntech plans are billed yearly; there is no monthly plan. Pro is ₹1,499 per year ($12.99) and Ultra is " +
+      "₹2,499 per year ($19.99). Subscriptions renew automatically each year through the App Store or Google Play " +
+      "unless cancelled. Enterprise is quoted per user. Token top-ups are available anytime when you run low.",
+    metadata: { tags: ["billing", "yearly", "annual", "top-up"] },
   },
 
   // --- K-Tokens -----------------------------------------------------------
@@ -332,8 +330,8 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     external_id: "FAQ-COST",
     title: "How much does Kauntech cost?",
     content:
-      "Kauntech offers a free plan with 49 scans and 100 K-Tokens per month. Paid plans are Pro at ₹499/month and Ultra at " +
-      "₹1,299/month, plus a Custom plan for enterprises. Annual billing is discounted (Pro ₹399/month, Ultra ₹999/month).",
+      "Kauntech offers a free plan with 49 scans and 100 K-Tokens per month. Paid plans are billed yearly: Pro at " +
+      "₹1,499/year and Ultra at ₹2,499/year, plus an Enterprise plan priced per user (5 user minimum).",
     metadata: { category: "pricing" },
   },
   {

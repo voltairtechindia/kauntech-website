@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Check, CircleCheck, Coins, Rocket } from "lucide-react";
 import Ic from "@/components/ui/Icon";
 import Brand from "@/components/ui/BrandIcons";
 
+// Plans bill yearly only (monthly retired 2026-09). Prices and scan pools mirror
+// the app paywall: kauntech-app constants/plans.ts and app/(tabs)/plan.tsx.
 export default function Pricing() {
-  const [annual, setAnnual] = useState(false);
-
   return (
     <section id="pricing">
       <div className="container">
@@ -91,24 +90,6 @@ export default function Pricing() {
               </div>
             </div>
           </div>
-
-          <div className="pricing-toggle">
-            <button
-              className={`toggle-btn${!annual ? " active" : ""}`}
-              onClick={() => setAnnual(false)}
-              type="button"
-            >
-              Monthly Billing
-            </button>
-            <button
-              className={`toggle-btn${annual ? " active" : ""}`}
-              onClick={() => setAnnual(true)}
-              type="button"
-            >
-              <span>Annual Billing</span>
-              <span className="save-badge">SAVE up to 23%</span>
-            </button>
-          </div>
         </div>
 
         <div className="pricing-grid reveal reveal-delay-1">
@@ -135,15 +116,15 @@ export default function Pricing() {
             <h2 className="price-name" style={{ color: "var(--gold)" }}>Pro</h2>
             <div className="price-amount">
               <span className="currency">₹</span>
-              {annual ? "399" : "499"}
-              <span className="period">/ month</span>
-              {annual && <div className="annual-price">₹4,788 billed annually</div>}
+              1,499
+              <span className="period">/ year</span>
+              <div className="annual-price">$12.99 / year</div>
             </div>
             <div className="price-desc">
               For active sales professionals demanding AI enrichment and CRM automations.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><Ic icon={Check} /></span> 500 Scans / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 2,000 Scans / year</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / month</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> AI Intel (2 tokens/scan)</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> AI Fix included (1 token/fix)</li>
@@ -160,15 +141,15 @@ export default function Pricing() {
             <h2 className="price-name" style={{ color: "var(--indigo)" }}>Ultra</h2>
             <div className="price-amount">
               <span className="currency">₹</span>
-              {annual ? "999" : "1,299"}
-              <span className="period">/ month</span>
-              {annual && <div className="annual-price">₹11,988 billed annually</div>}
+              2,499
+              <span className="period">/ year</span>
+              <div className="annual-price">$19.99 / year</div>
             </div>
             <div className="price-desc">
-              Everything in Pro, plus unlimited scans, AI Strategy, team collaboration, and cloud backup.
+              Everything in Pro, plus more scans, AI Strategy, team collaboration, and cloud backup.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><Ic icon={Check} /></span> Unlimited Scans</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 2,500 Scans / year</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 3,000 K-Tokens / month</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> AI Strategy (6 tokens/scan)</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Full AR Studio · custom 3D, video, build from scratch</li>
@@ -181,17 +162,19 @@ export default function Pricing() {
           </div>
 
           <div className="price-card">
-            <h2 className="price-name">Custom</h2>
+            <h2 className="price-name">Enterprise</h2>
             <div className="price-amount">
               <span style={{ fontSize: "2rem", fontWeight: 800, color: "var(--text)" }}>
-                Let&apos;s Talk
+                Per user
               </span>
+              <div className="annual-price">5 user minimum</div>
             </div>
             <div className="price-desc">
-              For large corporations needing white-labeling, custom LLMs, or massive event capacity.
+              Talk to us for a customized plan for your team.
             </div>
             <ul className="price-features">
-              <li><span className="pf-check"><Ic icon={Check} /></span> Unlimited Scans &amp; Tokens</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 4,000 Scans / year per user</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Everything in Ultra</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> On-Premise Storage Options</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Custom Hardware Integrations</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Advanced Analytics Dashboard</li>
@@ -203,7 +186,7 @@ export default function Pricing() {
               href="/contact"
               style={{ display: "block", textAlign: "center", textDecoration: "none" }}
             >
-              Contact Sales
+              Get Quote
             </Link>
           </div>
         </div>
