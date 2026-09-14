@@ -172,8 +172,8 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Pro plan (₹1,499 / year)",
     content:
       "Pro plan: ₹1,499 per year ($12.99 per year), billed yearly. For active sales " +
-      "professionals who want AI enrichment and CRM automations. Includes 2,000 scans per year, 1,000 K-Tokens per month, " +
-      "AI Intel (2 tokens per scan), AI Fix (1 token per fix), AR template cards (60 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
+      "professionals who want AI enrichment and CRM automations. Includes 2,000 scans per year, 1,000 K-Tokens per year, " +
+      "50 AI Intel runs per month with unused runs rolling over to the next month, AI Fix, AR template cards (600 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
       "sync, Telegram bot integration, Webhook & WhatsApp automation, the ability to unlock more VCard/Product/Template " +
       "slots with tokens, and 50 MB of cloud storage (one budget shared by your card photos and AR content).",
     metadata: {
@@ -238,14 +238,17 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     content:
       "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features and are only consumed when you actively " +
       "use an AI feature. When a plan's scan limit is exhausted, additional scans can also consume tokens flexibly. " +
-      "The three AI features and their costs are: AI Fix - 1 token per use (Pro tier; automated contact-formatting fixes); " +
-      "AI Intel - 2 tokens per scan (Pro tier; deep company intelligence enrichment); AI Strategy - 6 tokens per scan " +
-      "(Ultra tier; comprehensive sales strategies and icebreakers). Example balances: 1,000 K-Tokens can run up to 1,000 " +
-      "AI Fixes or enrich up to 500 cards with AI Intel; 3,000 K-Tokens can generate up to 500 AI Strategy outputs.",
+      "AI Intel and AI Strategy are not paid for with tokens on a paid plan: each plan includes a monthly allowance of " +
+      "runs, unused runs roll over to the next month, and the balance resets when the plan renews. Pro includes 50 AI Intel " +
+      "a month; Ultra includes 60 AI Intel and 30 AI Strategy; Enterprise includes 75 AI Intel and 25 AI Strategy. " +
+      "Tokens are the overflow price once an allowance is spent, and they also buy add-ons: AI Intel - 100 tokens per run; " +
+      "AI Strategy - 200 tokens per run (Ultra and Enterprise only); an extra scan including its AI Fix - 3 tokens. " +
+      "Top-up packs are ₹100 for 1,500 tokens, ₹250 for 4,000 tokens and ₹500 for 10,000 tokens. Purchased tokens never " +
+      "expire and are spent only after the monthly plan tokens are used up.",
     metadata: {
-      ai_fix: "1 token/use",
-      ai_intel: "2 tokens/scan",
-      ai_strategy: "6 tokens/scan",
+      ai_fix: "included; 3 tokens for an extra scan",
+      ai_intel: "50/mo Pro, 60/mo Ultra, 75/mo Enterprise; 100 tokens beyond the allowance",
+      ai_strategy: "30/mo Ultra, 25/mo Enterprise; 200 tokens beyond the allowance",
     },
   },
   {

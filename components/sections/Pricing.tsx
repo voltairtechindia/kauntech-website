@@ -125,10 +125,10 @@ export default function Pricing() {
             </div>
             <ul className="price-features">
               <li><span className="pf-check"><Ic icon={Check} /></span> 2,000 Scans / year</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / month</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> AI Intel (2 tokens/scan)</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> AI Fix included (1 token/fix)</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> AR template cards (60 tokens/card)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 50 AI Intel / month, unused roll over</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / year</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AI Fix included</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AR template cards (600 tokens/card)</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 3 VCards · 4 Products · 4 Templates</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Google Sheets &amp; Gmail Sync</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Telegram Bot Integration</li>
@@ -150,8 +150,8 @@ export default function Pricing() {
             </div>
             <ul className="price-features">
               <li><span className="pf-check"><Ic icon={Check} /></span> 2,500 Scans / year</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> 3,000 K-Tokens / month</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> AI Strategy (6 tokens/scan)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 60 AI Intel + 30 AI Strategy / month, unused roll over</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / year</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Full AR Studio · custom 3D, video, build from scratch</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 5 VCards · 8 Products · 6 Templates</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Company Logo on QR · Custom QR Link</li>
@@ -174,6 +174,7 @@ export default function Pricing() {
             </div>
             <ul className="price-features">
               <li><span className="pf-check"><Ic icon={Check} /></span> 4,000 Scans / year per user</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 75 AI Intel + 25 AI Strategy / month per user</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Everything in Ultra</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> On-Premise Storage Options</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Custom Hardware Integrations</li>
@@ -210,10 +211,9 @@ export default function Pricing() {
           }}
         >
           {[
-            { tokens: "200", price: "99" },
-            { tokens: "600", price: "249" },
-            { tokens: "1,500", price: "549" },
-            { tokens: "4,000", price: "1,299", badge: "Best Value" },
+            { tokens: "1,500", price: "100" },
+            { tokens: "4,000", price: "250", badge: "Popular" },
+            { tokens: "10,000", price: "500", badge: "Best Value" },
           ].map((pack) => (
             <div
               key={pack.price}

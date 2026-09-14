@@ -847,13 +847,14 @@ export function ConfigsScreen() {
 
 /* ---------------------------------- 6 · PLAN -----------------------------------
    app/(tabs)/plan.tsx - YOUR PLAN header, Overview/K-Tokens/Upgrade tabs,
-   token balance with usage bar, real token costs (AI Fix 1 · AI Intel 50 ·
-   AI Strategy 100) and the RECOMMENDED Pro card at ₹1,499 a year. */
+   token balance with usage bar, the overflow token costs that apply once a
+   plan's included AI allowance is spent (extra scan 3 · AI Intel 100 ·
+   AI Strategy 200) and the RECOMMENDED Pro card at ₹1,499 a year. */
 
 const TOKEN_COSTS = [
-  { icon: ic.sparkles, name: "AI Fix", cost: "1", tint: "#D97706" },
-  { icon: ic.brain, name: "AI Intel", cost: "50", tint: "#6366F1" },
-  { icon: ic.target, name: "AI Strategy", cost: "100", tint: "#10B981" },
+  { icon: ic.sparkles, name: "Extra scan", cost: "3", tint: "#D97706" },
+  { icon: ic.brain, name: "AI Intel", cost: "100", tint: "#6366F1" },
+  { icon: ic.target, name: "AI Strategy", cost: "200", tint: "#10B981" },
 ];
 
 export function PlanScreen() {
@@ -914,7 +915,7 @@ export function PlanScreen() {
         </div>
         <ul>
           <li>{ic.check(11)} 1,000 tokens a month · 2,000 scans a year</li>
-          <li>{ic.check(11)} AI Intel (50 tokens / scan)</li>
+          <li>{ic.check(11)} 50 AI Intel / month</li>
           <li>{ic.check(11)} Google Sheets · Gmail · Telegram automation</li>
           <li>{ic.check(11)} AR template cards · 3 VCards</li>
         </ul>

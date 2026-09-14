@@ -7,23 +7,26 @@
  *
  * AR is TIERED: Pro = pre-made templates only; Ultra = the full studio.
  * Token costs (kept in lock-step with the app's plan.tsx AR cost copy):
- *   - Publish a TEMPLATE AR card (Pro) .... AR_COST.buildPro    (60)
- *   - Build a CUSTOM AR card (Ultra) ...... AR_COST.buildUltra  (80)
- *   - Upload a 3D model element (.glb) .... AR_COST.model       (40)  Ultra only
- *   - Upload a video element .............. AR_COST.video      (100)  Ultra only
+ *   - Publish a TEMPLATE AR card (Pro) .... AR_COST.buildPro   (600)
+ *   - Build a CUSTOM AR card (Ultra) ...... AR_COST.buildUltra (800)
+ *   - Upload a 3D model element (.glb) .... AR_COST.model      (400)  Ultra only
+ *   - Upload a video element .............. AR_COST.video     (1000)  Ultra only
  *   - Image / audio (custom uploads) ...... Ultra only (gated in /api/ar/asset)
  *   - Text / social / template apply ...... free
  * Custom element uploads are gated to Ultra in /api/ar/asset. Extra AR card slots
  * beyond the plan cap are bought via the app's purchase_bypass RPC ('ar_card',
- * 160 tokens, Ultra only), not here.
+ * 1600 tokens, Ultra only), not here.
  */
 import { getAppSupabase } from "@/lib/appSupabase";
 
+// Ten times their old values because a K-Token is worth ₹0.05 after the v3
+// repricing instead of ~₹0.495. The rupee price of every AR action is
+// unchanged: a custom card was ₹39.60 and is ₹40.
 export const AR_COST = {
-  buildPro: 60,    // Pro: publish a pre-made template card
-  buildUltra: 80,  // Ultra: build / publish a custom card
-  model: 40,       // Ultra: custom .glb upload
-  video: 100,      // Ultra: custom video upload (the only recurring-egress element)
+  buildPro: 600,    // Pro: publish a pre-made template card  (₹30)
+  buildUltra: 800,  // Ultra: build / publish a custom card   (₹40)
+  model: 400,       // Ultra: custom .glb upload              (₹20)
+  video: 1000,      // Ultra: custom video upload (the only recurring-egress element, ₹50)
 } as const;
 
 export type ArChargeResult =

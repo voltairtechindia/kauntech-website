@@ -163,16 +163,20 @@ export default function TermsPage() {
             </p>
             <ul>
               <li>
-                <strong>AI Fix</strong> (1 Token per use): Automated grammatical, capitalization,
+                <strong>AI Fix</strong> (3 Tokens per use): Automated grammatical, capitalization,
                 or formatting corrections.
               </li>
               <li>
-                <strong>AI Intel</strong> (2 Tokens per scan): Deep enrichment of company
-                background, founder intelligence, and size.
+                <strong>AI Intel</strong>: Deep enrichment of company background, founder
+                intelligence, and size. Paid plans include a monthly allowance of AI Intel
+                runs; unused runs carry over to the next month and reset when the plan
+                renews. Beyond the allowance, each run costs 100 Tokens.
               </li>
               <li>
-                <strong>AI Strategy</strong> (6 Tokens per scan): Generation of customized B2B cold
-                email opener sequences and sales pitches.
+                <strong>AI Strategy</strong> (Ultra and Enterprise only): Generation of
+                customized B2B cold email opener sequences and sales pitches. Included as a
+                monthly allowance on the same terms as AI Intel; beyond it, each run costs
+                200 Tokens.
               </li>
             </ul>
             <p>
