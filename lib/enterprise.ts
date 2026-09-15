@@ -31,11 +31,17 @@ export function sanitizeNeeds(input: unknown): string[] {
 }
 
 /**
- * Seat range the form's slider covers. 5 is the published Enterprise minimum;
- * anything above 500 is a conversation, not a slider.
+ * Bounds the form and the API agree on. 5 is the published Enterprise minimum
+ * seat count; the ceilings exist only so a typo or a bot can't write a number
+ * the table's own sanity check would reject.
+ *
+ * These are typed in rather than dragged: a team that needs 1,700 seats can say
+ * so, instead of being rounded to wherever a slider happened to stop.
  */
-export const SEATS = { min: 5, max: 500, step: 5, default: 25 } as const;
-export const SCANS = { min: 1000, max: 20000, step: 500, default: 4000 } as const;
+export const SEATS = { min: 5, max: 100000 } as const;
+export const SCANS = { min: 1, max: 1000000 } as const;
+export const INTEL = { min: 0, max: 100000 } as const;
+export const STRATEGY = { min: 0, max: 100000 } as const;
 
 export interface EnterpriseEnquiry {
   name: string;
@@ -45,6 +51,7 @@ export interface EnterpriseEnquiry {
   seats: number;
   scans_per_user: number;
   intel_per_user: number | null;
+  strategy_per_user: number | null;
   needs: string[];
   message: string | null;
   indicative_annual_inr: number | null;

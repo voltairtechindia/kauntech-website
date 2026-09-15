@@ -3,7 +3,7 @@
  *
  * POST /api/enterprise
  *   { name, work_email, company, phone?, seats, scans_per_user, intel_per_user?,
- *     needs?: string[], message?, source?, page_url?, website? }
+ *     strategy_per_user?, needs?: string[], message?, source?, page_url?, website? }
  *   -> 200 { ok: true }
  *
  * Same shape as /api/contact — per-IP burst + daily limits, and a `website`
@@ -18,8 +18,10 @@
 import { NextResponse } from "next/server";
 
 import {
+  INTEL,
   SEATS,
   SCANS,
+  STRATEGY,
   insertEnterpriseEnquiry,
   sanitizeNeeds,
 } from "@/lib/enterprise";
@@ -39,10 +41,17 @@ function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
-function clampInt(v: unknown, lo: number, hi: number, fallback: number): number {
-  const n = typeof v === "number" ? v : Number.parseInt(str(v), 10);
-  if (!Number.isFinite(n)) return fallback;
-  return Math.min(hi, Math.max(lo, Math.round(n)));
+/**
+ * Parse one of the typed-in numbers. Returns null when the field is blank or
+ * not a number at all — the caller decides whether that is fatal (seats, scans)
+ * or simply absent (Intel, Strategy). Values outside the range are clamped
+ * rather than rejected, so a stray extra zero still produces a workable lead.
+ */
+function intIn(v: unknown, lo: number, hi: number): number | null {
+  if (v == null) return null;
+  const raw = typeof v === "number" ? v : Number.parseInt(str(v).replace(/[,\s]/g, ""), 10);
+  if (!Number.isFinite(raw)) return null;
+  return Math.min(hi, Math.max(lo, Math.round(raw)));
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -103,10 +112,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ detail: "Phone or message is too long." }, { status: 400 });
   }
 
-  const seats = clampInt(body.seats, SEATS.min, SEATS.max, SEATS.default);
-  const scansPerUser = clampInt(body.scans_per_user, SCANS.min, SCANS.max, SCANS.default);
-  const intelPerUser =
-    body.intel_per_user == null ? null : clampInt(body.intel_per_user, 0, 1000, 75);
+  const seats = intIn(body.seats, SEATS.min, SEATS.max);
+  if (seats == null) {
+    return NextResponse.json(
+      { detail: `Please enter how many users you need (minimum ${SEATS.min}).` },
+      { status: 400 },
+    );
+  }
+  const scansPerUser = intIn(body.scans_per_user, SCANS.min, SCANS.max);
+  if (scansPerUser == null) {
+    return NextResponse.json(
+      { detail: "Please enter how many scans each user needs per year." },
+      { status: 400 },
+    );
+  }
+  // Both AI allowances are optional — a team that has not thought about them
+  // yet should still be able to ask for a quote.
+  const intelPerUser = intIn(body.intel_per_user, INTEL.min, INTEL.max);
+  const strategyPerUser = intIn(body.strategy_per_user, STRATEGY.min, STRATEGY.max);
 
   const daily = await rlHit(
     `enterprise:day:${istDay()}:${ip}`,
@@ -131,6 +154,7 @@ export async function POST(req: Request) {
       seats,
       scans_per_user: scansPerUser,
       intel_per_user: intelPerUser,
+      strategy_per_user: strategyPerUser,
       needs: sanitizeNeeds(body.needs),
       message: message || null,
       // No figure is shown to the user any more, so none is recorded.

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ENTERPRISE_NEEDS, SCANS, SEATS } from "@/lib/enterprise";
+import { ENTERPRISE_NEEDS, SEATS } from "@/lib/enterprise";
 
 /**
  * Phone-first Enterprise quote form.
@@ -17,15 +17,31 @@ import { ENTERPRISE_NEEDS, SCANS, SEATS } from "@/lib/enterprise";
  * volume captured here, and putting a number on the page would set an
  * expectation sales then has to argue with.
  *
- * Submit stays disabled until name, work email and company are filled — a
- * quote request without a way to reply is just noise in the queue.
+ * The volumes are typed, not dragged. A slider can only offer the numbers it
+ * was built to reach, and Enterprise teams routinely need more — so the four
+ * figures sit in a box of their own above the contact details, where seats and
+ * scans are required and the two AI allowances are not.
+ *
+ * Submit stays disabled until name, work email, company, seats and scans are
+ * filled — a quote request without a way to reply, or without a volume to quote
+ * against, is just noise in the queue.
  */
 
 type Status = "idle" | "sending" | "sent" | "error";
 
+/** Digits only. Keeps the field numeric without `type=number`'s spinner, its
+ *  scroll-wheel edits, or its habit of silently clearing on a stray letter. */
+function digits(v: string): string {
+  return v.replace(/[^0-9]/g, "").slice(0, 7);
+}
+
 export default function EnterpriseForm() {
-  const [seats, setSeats] = useState<number>(SEATS.default);
-  const [scans, setScans] = useState<number>(SCANS.default);
+  // Held as strings so the box can start empty — a pre-filled number is an
+  // answer we invented on the team's behalf.
+  const [seats, setSeats] = useState("");
+  const [scans, setScans] = useState("");
+  const [intel, setIntel] = useState("");
+  const [strategy, setStrategy] = useState("");
   const [needs, setNeeds] = useState<string[]>([]);
   // Gated on the three fields a follow-up is impossible without. Controlled
   // rather than leaning on `required`, so the button visibly cannot be pressed
@@ -36,10 +52,17 @@ export default function EnterpriseForm() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string>("");
 
+  const seatCount = Number(seats);
+  const scanCount = Number(scans);
+  const seatsOk = seats.length > 0 && seatCount >= SEATS.min;
+  const scansOk = scans.length > 0 && scanCount > 0;
+
   const canSubmit =
     name.trim().length > 0 &&
     company.trim().length > 0 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
+    seatsOk &&
+    scansOk;
 
   function toggleNeed(key: string) {
     setNeeds((cur) =>
@@ -61,8 +84,10 @@ export default function EnterpriseForm() {
       phone: fd.get("phone"),
       message: fd.get("message"),
       website: fd.get("website"), // honeypot
-      seats,
-      scans_per_user: scans,
+      seats: seatCount,
+      scans_per_user: scanCount,
+      intel_per_user: intel.length ? Number(intel) : null,
+      strategy_per_user: strategy.length ? Number(strategy) : null,
       needs,
       source: new URLSearchParams(window.location.search).get("src") === "app" ? "app" : "site",
       page_url: window.location.href,
@@ -95,7 +120,7 @@ export default function EnterpriseForm() {
           <h1>Enquiry sent</h1>
           <p>
             Thanks — we have your details. Someone from the team will come back
-            to you within one business day with a price for {seats} seats.
+            to you within one business day with a price for {seatCount} seats.
           </p>
         </div>
         <Styles />
@@ -111,37 +136,58 @@ export default function EnterpriseForm() {
           <p>Tell us about your team and we&apos;ll come back with a price.</p>
         </header>
 
-        {/* ── Sliders ─────────────────────────────────────────────── */}
-        <div className="ent-field">
-          <div className="ent-slabel">
-            <label htmlFor="seats">Team size</label>
-            <output htmlFor="seats">{seats} {seats === 1 ? "user" : "users"}</output>
-          </div>
-          <input
-            id="seats" name="seats" type="range" className="ent-range"
-            min={SEATS.min} max={SEATS.max} step={SEATS.step}
-            value={seats}
-            onChange={(e) => setSeats(Number(e.target.value))}
-          />
-          <div className="ent-scale">
-            <span>{SEATS.min}</span><span>{SEATS.max}+</span>
-          </div>
-        </div>
+        {/* ── Volumes ─────────────────────────────────────────────
+            One box, above the contact details: these four numbers are what a
+            quote is actually built from. */}
+        <div className="ent-box">
+          <p className="ent-box-title">Your numbers</p>
 
-        <div className="ent-field">
-          <div className="ent-slabel">
-            <label htmlFor="scans">Scans per user, per year</label>
-            <output htmlFor="scans">{scans.toLocaleString("en-IN")}</output>
+          <div className="ent-field">
+            <label htmlFor="seats">
+              Required team size <span className="ent-req">*</span>
+            </label>
+            <input
+              id="seats" name="seats" className="ent-input"
+              type="text" inputMode="numeric" autoComplete="off"
+              placeholder={`${SEATS.min} or more`}
+              value={seats} onChange={(e) => setSeats(digits(e.target.value))} required
+            />
           </div>
-          <input
-            id="scans" name="scans" type="range" className="ent-range"
-            min={SCANS.min} max={SCANS.max} step={SCANS.step}
-            value={scans}
-            onChange={(e) => setScans(Number(e.target.value))}
-          />
-          <div className="ent-scale">
-            <span>{SCANS.min.toLocaleString("en-IN")}</span>
-            <span>{SCANS.max.toLocaleString("en-IN")}+</span>
+
+          <div className="ent-field">
+            <label htmlFor="scans">
+              Total scans per user <span className="ent-req">*</span>
+            </label>
+            <input
+              id="scans" name="scans" className="ent-input"
+              type="text" inputMode="numeric" autoComplete="off"
+              placeholder="per year"
+              value={scans} onChange={(e) => setScans(digits(e.target.value))} required
+            />
+          </div>
+
+          <div className="ent-field">
+            <label htmlFor="intel">
+              Total Intel per user <span className="ent-opt">optional</span>
+            </label>
+            <input
+              id="intel" name="intel" className="ent-input"
+              type="text" inputMode="numeric" autoComplete="off"
+              placeholder="per month"
+              value={intel} onChange={(e) => setIntel(digits(e.target.value))}
+            />
+          </div>
+
+          <div className="ent-field">
+            <label htmlFor="strategy">
+              Total Strategy per user <span className="ent-opt">optional</span>
+            </label>
+            <input
+              id="strategy" name="strategy" className="ent-input"
+              type="text" inputMode="numeric" autoComplete="off"
+              placeholder="per month"
+              value={strategy} onChange={(e) => setStrategy(digits(e.target.value))}
+            />
           </div>
         </div>
 
@@ -211,7 +257,9 @@ export default function EnterpriseForm() {
         <p className="ent-fine">
           {canSubmit
             ? `We reply within one business day. Minimum ${SEATS.min} users.`
-            : "Add your name, work email and company to continue."}
+            : !seatsOk || !scansOk
+              ? `Add your team size (${SEATS.min} users or more) and scans per user to continue.`
+              : "Add your name, work email and company to continue."}
         </p>
       </form>
       <Styles />
@@ -253,31 +301,16 @@ function Styles() {
       .ent-field label,.ent-legend{font-size:13px;font-weight:600;color:#D4D4D8}
       .ent-opt{font-weight:400;color:#71717A}
 
-      .ent-slabel{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-      .ent-slabel output{font-size:15px;font-weight:700;color:#F97316;font-variant-numeric:tabular-nums}
-      .ent-scale{display:flex;justify-content:space-between;font-size:11px;color:#71717A;font-variant-numeric:tabular-nums}
-
-      .ent-range{
-        -webkit-appearance:none;appearance:none;
-        width:100%;max-width:100%;height:28px;background:transparent;margin:0;
+      .ent-box{
+        display:flex;flex-direction:column;gap:14px;
+        padding:16px;border-radius:14px;
+        background:#121215;border:1px solid #27272A;
       }
-      .ent-range::-webkit-slider-runnable-track{height:6px;border-radius:999px;background:#27272A}
-      .ent-range::-moz-range-track{height:6px;border-radius:999px;background:#27272A}
-      /* 28px thumb: comfortably over the ~44px touch-target guidance once the
-         28px track height is counted, so it can be dragged with a thumb. */
-      .ent-range::-webkit-slider-thumb{
-        -webkit-appearance:none;appearance:none;
-        width:28px;height:28px;margin-top:-11px;border-radius:50%;
-        background:#F97316;border:3px solid #0B0B0F;
-        box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:grab;
+      .ent-box-title{
+        margin:0;font-size:12px;font-weight:700;letter-spacing:.08em;
+        text-transform:uppercase;color:#71717A;
       }
-      .ent-range::-moz-range-thumb{
-        width:28px;height:28px;border-radius:50%;
-        background:#F97316;border:3px solid #0B0B0F;
-        box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:grab;
-      }
-      .ent-range:focus-visible{outline:2px solid #F97316;outline-offset:4px;border-radius:8px}
-
+      .ent-req{color:#F97316;font-weight:700}
 
       .ent-chips{display:flex;flex-wrap:wrap;gap:8px}
       .ent-chip{
