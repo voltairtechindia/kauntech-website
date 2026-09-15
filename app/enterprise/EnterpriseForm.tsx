@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { ENTERPRISE_NEEDS, SEATS } from "@/lib/enterprise";
+import { SEATS } from "@/lib/enterprise";
 
 /**
  * Phone-first Enterprise quote form.
@@ -42,7 +42,6 @@ export default function EnterpriseForm() {
   const [scans, setScans] = useState("");
   const [intel, setIntel] = useState("");
   const [strategy, setStrategy] = useState("");
-  const [needs, setNeeds] = useState<string[]>([]);
   // Gated on the three fields a follow-up is impossible without. Controlled
   // rather than leaning on `required`, so the button visibly cannot be pressed
   // instead of failing validation after the tap.
@@ -64,12 +63,6 @@ export default function EnterpriseForm() {
     seatsOk &&
     scansOk;
 
-  function toggleNeed(key: string) {
-    setNeeds((cur) =>
-      cur.includes(key) ? cur.filter((k) => k !== key) : [...cur, key],
-    );
-  }
-
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (status === "sending" || !canSubmit) return;
@@ -88,7 +81,6 @@ export default function EnterpriseForm() {
       scans_per_user: scanCount,
       intel_per_user: intel.length ? Number(intel) : null,
       strategy_per_user: strategy.length ? Number(strategy) : null,
-      needs,
       source: new URLSearchParams(window.location.search).get("src") === "app" ? "app" : "site",
       page_url: window.location.href,
     };
@@ -140,7 +132,7 @@ export default function EnterpriseForm() {
             One box, above the contact details: these four numbers are what a
             quote is actually built from. */}
         <div className="ent-box">
-          <p className="ent-box-title">Your numbers</p>
+          <p className="ent-box-title">Team and volume</p>
 
           <div className="ent-field">
             <label htmlFor="seats">
@@ -188,26 +180,6 @@ export default function EnterpriseForm() {
               placeholder="per month"
               value={strategy} onChange={(e) => setStrategy(digits(e.target.value))}
             />
-          </div>
-        </div>
-
-        {/* ── Needs ───────────────────────────────────────────────── */}
-        <div className="ent-field">
-          <span className="ent-legend">What do you need?</span>
-          <div className="ent-chips">
-            {ENTERPRISE_NEEDS.map((n) => {
-              const on = needs.includes(n.key);
-              return (
-                <button
-                  key={n.key} type="button"
-                  className={on ? "ent-chip on" : "ent-chip"}
-                  aria-pressed={on}
-                  onClick={() => toggleNeed(n.key)}
-                >
-                  {n.label}
-                </button>
-              );
-            })}
           </div>
         </div>
 
@@ -298,7 +270,7 @@ function Styles() {
       .ent-head p{margin:0;font-size:15px;line-height:1.5;color:#A1A1AA}
 
       .ent-field{display:flex;flex-direction:column;gap:8px;min-width:0}
-      .ent-field label,.ent-legend{font-size:13px;font-weight:600;color:#D4D4D8}
+      .ent-field label{font-size:13px;font-weight:600;color:#D4D4D8}
       .ent-opt{font-weight:400;color:#71717A}
 
       .ent-box{
@@ -311,16 +283,6 @@ function Styles() {
         text-transform:uppercase;color:#71717A;
       }
       .ent-req{color:#F97316;font-weight:700}
-
-      .ent-chips{display:flex;flex-wrap:wrap;gap:8px}
-      .ent-chip{
-        font:inherit;font-size:13px;
-        padding:9px 13px;border-radius:999px;cursor:pointer;
-        background:#18181B;color:#D4D4D8;border:1px solid #27272A;
-        transition:background .15s,border-color .15s,color .15s;
-      }
-      .ent-chip.on{background:rgba(249,115,22,.16);border-color:#F97316;color:#FDBA74}
-      .ent-chip:focus-visible{outline:2px solid #F97316;outline-offset:2px}
 
       .ent-input{
         width:100%;max-width:100%;
@@ -363,7 +325,7 @@ function Styles() {
       }
 
       @media (prefers-reduced-motion:reduce){
-        .ent-chip,.ent-submit{transition:none}
+        .ent-submit{transition:none}
       }
     `}</style>
   );
