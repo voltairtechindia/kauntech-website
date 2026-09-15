@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { SEATS } from "@/lib/enterprise";
+import { INTEL, SCANS, SEATS, STRATEGY } from "@/lib/enterprise";
 
 /**
  * Phone-first Enterprise quote form.
@@ -22,12 +22,41 @@ import { SEATS } from "@/lib/enterprise";
  * figures sit in a box of their own above the contact details, where seats and
  * scans are required and the two AI allowances are not.
  *
- * Submit stays disabled until name, work email, company, seats and scans are
- * filled — a quote request without a way to reply, or without a volume to quote
- * against, is just noise in the queue.
+ * Validation is per field and visible. The submit button is NEVER disabled for
+ * a validation reason: a dead button tells the user nothing about which box is
+ * wrong, and on a phone the offending field is usually scrolled off-screen.
+ * Pressing it instead reveals every message at once and scrolls to the first
+ * bad field. The rules here mirror `app/api/enterprise/route.ts` exactly, so a
+ * form that passes locally cannot be rejected by the server for shape.
  */
 
 type Status = "idle" | "sending" | "sent" | "error";
+
+type Field =
+  | "seats"
+  | "scans"
+  | "intel"
+  | "strategy"
+  | "name"
+  | "work_email"
+  | "company"
+  | "phone"
+  | "message";
+
+/** Order matters: it is the order the page scrolls to the first bad field in. */
+const FIELD_ORDER: Field[] = [
+  "seats",
+  "scans",
+  "intel",
+  "strategy",
+  "name",
+  "work_email",
+  "company",
+  "phone",
+  "message",
+];
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Digits only. Keeps the field numeric without `type=number`'s spinner, its
  *  scroll-wheel edits, or its habit of silently clearing on a stray letter. */
@@ -35,52 +64,126 @@ function digits(v: string): string {
   return v.replace(/[^0-9]/g, "").slice(0, 7);
 }
 
+function inr(n: number): string {
+  return n.toLocaleString("en-IN");
+}
+
+interface Values {
+  seats: string;
+  scans: string;
+  intel: string;
+  strategy: string;
+  name: string;
+  work_email: string;
+  company: string;
+  phone: string;
+  message: string;
+}
+
+/** One rule per field, same bounds the API enforces. */
+function validate(v: Values): Partial<Record<Field, string>> {
+  const e: Partial<Record<Field, string>> = {};
+
+  const seats = Number(v.seats);
+  if (!v.seats) e.seats = "Enter how many users you need.";
+  else if (seats < SEATS.min) e.seats = `Enterprise starts at ${SEATS.min} users.`;
+  else if (seats > SEATS.max) e.seats = `Enter ${inr(SEATS.max)} or fewer.`;
+
+  const scans = Number(v.scans);
+  if (!v.scans) e.scans = "Enter scans per user, per year.";
+  else if (scans < SCANS.min) e.scans = "Must be at least 1.";
+  else if (scans > SCANS.max) e.scans = `Enter ${inr(SCANS.max)} or fewer.`;
+
+  // Both AI allowances are optional; only a value that is present is checked.
+  if (v.intel && Number(v.intel) > INTEL.max) e.intel = `Enter ${inr(INTEL.max)} or fewer.`;
+  if (v.strategy && Number(v.strategy) > STRATEGY.max)
+    e.strategy = `Enter ${inr(STRATEGY.max)} or fewer.`;
+
+  if (!v.name.trim()) e.name = "Tell us your name.";
+  else if (v.name.trim().length > 200) e.name = "That name is too long.";
+
+  const email = v.work_email.trim();
+  if (!email) e.work_email = "We need an email to reply to.";
+  else if (!EMAIL_RE.test(email) || email.length > 320)
+    e.work_email = "That doesn't look like a valid email.";
+
+  if (!v.company.trim()) e.company = "Tell us your company name.";
+  else if (v.company.trim().length > 200) e.company = "That company name is too long.";
+
+  const phone = v.phone.trim();
+  if (phone) {
+    if (phone.length > 50) e.phone = "That phone number is too long.";
+    else if (phone.replace(/[^0-9]/g, "").length < 7)
+      e.phone = "That doesn't look like a full phone number.";
+  }
+
+  if (v.message.length > 5000) e.message = "Please keep this under 5,000 characters.";
+
+  return e;
+}
+
 export default function EnterpriseForm() {
-  // Held as strings so the box can start empty — a pre-filled number is an
+  // Held as strings so each box can start empty — a pre-filled number is an
   // answer we invented on the team's behalf.
-  const [seats, setSeats] = useState("");
-  const [scans, setScans] = useState("");
-  const [intel, setIntel] = useState("");
-  const [strategy, setStrategy] = useState("");
-  // Gated on the three fields a follow-up is impossible without. Controlled
-  // rather than leaning on `required`, so the button visibly cannot be pressed
-  // instead of failing validation after the tap.
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [company, setCompany] = useState("");
+  const [values, setValues] = useState<Values>({
+    seats: "",
+    scans: "",
+    intel: "",
+    strategy: "",
+    name: "",
+    work_email: "",
+    company: "",
+    phone: "",
+    message: "",
+  });
+  // A field's message appears once the user has left it, or once they have
+  // pressed submit — never while they are still typing the first character.
+  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
+  const [submitted, setSubmitted] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string>("");
 
-  const seatCount = Number(seats);
-  const scanCount = Number(scans);
-  const seatsOk = seats.length > 0 && seatCount >= SEATS.min;
-  const scansOk = scans.length > 0 && scanCount > 0;
+  const errors = validate(values);
+  const seatCount = Number(values.seats);
 
-  const canSubmit =
-    name.trim().length > 0 &&
-    company.trim().length > 0 &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) &&
-    seatsOk &&
-    scansOk;
+  function set(field: Field, next: string) {
+    setValues((cur) => ({ ...cur, [field]: next }));
+  }
+  function blur(field: Field) {
+    setTouched((cur) => ({ ...cur, [field]: true }));
+  }
+  /** Shown only when the field has been visited or submit has been pressed. */
+  function shown(field: Field): string | undefined {
+    return touched[field] || submitted ? errors[field] : undefined;
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (status === "sending" || !canSubmit) return;
-    setStatus("sending");
+    if (status === "sending") return;
+    setSubmitted(true);
     setError("");
 
-    const fd = new FormData(e.currentTarget);
+    const first = FIELD_ORDER.find((f) => errors[f]);
+    if (first) {
+      const el = document.getElementById(first);
+      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+      el?.focus({ preventScroll: true });
+      return;
+    }
+
+    setStatus("sending");
+    const form = e.currentTarget;
     const payload = {
-      name: fd.get("name"),
-      work_email: fd.get("work_email"),
-      company: fd.get("company"),
-      phone: fd.get("phone"),
-      message: fd.get("message"),
-      website: fd.get("website"), // honeypot
+      name: values.name.trim(),
+      work_email: values.work_email.trim(),
+      company: values.company.trim(),
+      phone: values.phone.trim() || null,
+      message: values.message.trim() || null,
+      website: new FormData(form).get("website"), // honeypot
       seats: seatCount,
-      scans_per_user: scanCount,
-      intel_per_user: intel.length ? Number(intel) : null,
-      strategy_per_user: strategy.length ? Number(strategy) : null,
+      scans_per_user: Number(values.scans),
+      intel_per_user: values.intel ? Number(values.intel) : null,
+      strategy_per_user: values.strategy ? Number(values.strategy) : null,
       source: new URLSearchParams(window.location.search).get("src") === "app" ? "app" : "site",
       page_url: window.location.href,
     };
@@ -134,81 +237,68 @@ export default function EnterpriseForm() {
         <div className="ent-box">
           <p className="ent-box-title">Team and volume</p>
 
-          <div className="ent-field">
-            <label htmlFor="seats">
-              Required team size <span className="ent-req">*</span>
-            </label>
-            <input
-              id="seats" name="seats" className="ent-input"
-              type="text" inputMode="numeric" autoComplete="off"
-              placeholder={`${SEATS.min} or more`}
-              value={seats} onChange={(e) => setSeats(digits(e.target.value))} required
-            />
-          </div>
-
-          <div className="ent-field">
-            <label htmlFor="scans">
-              Total scans per user <span className="ent-req">*</span>
-            </label>
-            <input
-              id="scans" name="scans" className="ent-input"
-              type="text" inputMode="numeric" autoComplete="off"
-              placeholder="per year"
-              value={scans} onChange={(e) => setScans(digits(e.target.value))} required
-            />
-          </div>
-
-          <div className="ent-field">
-            <label htmlFor="intel">
-              Total Intel per user <span className="ent-opt">optional</span>
-            </label>
-            <input
-              id="intel" name="intel" className="ent-input"
-              type="text" inputMode="numeric" autoComplete="off"
-              placeholder="per month"
-              value={intel} onChange={(e) => setIntel(digits(e.target.value))}
-            />
-          </div>
-
-          <div className="ent-field">
-            <label htmlFor="strategy">
-              Total Strategy per user <span className="ent-opt">optional</span>
-            </label>
-            <input
-              id="strategy" name="strategy" className="ent-input"
-              type="text" inputMode="numeric" autoComplete="off"
-              placeholder="per month"
-              value={strategy} onChange={(e) => setStrategy(digits(e.target.value))}
-            />
-          </div>
+          <Num
+            id="seats" label="Required team size" required
+            placeholder={`${SEATS.min} or more`}
+            value={values.seats} error={shown("seats")}
+            onChange={(v) => set("seats", v)} onBlur={() => blur("seats")}
+          />
+          <Num
+            id="scans" label="Total scans per user" required placeholder="per year"
+            value={values.scans} error={shown("scans")}
+            onChange={(v) => set("scans", v)} onBlur={() => blur("scans")}
+          />
+          <Num
+            id="intel" label="Total Intel per user" placeholder="per month"
+            value={values.intel} error={shown("intel")}
+            onChange={(v) => set("intel", v)} onBlur={() => blur("intel")}
+          />
+          <Num
+            id="strategy" label="Total Strategy per user" placeholder="per month"
+            value={values.strategy} error={shown("strategy")}
+            onChange={(v) => set("strategy", v)} onBlur={() => blur("strategy")}
+          />
         </div>
 
         {/* ── Details ─────────────────────────────────────────────── */}
+        <Text
+          id="name" label="Your name" required autoComplete="name"
+          value={values.name} error={shown("name")}
+          onChange={(v) => set("name", v)} onBlur={() => blur("name")}
+        />
+        <Text
+          id="work_email" label="Work email" required type="email"
+          inputMode="email" autoComplete="email"
+          value={values.work_email} error={shown("work_email")}
+          onChange={(v) => set("work_email", v)} onBlur={() => blur("work_email")}
+        />
+        <Text
+          id="company" label="Company" required autoComplete="organization"
+          value={values.company} error={shown("company")}
+          onChange={(v) => set("company", v)} onBlur={() => blur("company")}
+        />
+        <Text
+          id="phone" label="Phone" type="tel" inputMode="tel" autoComplete="tel"
+          value={values.phone} error={shown("phone")}
+          onChange={(v) => set("phone", v)} onBlur={() => blur("phone")}
+        />
+
         <div className="ent-field">
-          <label htmlFor="name">Your name</label>
-          <input id="name" name="name" className="ent-input" autoComplete="name"
-            value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div className="ent-field">
-          <label htmlFor="work_email">Work email</label>
-          <input
-            id="work_email" name="work_email" type="email" inputMode="email"
-            className="ent-input" autoComplete="email" required
-            value={email} onChange={(e) => setEmail(e.target.value)}
+          <label htmlFor="message">
+            Anything else? <span className="ent-opt">optional</span>
+          </label>
+          <textarea
+            id="message" name="message" rows={3}
+            className={shown("message") ? "ent-input ent-textarea bad" : "ent-input ent-textarea"}
+            aria-invalid={shown("message") ? true : undefined}
+            aria-describedby={shown("message") ? "message-err" : undefined}
+            value={values.message}
+            onChange={(e) => set("message", e.target.value)}
+            onBlur={() => blur("message")}
           />
-        </div>
-        <div className="ent-field">
-          <label htmlFor="company">Company</label>
-          <input id="company" name="company" className="ent-input" autoComplete="organization"
-            value={company} onChange={(e) => setCompany(e.target.value)} required />
-        </div>
-        <div className="ent-field">
-          <label htmlFor="phone">Phone <span className="ent-opt">optional</span></label>
-          <input id="phone" name="phone" type="tel" inputMode="tel" className="ent-input" autoComplete="tel" />
-        </div>
-        <div className="ent-field">
-          <label htmlFor="message">Anything else? <span className="ent-opt">optional</span></label>
-          <textarea id="message" name="message" className="ent-input ent-textarea" rows={3} />
+          {shown("message") && (
+            <p className="ent-err" id="message-err">{shown("message")}</p>
+          )}
         </div>
 
         {/* Honeypot — off-screen, never shown to a person. */}
@@ -219,23 +309,83 @@ export default function EnterpriseForm() {
 
         {status === "error" && <p className="ent-error" role="alert">{error}</p>}
 
-        <button
-          type="submit"
-          className="ent-submit"
-          disabled={status === "sending" || !canSubmit}
-        >
+        <button type="submit" className="ent-submit" disabled={status === "sending"}>
           {status === "sending" ? "Sending…" : "Request a quote"}
         </button>
         <p className="ent-fine">
-          {canSubmit
-            ? `We reply within one business day. Minimum ${SEATS.min} users.`
-            : !seatsOk || !scansOk
-              ? `Add your team size (${SEATS.min} users or more) and scans per user to continue.`
-              : "Add your name, work email and company to continue."}
+          We reply within one business day. Minimum {SEATS.min} users.
         </p>
       </form>
       <Styles />
     </main>
+  );
+}
+
+interface BaseProps {
+  id: Field;
+  label: string;
+  required?: boolean;
+  placeholder?: string;
+  value: string;
+  error?: string;
+  onChange: (v: string) => void;
+  onBlur: () => void;
+}
+
+/** Digits-only field. Filtering on change is what keeps the value and the
+ *  server's integer check from ever disagreeing. */
+function Num(p: BaseProps) {
+  return (
+    <Shell {...p}>
+      <input
+        id={p.id} name={p.id}
+        className={p.error ? "ent-input bad" : "ent-input"}
+        type="text" inputMode="numeric" autoComplete="off"
+        placeholder={p.placeholder}
+        aria-invalid={p.error ? true : undefined}
+        aria-describedby={p.error ? `${p.id}-err` : undefined}
+        value={p.value}
+        onChange={(e) => p.onChange(digits(e.target.value))}
+        onBlur={p.onBlur}
+      />
+    </Shell>
+  );
+}
+
+function Text(p: BaseProps & { type?: string; inputMode?: "email" | "tel"; autoComplete?: string }) {
+  return (
+    <Shell {...p}>
+      <input
+        id={p.id} name={p.id}
+        className={p.error ? "ent-input bad" : "ent-input"}
+        type={p.type ?? "text"} inputMode={p.inputMode} autoComplete={p.autoComplete}
+        placeholder={p.placeholder}
+        aria-invalid={p.error ? true : undefined}
+        aria-describedby={p.error ? `${p.id}-err` : undefined}
+        value={p.value}
+        onChange={(e) => p.onChange(e.target.value)}
+        onBlur={p.onBlur}
+      />
+    </Shell>
+  );
+}
+
+function Shell({
+  id, label, required, error, children,
+}: Pick<BaseProps, "id" | "label" | "required" | "error"> & { children: React.ReactNode }) {
+  return (
+    <div className="ent-field">
+      <label htmlFor={id}>
+        {label}{" "}
+        {required ? (
+          <span className="ent-req">*</span>
+        ) : (
+          <span className="ent-opt">optional</span>
+        )}
+      </label>
+      {children}
+      {error && <p className="ent-err" id={`${id}-err`}>{error}</p>}
+    </div>
   );
 }
 
@@ -293,7 +443,11 @@ function Styles() {
       }
       .ent-input::placeholder{color:#52525B}
       .ent-input:focus{outline:none;border-color:#F97316;box-shadow:0 0 0 3px rgba(249,115,22,.18)}
+      .ent-input.bad{border-color:#EF4444}
+      .ent-input.bad:focus{border-color:#EF4444;box-shadow:0 0 0 3px rgba(239,68,68,.18)}
       .ent-textarea{resize:vertical;min-height:84px}
+
+      .ent-err{margin:0;font-size:12.5px;line-height:1.4;color:#FCA5A5}
 
       .ent-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 
