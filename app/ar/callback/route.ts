@@ -13,16 +13,24 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") || "/ar";
+
+  // `next` is attacker-controllable (it rides in the email link), so only a
+  // same-site PATH is ever honoured. "//evil.com" and "https://evil.com" both
+  // resolve off-origin through `new URL(next, origin)`, so both are rejected.
+  const raw = url.searchParams.get("next");
+  const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/ar";
+
+  // Send failures back to the door the person actually came through.
+  const loginPath = next.startsWith("/enterprise") ? "/enterprise/admin-auth" : "/ar/login";
 
   if (!code) {
-    return NextResponse.redirect(new URL("/ar/login?error=missing_code", url.origin));
+    return NextResponse.redirect(new URL(`${loginPath}?error=missing_code`, url.origin));
   }
 
   const supabase = await createArServerClient();
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(new URL("/ar/login?error=auth", url.origin));
+    return NextResponse.redirect(new URL(`${loginPath}?error=auth`, url.origin));
   }
 
   return NextResponse.redirect(new URL(next, url.origin));

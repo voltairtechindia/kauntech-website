@@ -9,7 +9,11 @@
  * otherwise show as a misleading "No cards yet". Running getUser() here keeps a
  * valid token in the cookies for the downstream RSC/route handlers.
  *
- * Scoped to /ar + /api/ar only so the rest of the marketing site is untouched.
+ * Also covers the enterprise seat console, which authenticates the same way:
+ * an org owner signs in with their ordinary KaunTech app account and every seat
+ * operation runs through RLS-gated RPCs as that person.
+ *
+ * Scoped to those routes only so the rest of the marketing site is untouched.
  */
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
@@ -43,5 +47,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/ar/:path*", "/api/ar/:path*"],
+  matcher: [
+    "/ar/:path*",
+    "/api/ar/:path*",
+    "/enterprise/admin/:path*",
+    "/enterprise/admin-auth",
+    "/api/enterprise/admin/:path*",
+  ],
 };
