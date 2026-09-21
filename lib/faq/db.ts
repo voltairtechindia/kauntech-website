@@ -33,7 +33,7 @@ export const DEFAULT_FAQS: FaqQA[] = [
   },
   {
     q: "What is a K-Token?",
-    a: "A K-Token is Kauntech's AI credit unit. Tokens power on-device AI features such as AI Intel enrichment, AI Fix, and AI Strategy, and are only consumed when you actively use an AI feature.",
+    a: "A K-Token is Kauntech's AI credit unit. Every paid plan includes a monthly allowance of AI Intel and AI Strategy runs — unused runs roll over and reset when the plan renews — and tokens are what you spend once that allowance is gone (AI Intel 100, AI Strategy 200), on extra scans (3 each), and on one-time unlocks like Webhook, Telegram, NFC and AR. They are only consumed when you actually use something.",
   },
   {
     q: "How much does Kauntech cost?",

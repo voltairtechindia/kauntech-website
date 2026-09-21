@@ -14,21 +14,21 @@ const PLANS = [
     price: "₹0",
     per: "forever",
     tag: null,
-    feats: ["100 K-Tokens + 49 scans /mo", "1 V-Card · QR & NFC scanning", "WhatsApp & Webhook · offline mode"],
+    feats: ["100 K-Tokens + 49 scans /mo", "1 V-Card · QR scanning", "WhatsApp · CSV export · offline mode"],
   },
   {
     name: "Pro",
     price: "₹1,499",
     per: "/year · $12.99",
     tag: "Recommended",
-    feats: ["1,000 K-Tokens /mo · 2,000 scans /yr", "AI Intel & AR template cards", "Google Sheets · Gmail · Telegram"],
+    feats: ["1,000 K-Tokens /mo · 2,000 scans /yr", "50 AI Intel a month, unused roll over", "Sheets & Excel · Gmail & Outlook"],
   },
   {
     name: "Ultra",
     price: "₹2,499",
     per: "/year · $19.99",
     tag: "Everything",
-    feats: ["3,000 K-Tokens /mo · 2,500 scans /yr", "AI Strategy + full AR studio", "Team access · 250 MB cloud"],
+    feats: ["3,000 K-Tokens /mo · 2,500 scans /yr", "60 AI Intel + 30 AI Strategy a month", "Team access · 250 MB cloud"],
   },
 ];
 
@@ -68,8 +68,8 @@ export default function PricingTeaser() {
         </div>
 
         <p className="k-packs reveal">
-          <Ic icon={Coins} /> Top-up packs: <b>200 KT ₹99</b> ·{" "}
-          <b>600 KT ₹249</b> · <b>1,500 KT ₹549</b> · <b>4,000 KT ₹1,299</b>
+          <Ic icon={Coins} /> Top-up packs: <b>1,500 KT ₹100</b> ·{" "}
+          <b>4,000 KT ₹250</b> · <b>10,000 KT ₹500</b>
           <Link href="/pricing" className="k-arrowlink">
             Full pricing &amp; token math <Ic icon={ArrowRight} />
           </Link>

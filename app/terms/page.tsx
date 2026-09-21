@@ -163,8 +163,8 @@ export default function TermsPage() {
             </p>
             <ul>
               <li>
-                <strong>AI Fix</strong> (3 Tokens per use): Automated grammatical, capitalization,
-                or formatting corrections.
+                <strong>AI Fix</strong>: Automated grammatical, capitalization, or formatting
+                corrections, applied as part of a scan on a paid plan and not billed separately.
               </li>
               <li>
                 <strong>AI Intel</strong>: Deep enrichment of company background, founder

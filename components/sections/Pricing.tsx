@@ -5,8 +5,12 @@ import { Check, CircleCheck, Coins, Rocket } from "lucide-react";
 import Ic from "@/components/ui/Icon";
 import Brand from "@/components/ui/BrandIcons";
 
-// Plans bill yearly only (monthly retired 2026-09). Prices and scan pools mirror
-// the app paywall: kauntech-app constants/plans.ts and app/(tabs)/plan.tsx.
+// Plans bill yearly only (monthly retired 2026-09). Every number here mirrors
+// the app, which is the source of truth: prices from kauntech-app
+// constants/plans.ts, quotas and unlock costs from app/(tabs)/plan.tsx +
+// hooks/useProfile.ts, AI allowances from the ai_monthly_grant SQL function,
+// and the per-run token costs from what the edge functions actually charge
+// (refine-ocr 1, enrich-contact 100, ai-strategy 200).
 export default function Pricing() {
   return (
     <section id="pricing">
@@ -105,9 +109,9 @@ export default function Pricing() {
               <li><span className="pf-check"><Ic icon={Check} /></span> 49 Scans / month</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 100 K-Tokens / month</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 1 VCard · 2 Products · 2 Templates</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> QR Code &amp; NFC Scanning</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> QR Code Scanning</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> CSV Export included</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Webhook &amp; WhatsApp Sync</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> WhatsApp Messaging</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Offline-First Mode</li>
             </ul>
           </div>
@@ -126,13 +130,12 @@ export default function Pricing() {
             <ul className="price-features">
               <li><span className="pf-check"><Ic icon={Check} /></span> 2,000 Scans / year</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 50 AI Intel / month, unused roll over</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / year</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> AI Fix included</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> AR template cards (600 tokens/card)</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> AI Fix on every scan</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 3 VCards · 4 Products · 4 Templates</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Google Sheets &amp; Gmail Sync</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Telegram Bot Integration</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Webhook &amp; WhatsApp Automation</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Sheets &amp; Excel · Gmail &amp; Outlook</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> WhatsApp Automation</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Buy AR, NFC, Telegram &amp; Webhook with tokens</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Unlock more slots with tokens</li>
             </ul>
           </div>
@@ -151,8 +154,8 @@ export default function Pricing() {
             <ul className="price-features">
               <li><span className="pf-check"><Ic icon={Check} /></span> 2,500 Scans / year</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 60 AI Intel + 30 AI Strategy / month, unused roll over</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> 1,000 K-Tokens / year</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Full AR Studio · custom 3D, video, build from scratch</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> 3,000 K-Tokens / month</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Full AR Studio once AR is unlocked · custom 3D, video</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 5 VCards · 8 Products · 6 Templates</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Company Logo on QR · Custom QR Link</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 250 MB Cloud Storage</li>
@@ -176,11 +179,10 @@ export default function Pricing() {
               <li><span className="pf-check"><Ic icon={Check} /></span> 4,000 Scans / year per user</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> 75 AI Intel + 25 AI Strategy / month per user</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Everything in Ultra</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> On-Premise Storage Options</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Custom Hardware Integrations</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Advanced Analytics Dashboard</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> One shared lead pool for the whole team</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> Web console · leads, people, CSV export</li>
+              <li><span className="pf-check"><Ic icon={Check} /></span> You hand out seats and allowances yourself</li>
               <li><span className="pf-check"><Ic icon={Check} /></span> Account Manager</li>
-              <li><span className="pf-check"><Ic icon={Check} /></span> Complete White Labeling</li>
             </ul>
             <Link
               className="price-btn outline"
@@ -311,8 +313,10 @@ export default function Pricing() {
                 Understanding Kauntech AI Tokens Economy
               </h3>
               <p style={{ fontSize: "0.95rem", color: "var(--text-dim)", margin: 0 }}>
-                AI features consume K-Tokens seamlessly. When scan limits are exhausted, additional
-                scans also consume tokens flexibly.
+                AI Intel and AI Strategy come as a monthly allowance of runs on every paid plan —
+                unused runs roll over, and the balance resets when the plan renews. Tokens are what
+                you spend once an allowance is gone, and they also buy one-time unlocks: Webhook
+                1,500 · Telegram 2,000 · NFC 2,500 · AR 4,000, owned for life.
               </p>
             </div>
           </div>
@@ -321,27 +325,27 @@ export default function Pricing() {
             {[
               {
                 tier: "PRO TIER FEATURE",
-                color: "var(--gold)",
-                name: "AI Fix",
-                cost: "1",
-                unit: "Token / use",
-                ex: "Example: With 1,000 K-Tokens balance, execute up to 1,000 automated AI fixes for contact formatting.",
-              },
-              {
-                tier: "PRO TIER FEATURE",
                 color: "var(--indigo)",
                 name: "AI Intel",
-                cost: "2",
-                unit: "Tokens / scan",
-                ex: "Example: With 1,000 K-Tokens balance, enrich up to 500 business cards with deep company intelligence.",
+                cost: "100",
+                unit: "Tokens / run past your allowance",
+                ex: "Pro includes 50 runs a month, Ultra 60, Enterprise 75. Past that, 1,000 K-Tokens is 10 more enrichments.",
               },
               {
                 tier: "ULTRA TIER FEATURE",
                 color: "#34d399",
                 name: "AI Strategy",
-                cost: "6",
-                unit: "Tokens / scan",
-                ex: "Example: With 3,000 K-Tokens balance, generate up to 500 comprehensive sales strategies & icebreakers.",
+                cost: "200",
+                unit: "Tokens / run past your allowance",
+                ex: "Ultra includes 30 runs a month, Enterprise 25. Past that, 3,000 K-Tokens is 15 more sales plans.",
+              },
+              {
+                tier: "ANY PAID PLAN",
+                color: "var(--gold)",
+                name: "Extra scan",
+                cost: "3",
+                unit: "Tokens / scan past your pool",
+                ex: "Your yearly scans run out before the year does? 1,000 K-Tokens is 333 more scans, AI Fix included.",
               },
             ].map((b) => (
               <div

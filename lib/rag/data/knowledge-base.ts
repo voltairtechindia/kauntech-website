@@ -154,8 +154,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Free plan (₹0 / forever)",
     content:
       "Free plan: ₹0 forever. For individual professionals exploring offline business card scanning. Includes 49 scans " +
-      "per month, 100 K-Tokens per month, 1 VCard, 2 Products and 2 Templates, QR code & NFC scanning, CSV export, " +
-      "Webhook & WhatsApp Sync, and offline-first scanning.",
+      "per month, 100 K-Tokens per month, 1 VCard, 2 Products and 2 Templates, QR code scanning, CSV export, " +
+      "WhatsApp messaging, and offline-first scanning. NFC, Webhook, Telegram and AR are one-time token unlocks on a " +
+      "paid plan, not part of the Free plan.",
     metadata: {
       name: "Free",
       price_monthly: "₹0",
@@ -172,10 +173,12 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Pro plan (₹1,499 / year)",
     content:
       "Pro plan: ₹1,499 per year ($12.99 per year), billed yearly. For active sales " +
-      "professionals who want AI enrichment and CRM automations. Includes 2,000 scans per year, 1,000 K-Tokens per year, " +
-      "50 AI Intel runs per month with unused runs rolling over to the next month, AI Fix, AR template cards (600 tokens), 3 VCards, 4 Products and 4 Templates, Google Sheets & Gmail " +
-      "sync, Telegram bot integration, Webhook & WhatsApp automation, the ability to unlock more VCard/Product/Template " +
-      "slots with tokens, and 50 MB of cloud storage (one budget shared by your card photos and AR content).",
+      "professionals who want AI enrichment and CRM automations. Includes 2,000 scans per year, 1,000 K-Tokens per month, " +
+      "50 AI Intel runs per month with unused runs rolling over to the next month, AI Fix on every scan, 3 VCards, " +
+      "4 Products and 4 Templates, Google Sheets & Microsoft Excel sync, Gmail & Outlook sending, WhatsApp automation, " +
+      "the ability to buy AR, NFC, Telegram and Webhook with tokens (one-time, owned for life), the ability to unlock " +
+      "more VCard/Product/Template slots with tokens, and 50 MB of cloud storage (one budget shared by your card photos " +
+      "and AR content). AR template cards cost 600 tokens each once AR is unlocked.",
     metadata: {
       name: "Pro",
       price_yearly: "₹1,499",
@@ -193,8 +196,9 @@ export const KNOWLEDGE_BASE: IngestDocument[] = [
     title: "Ultra plan (₹2,499 / year)",
     content:
       "Ultra plan: ₹2,499 per year ($19.99 per year), billed yearly. The top self-serve tier, with " +
-      "everything in Pro included. Adds 2,500 scans per year, 3,000 K-Tokens per month, AI Strategy (6 tokens per scan, Ultra " +
-      "only), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
+      "everything in Pro included. Adds 2,500 scans per year, 3,000 K-Tokens per month, 60 AI Intel and 30 AI Strategy " +
+      "runs a month with unused runs rolling over (AI Strategy is Ultra and Enterprise only; 200 tokens a run past the " +
+      "allowance), the full AR studio (custom 3D models, video and build-from-scratch), 5 VCards, 8 Products and 6 Templates, a company logo on your QR code plus a custom QR link, 250 MB of cloud " +
       "storage, Multi-User Team Collaboration (team group access), and Dedicated VIP Support.",
     metadata: {
       name: "Ultra",

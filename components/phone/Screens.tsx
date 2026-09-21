@@ -916,7 +916,7 @@ export function PlanScreen() {
         <ul>
           <li>{ic.check(11)} 1,000 tokens a month · 2,000 scans a year</li>
           <li>{ic.check(11)} 50 AI Intel / month</li>
-          <li>{ic.check(11)} Google Sheets · Gmail · Telegram automation</li>
+          <li>{ic.check(11)} Sheets &amp; Excel · Gmail &amp; Outlook</li>
           <li>{ic.check(11)} AR template cards · 3 VCards</li>
         </ul>
         <span className="kps-plancard-cta">
@@ -925,7 +925,7 @@ export function PlanScreen() {
       </div>
 
       <div className="kps-packs">
-        {ic.coins(12)} Top-ups: <b>200 · ₹99</b> <b>600 · ₹249</b> <b>1.5K · ₹549</b>
+        {ic.coins(12)} Top-ups: <b>1.5K · ₹100</b> <b>4K · ₹250</b> <b>10K · ₹500</b>
       </div>
 
       <TabBar active={3} />

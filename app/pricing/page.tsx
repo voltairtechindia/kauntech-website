@@ -5,12 +5,12 @@ import Pricing from "@/components/sections/Pricing";
 export const metadata: Metadata = {
   title: "Pricing & Top-Ups - Free, Pro, Ultra & Enterprise Plans",
   description:
-    "Kauntech pricing: Free (49 scans a month), Pro (₹1,499/year), Ultra (₹2,499/year), and Enterprise priced per user. Understand the K-Tokens economy and AI Intel / Fix / Strategy token costs.",
+    "Kauntech pricing: Free (49 scans a month), Pro (₹1,499/year), Ultra (₹2,499/year), and Enterprise priced per user. Monthly AI Intel and AI Strategy allowances, K-Tokens for anything past them.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Kauntech Pricing - Free, Pro, Ultra & Enterprise",
     description:
-      "Flexible offline-first scanning plans with K-Tokens for AI Fix, AI Intel, and AI Strategy.",
+      "Flexible offline-first scanning plans, with monthly AI Intel and AI Strategy allowances and K-Tokens beyond them.",
     url: "/pricing",
   },
 };
