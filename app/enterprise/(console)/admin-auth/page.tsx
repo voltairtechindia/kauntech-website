@@ -33,33 +33,31 @@ export default async function EnterpriseAdminAuthPage({
   const authError = error ? AUTH_ERRORS[error] ?? AUTH_ERRORS.auth : null;
 
   return (
-    <div className="ar-root">
-      <div className="ar-container ar-stack" style={{ maxWidth: 460, paddingTop: "var(--ar-sp-3xl)" }}>
-        <div>
-          <h1 className="ar-h1">Manage your team</h1>
-          <p className="ar-muted" style={{ marginTop: "var(--ar-sp-sm)" }}>
-            Sign in with the KaunTech account that bought your Enterprise plan. Add people,
-            set their passwords, and split your yearly allowance between them.
-          </p>
-        </div>
+    <div className="ar-root ec">
+      <main className="ec-gate">
+        <div className="ec-gate-card">
+          <div className="ec-gate-brand">
+            <span className="ec-brand-kicker">KaunTech Enterprise</span>
+            <h1 className="ec-gate-title">Sign in to your team</h1>
+            <p className="ec-sub">See every lead your team scans, add people, and split your yearly allowance.</p>
+          </div>
 
-        {authError ? <p className="ar-error" style={{ margin: 0 }}>{authError}</p> : null}
+          {authError ? <div className="ec-alert ec-alert--error" role="alert">{authError}</div> : null}
 
-        {arAuthConfigured() ? (
-          <EnterpriseLoginForm />
-        ) : (
-          <div className="ar-card">
-            <p className="ar-error" style={{ margin: 0 }}>
+          {arAuthConfigured() ? (
+            <EnterpriseLoginForm />
+          ) : (
+            <div className="ec-alert ec-alert--error">
               Enterprise sign-in isn’t configured on this environment
               (missing NEXT_PUBLIC_KAUNTECH_APP_SUPABASE_URL / _ANON_KEY).
-            </p>
-          </div>
-        )}
+            </div>
+          )}
 
-        <p className="ar-muted" style={{ fontSize: 13 }}>
-          Don’t have an Enterprise plan yet? <a href="/enterprise">Get a quote</a>.
-        </p>
-      </div>
+          <p className="ec-gate-foot">
+            No Enterprise plan yet? <a href="/enterprise">Get a quote</a>
+          </p>
+        </div>
+      </main>
     </div>
   );
 }

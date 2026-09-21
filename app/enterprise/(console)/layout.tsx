@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../../ar/ar.css";
+import "./console.css";
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },

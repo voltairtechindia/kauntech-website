@@ -12,6 +12,7 @@
  * in the route handlers under app/api/enterprise/admin, which re-check
  * ownership through getOrgOwner() before they touch GoTrue.
  */
+import { cache } from "react";
 import { createArServerClient, arAuthConfigured } from "@/lib/ar/appAuth";
 import type { Org, OrgSeat, OrgView } from "@/lib/enterpriseTypes";
 
@@ -25,8 +26,11 @@ export {
   type Resource,
 } from "@/lib/enterpriseTypes";
 
-/** The whole org as the signed-in person is allowed to see it, or null. */
-export async function getOrgView(): Promise<OrgView | null> {
+/**
+ * The whole org as the signed-in person is allowed to see it, or null.
+ * cache(): the console layout and the page under it both ask, once per request.
+ */
+export const getOrgView = cache(async function getOrgView(): Promise<OrgView | null> {
   if (!arAuthConfigured()) return null;
   const supabase = await createArServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -42,7 +46,7 @@ export async function getOrgView(): Promise<OrgView | null> {
     status: res.status,
     seats: (res.seats ?? []) as OrgSeat[],
   };
-}
+});
 
 /**
  * The org this person OWNS, or null. The console gate: a seat who is not the

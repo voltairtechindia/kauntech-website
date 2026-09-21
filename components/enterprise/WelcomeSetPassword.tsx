@@ -89,79 +89,67 @@ export default function WelcomeSetPassword() {
   }
 
   return (
-    <div className="ar-root">
-      <div className="ar-container ar-stack" style={{ maxWidth: 460, paddingTop: "var(--ar-sp-3xl)" }}>
-        {stage.kind === "loading" ? (
-          <p className="ar-muted">Checking your invite…</p>
-        ) : null}
+    <div className="ar-root ec">
+      <main className="ec-gate">
+        <div className="ec-gate-card">
+          <div className="ec-gate-brand">
+            <span className="ec-brand-kicker">KaunTech Enterprise</span>
+            <h1 className="ec-gate-title">
+              {stage.kind === "done" ? "You're all set" : stage.kind === "invalid" ? "That link did not work" : "Welcome to your team"}
+            </h1>
+            {stage.kind === "ready" ? (
+              <p className="ec-sub">
+                Choose a password for <strong style={{ color: "var(--ec-ink)" }}>{stage.email}</strong>. You&apos;ll use it to
+                sign in to the KaunTech app, where you&apos;ll see your team&apos;s leads.
+              </p>
+            ) : null}
+          </div>
 
-        {stage.kind === "invalid" ? (
-          <>
-            <h1 className="ar-h1">That link did not work</h1>
-            <p className="ar-error" style={{ margin: 0 }}>{stage.reason}</p>
-            <p className="ar-muted">
-              Ask whoever manages your team to send the invite again, or open the KaunTech app and use
-              “Forgot password” with your work email.
-            </p>
-          </>
-        ) : null}
+          {stage.kind === "loading" ? (
+            <div className="ec-gate-panel"><p className="ec-hint">Checking your invite…</p></div>
+          ) : null}
 
-        {stage.kind === "ready" ? (
-          <>
-            <div>
-              <h1 className="ar-h1">Welcome to your team</h1>
-              <p className="ar-muted" style={{ marginTop: "var(--ar-sp-sm)" }}>
-                Choose a password for <strong>{stage.email}</strong>. You will use it to sign in to the
-                KaunTech app, where you will see your team&apos;s leads.
+          {stage.kind === "invalid" ? (
+            <div className="ec-gate-panel">
+              <div className="ec-alert ec-alert--error" role="alert">{stage.reason}</div>
+              <p className="ec-hint">
+                Ask whoever manages your team to send the invite again, or open the KaunTech app and use “Forgot
+                password” with your work email.
               </p>
             </div>
+          ) : null}
 
-            <form className="ar-card ar-stack" onSubmit={save}>
-              <div>
-                <label className="ar-label" htmlFor="w-pw">New password</label>
-                <input
-                  id="w-pw" className="ar-field" type="password" autoComplete="new-password"
-                  required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                />
-              </div>
-              <div>
-                <label className="ar-label" htmlFor="w-pw2">Type it again</label>
-                <input
-                  id="w-pw2" className="ar-field" type="password" autoComplete="new-password"
-                  required value={confirm} onChange={(e) => setConfirm(e.target.value)}
-                />
-              </div>
-              {error ? <p className="ar-error" style={{ margin: 0 }}>{error}</p> : null}
-              <button className="ar-btn ar-btn-primary" type="submit" disabled={busy}>
+          {stage.kind === "ready" ? (
+            <form className="ec-gate-panel" onSubmit={save}>
+              <label className="ec-field">
+                <span className="ec-label">New password</span>
+                <input className="ec-input" type="password" autoComplete="new-password" required minLength={8}
+                  value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" />
+              </label>
+              <label className="ec-field">
+                <span className="ec-label">Type it again</span>
+                <input className="ec-input" type="password" autoComplete="new-password" required
+                  value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+              </label>
+              {error ? <div className="ec-alert ec-alert--error" role="alert">{error}</div> : null}
+              <button className="ec-btn ec-btn--primary ec-btn--block" type="submit" disabled={busy}
+                data-state={busy ? "loading" : undefined}>
                 {busy ? "Saving…" : "Set password"}
               </button>
             </form>
-          </>
-        ) : null}
+          ) : null}
 
-        {stage.kind === "done" ? (
-          <>
-            <h1 className="ar-h1">You are all set</h1>
-            <div className="ar-card ar-stack">
-              <p style={{ margin: 0 }}>
-                Open the KaunTech app and sign in with:
+          {stage.kind === "done" ? (
+            <div className="ec-gate-panel">
+              <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6 }}>
+                Open the KaunTech app and sign in with <strong>{stage.email}</strong> and the password you just chose.
               </p>
-              <p style={{ margin: 0 }}>
-                <strong>{stage.email}</strong>
-                <br />
-                <span className="ar-muted">and the password you just chose.</span>
-              </p>
-              <a className="ar-btn ar-btn-primary" href="/get" style={{ textAlign: "center", textDecoration: "none" }}>
-                Get the KaunTech app
-              </a>
+              <a className="ec-btn ec-btn--primary ec-btn--block" href="/get">Get the KaunTech app</a>
+              <p className="ec-hint">Your plan comes from your company, so there is nothing to buy.</p>
             </div>
-            <p className="ar-muted" style={{ fontSize: 13 }}>
-              Your plan and allowance come from your company, so there is nothing to buy.
-            </p>
-          </>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      </main>
     </div>
   );
 }

@@ -97,36 +97,29 @@ export default function EnterpriseLoginForm() {
 
   if (sent) {
     return (
-      <div className="ar-card">
-        <p style={{ margin: 0 }}>
-          Check <strong>{email}</strong> for a sign-in link. Open it on this device.
+      <div className="ec-gate-panel">
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55 }}>
+          Check <strong>{email}</strong> for a sign-in link, and open it on this device.
         </p>
+        <button className="ec-btn ec-btn--ghost ec-btn--sm" type="button" onClick={() => setSent(false)}>
+          Use a different way to sign in
+        </button>
       </div>
     );
   }
 
   return (
-    <form className="ar-card ar-stack" onSubmit={signIn}>
-      <p className="ar-muted" style={{ margin: 0, fontSize: 13 }}>
-        Sign in the same way you do in the KaunTech app.
-      </p>
-
-      <button className="ar-btn" type="button" onClick={withGoogle} disabled={busy}
-        style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+    <form className="ec-gate-panel" onSubmit={signIn}>
+      <button className="ec-btn ec-btn--google ec-btn--block" type="button" onClick={withGoogle} disabled={busy}>
         <GoogleG /> Continue with Google
       </button>
 
-      <div className="ar-row" style={{ alignItems: "center", gap: 10 }}>
-        <span style={{ flex: 1, height: 1, background: "var(--ar-border)" }} />
-        <span className="ar-muted" style={{ fontSize: 12 }}>or with email</span>
-        <span style={{ flex: 1, height: 1, background: "var(--ar-border)" }} />
-      </div>
+      <div className="ec-divider">or with email</div>
 
-      <div>
-        <label className="ar-label" htmlFor="ent-email">Work email</label>
+      <label className="ec-field">
+        <span className="ec-label">Work email</span>
         <input
-          id="ent-email"
-          className="ar-field"
+          className="ec-input"
           type="email"
           autoComplete="email"
           required
@@ -134,13 +127,12 @@ export default function EnterpriseLoginForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@company.com"
         />
-      </div>
+      </label>
 
-      <div>
-        <label className="ar-label" htmlFor="ent-password">Password</label>
+      <label className="ec-field">
+        <span className="ec-label">Password</span>
         <input
-          id="ent-password"
-          className="ar-field"
+          className="ec-input"
           type="password"
           autoComplete="current-password"
           required
@@ -148,22 +140,19 @@ export default function EnterpriseLoginForm() {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Your KaunTech app password"
         />
-      </div>
+      </label>
 
-      {error ? <p className="ar-error" style={{ margin: 0 }}>{error}</p> : null}
+      {error ? <div className="ec-alert ec-alert--error" role="alert">{error}</div> : null}
 
-      <button className="ar-btn ar-btn-primary" type="submit" disabled={busy || !email || !password}>
+      <button className="ec-btn ec-btn--primary ec-btn--block" type="submit" disabled={busy || !email || !password}
+        data-state={busy ? "loading" : undefined}>
         {busy ? "Signing in…" : "Sign in"}
       </button>
 
-      <button
-        className="ar-btn ar-btn-ghost ar-btn-sm"
-        type="button"
-        onClick={sendLink}
-        disabled={busy || !email}
-      >
+      <button className="ec-btn ec-btn--ghost ec-btn--sm" type="button" onClick={sendLink} disabled={busy || !email}>
         Signed up with Apple? Email me a sign-in link
       </button>
+      <p className="ec-hint" style={{ textAlign: "center" }}>Use the same way you sign in to the KaunTech app.</p>
     </form>
   );
 }
