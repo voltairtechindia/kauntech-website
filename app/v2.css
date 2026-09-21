@@ -619,6 +619,10 @@ html.lenis body {
   gap: 36px;
   max-width: 560px;
   margin: 0 auto;
+  /* five full 390x844 app screens, each self-animating: let the browser skip
+     rendering (and running the keyframes of) the ones that are off-screen */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
 }
 
 .k-mchapter-copy {

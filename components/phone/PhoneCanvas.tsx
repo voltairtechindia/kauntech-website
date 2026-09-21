@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useMemo, useRef, type MutableRefObject } from "react";
+import { Suspense, useCallback, useMemo, useRef, useState, type MutableRefObject } from "react";
 import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Html, Environment, Lightformer, useGLTF } from "@react-three/drei";
+import { Html, Environment, Lightformer, PerformanceMonitor, useGLTF } from "@react-three/drei";
 import { PHONE_SCREENS } from "./Screens";
 import { FLIGHT_START, FLIGHT_END } from "./flight";
 
@@ -36,6 +36,27 @@ export type PhoneSceneState = {
 const MODEL_URL = "/models/iphone16.glb";
 const PHONE_H = 2.46; // target world height
 
+/**
+ * Modest hardware (4 cores or less / 4 GB or less of reported RAM - most
+ * office laptops and older integrated GPUs) starts at device pixel ratio 1
+ * with MSAA off. Everything else starts crisp; PerformanceMonitor below then
+ * trims the ratio further on any machine that can't hold the frame rate.
+ * Read once, lazily - this module only ever loads in the browser.
+ */
+let modestDevice: boolean | null = null;
+const isModestDevice = () => {
+  if (modestDevice === null) {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    modestDevice = (nav.hardwareConcurrency ?? 8) <= 4 || (nav.deviceMemory ?? 8) <= 4;
+  }
+  return modestDevice;
+};
+
+/* Frame-loop scratch objects - the rig runs 60x a second, so it allocates nothing. */
+const _fwd = new THREE.Vector3();
+const _toCam = new THREE.Vector3();
+const FORWARD = new THREE.Vector3(0, 0, 1);
+
 /** Rest poses: x/y in viewport-width/height fractions from center, rotations in rad. */
 const POSES = [
   { x: 0.21, y: -0.01, rotY: -0.3, rotZ: -0.05 }, // hero - right side, angled to copy
@@ -59,15 +80,16 @@ export type PhoneModel = {
 };
 
 /**
- * The Sketchfab model ships in the teal colorway. Recolor every teal-family
- * material to graphite titanium (hue-free, keep luminance) and fix the screen:
- * its material has emissive 1/1/1, which would glow white - turn it into
- * powered-off glass instead. We also MEASURE the display ("Screen" node) and
- * body bounding boxes rather than trusting authored transforms - the baked
- * Sketchfab hierarchy is not origin-centered.
+ * The Sketchfab model ships in the teal colorway. `scripts/optimize-iphone.mjs`
+ * now bakes the graphite-titanium recolor and the powered-off glass into the
+ * GLB, so the pass below is a no-op safety net for any model that hasn't been
+ * through the optimizer (graphite fails the teal test, so re-running is free).
+ * We still MEASURE the display ("Screen" node) and body bounding boxes rather
+ * than trusting authored transforms - the baked Sketchfab hierarchy is not
+ * origin-centered.
  */
 export function useKauntechPhone(): PhoneModel {
-  const { scene } = useGLTF(MODEL_URL);
+  const { scene } = useGLTF(MODEL_URL, false);
 
   return useMemo(() => {
     const cloned = scene.clone(true);
@@ -121,6 +143,14 @@ export function useKauntechPhone(): PhoneModel {
     const screenSize = screenBox.getSize(new THREE.Vector3());
     screenCenter.z = screenBox.max.z; // sit on the glass, not inside it
 
+    // Nothing inside the phone ever moves on its own - only the rig group that
+    // holds it does. Freeze the 41 child matrices so three stops recomputing
+    // them every frame (they're already baked into world space above).
+    cloned.traverse((obj) => {
+      obj.matrixAutoUpdate = false;
+      obj.updateMatrix();
+    });
+
     return { object: cloned, scale, screenCenter, screenSize };
   }, [scene]);
 }
@@ -134,6 +164,7 @@ function PhoneRig({
 }) {
   const group = useRef<THREE.Group>(null);
   const screenDom = useRef<HTMLDivElement>(null);
+  const screenFacing = useRef(true);
   const intro = useRef(0);
   const booted = useRef(false);
   const phone = useKauntechPhone();
@@ -142,7 +173,9 @@ function PhoneRig({
     const g = group.current;
     if (!g) return;
 
-    const viewport = state.viewport.getCurrentViewport(state.camera, new THREE.Vector3(0, 0, 0));
+    // state.viewport is already the viewport at the origin for this camera -
+    // reading it avoids recomputing (and allocating) one every frame.
+    const viewport = state.viewport;
     const { pos, pointer, exit } = sceneState.current;
     // mid-story (re)mount - e.g. scrolling back up into the story after the
     // canvas was killed: skip the hero intro and snap straight to the pose
@@ -206,11 +239,17 @@ function PhoneRig({
     g.scale.setScalar(s);
 
     // hide the DOM screen when the glass faces away from the camera (drei Html
-    // would otherwise show it mirrored through the back of the phone)
+    // would otherwise show it mirrored through the back of the phone). Toggling
+    // a class instead of an inline style lets CSS also park the screen's own
+    // keyframes while it's invisible - and we only touch the DOM on a change.
     if (screenDom.current) {
-      const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(g.quaternion);
-      const toCam = state.camera.position.clone().sub(g.position).normalize();
-      screenDom.current.style.visibility = fwd.dot(toCam) > 0.14 ? "visible" : "hidden";
+      _fwd.copy(FORWARD).applyQuaternion(g.quaternion);
+      _toCam.copy(state.camera.position).sub(g.position).normalize();
+      const facing = _fwd.dot(_toCam) > 0.14;
+      if (facing !== screenFacing.current) {
+        screenFacing.current = facing;
+        screenDom.current.classList.toggle("is-away", !facing);
+      }
     }
   });
 
@@ -246,27 +285,64 @@ function PhoneRig({
   );
 }
 
+/**
+ * Fires once the phone has actually been drawn, so the hero's CSS stand-in can
+ * hold its place until then instead of leaving a hole while the model loads.
+ */
+function ReadySignal({ onReady }: { onReady: () => void }) {
+  const done = useRef(false);
+  useFrame(() => {
+    if (done.current) return;
+    done.current = true;
+    onReady();
+  });
+  return null;
+}
+
 export default function PhoneCanvas({
   sceneState,
   chapter,
+  onReady,
 }: {
   sceneState: MutableRefObject<PhoneSceneState>;
   chapter: number;
+  onReady?: () => void;
 }) {
+  // Start modest hardware at 1x with no MSAA; PerformanceMonitor then trims the
+  // ratio on anything that drops frames, whatever it reported about itself.
+  // The trim is deliberately sticky (drei stops monitoring after `flipflops`
+  // direction changes) - a machine that couldn't hold the frame rate stays at
+  // 1x for the page view rather than oscillating between sharp and smooth.
+  const modest = isModestDevice();
+  const [dpr, setDpr] = useState(modest ? 1 : 1.75);
+  const onDecline = useCallback(() => setDpr((d) => Math.max(1, +(d - 0.25).toFixed(2))), []);
+  const onIncline = useCallback(
+    () => setDpr((d) => (modest ? d : Math.min(1.75, +(d + 0.25).toFixed(2)))),
+    [modest],
+  );
+
   return (
     <Canvas
       camera={{ position: [0, 0, 8], fov: 35 }}
-      dpr={[1, 1.75]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      dpr={dpr}
+      gl={{ antialias: !modest, alpha: true, powerPreference: "high-performance" }}
       style={{ pointerEvents: "none" }}
       aria-hidden="true"
     >
+      <PerformanceMonitor
+        ms={250}
+        iterations={5}
+        flipflops={3}
+        onDecline={onDecline}
+        onIncline={onIncline}
+        onFallback={() => setDpr(1)}
+      />
       <Suspense fallback={null}>
         <ambientLight intensity={0.55} />
         <directionalLight position={[4, 6, 6]} intensity={1.15} />
         <directionalLight position={[-5, -2, 4]} intensity={0.4} color="#ffd9b0" />
 
-        <Environment resolution={64}>
+        <Environment resolution={64} frames={1}>
           {/* studio: white top, warm ember key, cool steel fill - titanium loves contrast */}
           <Lightformer intensity={2.4} position={[0, 5, 0]} rotation-x={Math.PI / 2} scale={[9, 5, 1]} color="#ffffff" />
           <Lightformer intensity={2.6} position={[5, 1, 2]} rotation-y={-Math.PI / 2} scale={[4, 9, 1]} color="#f97316" />
@@ -275,9 +351,10 @@ export default function PhoneCanvas({
         </Environment>
 
         <PhoneRig sceneState={sceneState} chapter={chapter} />
+        {onReady && <ReadySignal onReady={onReady} />}
       </Suspense>
     </Canvas>
   );
 }
 
-useGLTF.preload(MODEL_URL);
+useGLTF.preload(MODEL_URL, false);

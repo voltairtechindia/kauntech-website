@@ -2491,6 +2491,16 @@
 .k-3d-screen .k-cssphone-glare {
   border-radius: 55px;
 }
+/* the glass is edge-on or facing away mid-flip — hide the live DOM screen and
+   park its keyframes rather than animating pixels nobody can see */
+.k-3d-screen.is-away {
+  visibility: hidden;
+}
+.k-3d-screen.is-away *,
+.k-3d-screen.is-away *::before,
+.k-3d-screen.is-away *::after {
+  animation-play-state: paused !important;
+}
 
 /* chapter swap crossfade when a screen (re)mounts */
 .k-screen-mount {

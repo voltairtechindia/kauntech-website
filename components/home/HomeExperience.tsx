@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import StoreBadges from "@/components/sections/StoreBadges";
@@ -132,6 +132,12 @@ export default function HomeExperience() {
   const [chapter, setChapter] = useState(0);
   const [canvasOn, setCanvasOn] = useState(false); // capability gate (desktop + webgl + motion ok)
   const [canvasLive, setCanvasLive] = useState(true); // lifecycle within the page
+  // The 3D chunk + the model are a few hundred KB; on a slow connection that's
+  // seconds. Keep the hero's CSS phone in place until the real one has drawn a
+  // frame, so the hero never shows an empty column (and still shows a phone if
+  // the model never arrives at all).
+  const [canvasDrawn, setCanvasDrawn] = useState(false);
+  const onCanvasReady = useCallback(() => setCanvasDrawn(true), []);
 
   // Capability gate - only mount WebGL on motion-friendly desktops with REAL
   // GPU acceleration. Software renderers (SwiftShader/llvmpipe - headless
@@ -334,7 +340,7 @@ export default function HomeExperience() {
       {/* persistent 3D iPhone overlay (desktop only) */}
       {canvasOn && canvasLive && (
         <div className="k-canvas" aria-hidden="true">
-          <PhoneCanvas sceneState={sceneState} chapter={chapter} />
+          <PhoneCanvas sceneState={sceneState} chapter={chapter} onReady={onCanvasReady} />
         </div>
       )}
 
@@ -382,8 +388,9 @@ export default function HomeExperience() {
           </div>
 
           <div className="k-hero-stage" aria-hidden="true">
-            {/* mobile / no-WebGL phone - the 3D one takes over on desktop */}
-            {!canvasOn && (
+            {/* mobile / no-WebGL phone - and the desktop placeholder that holds
+                the hero together until the 3D one has actually drawn */}
+            {(!canvasOn || !canvasDrawn) && (
               <CssPhone className="k-hero-cssphone" scale={0.66}>
                 <CardScreen />
               </CssPhone>
