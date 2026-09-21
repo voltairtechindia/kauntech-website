@@ -5,7 +5,7 @@ import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
 import { IconMail } from "./icons";
 
 /** Google's four-colour G, inline so the button needs no asset fetch. */
-function GoogleG() {
+export function GoogleG() {
   return (
     <svg width="1.05em" height="1.05em" viewBox="0 0 24 24" aria-hidden focusable={false}>
       <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z" />
