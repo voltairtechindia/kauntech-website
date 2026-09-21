@@ -5,6 +5,21 @@ import { useRouter } from "next/navigation";
 import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
 
 /**
+ * GoTrue only honours a redirect whose host is the project's site_url
+ * (kauntech.com) or one listed exactly in its allow-list. www…/ar/callback is
+ * listed, but only without a query string, so `?next=` made it fall back to the
+ * bare site root. The apex host is always allowed and 308s to www with the
+ * query intact, where the PKCE verifier cookie lives.
+ */
+function magicLinkTarget(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const base = window.location.hostname.endsWith("kauntech.com")
+    ? "https://kauntech.com"
+    : window.location.origin;
+  return `${base}/ar/callback?next=/enterprise/admin`;
+}
+
+/**
  * Sign-in for the enterprise seat console.
  *
  * Password, not a magic link: the person managing seats is the one who bought
@@ -51,12 +66,7 @@ export default function EnterpriseLoginForm() {
     try {
       const { error } = await createArBrowserClient().auth.signInWithOtp({
         email: email.trim(),
-        options: {
-          emailRedirectTo:
-            typeof window !== "undefined"
-              ? `${window.location.origin}/ar/callback?next=/enterprise/admin`
-              : undefined,
-        },
+        options: { emailRedirectTo: magicLinkTarget() },
       });
       if (error) throw error;
       setSent(true);

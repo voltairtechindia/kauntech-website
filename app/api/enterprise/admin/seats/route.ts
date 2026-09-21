@@ -4,6 +4,8 @@ import { guardSeatRoute, isFailure } from "@/lib/enterpriseAdminGuard";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const INVITE_LANDING = "https://kauntech.com/enterprise/welcome";
+
 /**
  * Add a seat.
  *
@@ -73,6 +75,11 @@ export async function POST(req: Request) {
     if (invite) {
       const { data, error } = await (admin.auth.admin as any).inviteUserByEmail(email, {
         data: fullName ? { full_name: fullName } : undefined,
+        // Without this the invite landed on the bare site root and nothing
+        // could accept it. The apex host is the project's site_url, which
+        // GoTrue always allows; apex→www is a 308 that keeps the fragment the
+        // session rides in.
+        redirectTo: INVITE_LANDING,
       });
       if (error) {
         return NextResponse.json({ ok: false, error: error.message }, { status: 400 });

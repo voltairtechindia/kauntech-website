@@ -46,6 +46,8 @@ export default function Footer() {
             <Link href="/blog">Blog</Link>
             <Link href="/faq">FAQ</Link>
             <Link href="/career">Careers</Link>
+            <Link href="/enterprise">Enterprise</Link>
+            <Link href="/enterprise/admin-auth">Enterprise sign-in</Link>
             <Link href="/contact">Contact</Link>
           </div>
 

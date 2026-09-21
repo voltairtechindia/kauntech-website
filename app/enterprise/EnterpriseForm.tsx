@@ -315,6 +315,9 @@ export default function EnterpriseForm() {
         <p className="ent-fine">
           We reply within one business day. Minimum {SEATS.min} users.
         </p>
+        <p className="ent-fine">
+          Already on Enterprise? <a href="/enterprise/admin-auth">Manage your team</a>
+        </p>
       </form>
       <Styles />
     </main>
@@ -468,6 +471,7 @@ function Styles() {
       .ent-submit:focus-visible{outline:2px solid #FDBA74;outline-offset:3px}
 
       .ent-fine{margin:0;font-size:12px;color:#71717A;text-align:center}
+      .ent-fine a{color:#F97316;text-decoration:underline;text-underline-offset:2px}
 
       .ent-done{align-items:center;text-align:center;gap:12px;padding-top:56px}
       .ent-done h1{margin:0;font-size:24px;font-weight:800}

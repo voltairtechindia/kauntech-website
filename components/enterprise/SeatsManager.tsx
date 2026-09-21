@@ -27,6 +27,22 @@ function inr(n: number): string {
 
 type AllocDraft = Record<Resource, string>;
 
+const APP_LINK = "https://www.kauntech.com/get";
+
+/** What the owner sends a new person. Plain text so it pastes into WhatsApp. */
+function welcomeText(orgName: string, email: string, password: string | null, existing: boolean): string {
+  return [
+    `You're on the ${orgName} team on KaunTech.`,
+    "",
+    `1. Get the app: ${APP_LINK}`,
+    existing
+      ? `2. Sign in with ${email} and the password you already use.`
+      : `2. Sign in with ${email}${password ? ` and this password: ${password}` : ""}`,
+    "",
+    "You'll see the team's leads, and anything you scan is shared with the team. You can change your password in the app.",
+  ].join("\n");
+}
+
 function draftFrom(seat: OrgSeat): AllocDraft {
   return {
     tokens: String(seat.alloc?.tokens ?? 0),
@@ -50,6 +66,13 @@ export default function SeatsManager({
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<AllocDraft | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState<string | null>(null);
+  const [pwFor, setPwFor] = useState<string | null>(null);
+  const [pwValue, setPwValue] = useState("");
+  const [confirmAbsorb, setConfirmAbsorb] = useState<string | null>(null);
+  // What to send the person just added. Shown once, right after, because the
+  // owner is the only one who can hand over the details.
+  const [handoff, setHandoff] = useState<{ email: string; text: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Add-seat form
   const [adding, setAdding] = useState(false);
@@ -68,6 +91,9 @@ export default function SeatsManager({
     setEditing(null);
     setDraft(null);
     setConfirmFreeze(null);
+    setPwFor(null);
+    setPwValue("");
+    setConfirmAbsorb(null);
     if (message) setNotice(message);
     router.refresh();
   }
@@ -150,8 +176,7 @@ export default function SeatsManager({
   }
 
   async function resetPassword(seat: OrgSeat) {
-    const next = window.prompt(`New password for ${seat.email ?? seat.full_name ?? "this person"}`);
-    if (!next) return;
+    const next = pwValue;
     if (next.length < 8) {
       setError("Use at least 8 characters.");
       return;
@@ -170,15 +195,15 @@ export default function SeatsManager({
       setBusyId(null);
       return;
     }
-    done("Password changed. Tell them the new one yourself — we do not email it.");
+    setHandoff({
+      email: seat.email ?? "",
+      text: welcomeText(org.name, seat.email ?? "", next, false),
+    });
+    setCopied(false);
+    done("Password changed. Send them the new one below, we do not email it.");
   }
 
   async function absorb(seat: OrgSeat) {
-    if (
-      !window.confirm(
-        `Move every lead ${seat.full_name ?? seat.email ?? "this person"} scanned BEFORE joining into the company pool? The whole team will see them. This cannot be undone from here.`,
-      )
-    ) return;
     setBusyId(seat.user_id);
     const ok = await rpc("enterprise_absorb_member_leads", { p_user: seat.user_id });
     if (ok) done("Their earlier leads are in the company pool now.");
@@ -205,6 +230,13 @@ export default function SeatsManager({
       setBusyId(null);
       return;
     }
+    const addedEmail = newEmail.trim();
+    setHandoff(
+      inviteInstead && !body.existing
+        ? null
+        : { email: addedEmail, text: welcomeText(org.name, addedEmail, body.existing ? null : newPassword, !!body.existing) },
+    );
+    setCopied(false);
     setNewEmail("");
     setNewName("");
     setNewPassword("");
@@ -214,8 +246,18 @@ export default function SeatsManager({
         ? "That person already had a KaunTech account, so we added it to your plan. Leads they collected before today stay private to them."
         : inviteInstead
           ? "Invite sent. They pick their own password from the email."
-          : "Seat created. Give them the email and password you just set.",
+          : "Seat created. Send them the message below.",
     );
+  }
+
+  async function copyHandoff() {
+    if (!handoff) return;
+    try {
+      await navigator.clipboard.writeText(handoff.text);
+      setCopied(true);
+    } catch {
+      setError("Could not reach the clipboard. Select the text and copy it instead.");
+    }
   }
 
   return (
@@ -264,8 +306,45 @@ export default function SeatsManager({
           </div>
         </div>
 
+        {/* Until anyone else is on the team, say how people get in. */}
+        {seats.length <= 1 ? (
+          <div className="ar-card ar-stack">
+            <h2 className="ar-h2">How your team gets in</h2>
+            <ol className="ar-muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7, fontSize: 14 }}>
+              <li>Add someone below with their work email, and either set their password or email them an invite.</li>
+              <li>Send them the message we give you. It has the app link and how to sign in.</li>
+              <li>They sign in to the KaunTech app and see the team&apos;s leads. Everyone starts with an equal share of the plan, which you can change here any time.</li>
+            </ol>
+          </div>
+        ) : null}
+
         {error ? <p className="ar-error">{error}</p> : null}
         {notice ? <p className="ar-muted">{notice}</p> : null}
+
+        {handoff ? (
+          <div className="ar-card ar-stack" style={{ borderColor: "var(--ar-orange-border)" }}>
+            <div className="ar-between">
+              <h2 className="ar-h2" style={{ margin: 0 }}>Send this to {handoff.email}</h2>
+              <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setHandoff(null)}>Done</button>
+            </div>
+            <pre style={{ margin: 0, whiteSpace: "pre-wrap", fontFamily: "inherit", fontSize: 14, lineHeight: 1.6 }}>
+              {handoff.text}
+            </pre>
+            <div className="ar-row" style={{ gap: 8, flexWrap: "wrap" }}>
+              <button className="ar-btn ar-btn-primary ar-btn-sm" onClick={copyHandoff}>
+                {copied ? "Copied" : "Copy message"}
+              </button>
+              <a
+                className="ar-btn ar-btn-ghost ar-btn-sm"
+                href={`https://wa.me/?text=${encodeURIComponent(handoff.text)}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Send on WhatsApp
+              </a>
+            </div>
+          </div>
+        ) : null}
 
         {/* Add a seat */}
         {adding ? (
@@ -393,7 +472,11 @@ export default function SeatsManager({
 
                 {seat.role !== "owner" ? (
                   <>
-                    <button className="ar-btn ar-btn-ghost ar-btn-sm" disabled={busy} onClick={() => resetPassword(seat)}>
+                    <button
+                      className="ar-btn ar-btn-ghost ar-btn-sm"
+                      disabled={busy}
+                      onClick={() => { setPwFor(pwFor === seat.user_id ? null : seat.user_id); setPwValue(""); }}
+                    >
                       Set password
                     </button>
 
@@ -412,12 +495,53 @@ export default function SeatsManager({
                       </button>
                     )}
 
-                    <button className="ar-btn ar-btn-ghost ar-btn-sm" disabled={busy} onClick={() => absorb(seat)}>
-                      Move their old leads in
-                    </button>
+                    {confirmAbsorb === seat.user_id ? null : (
+                      <button className="ar-btn ar-btn-ghost ar-btn-sm" disabled={busy} onClick={() => setConfirmAbsorb(seat.user_id)}>
+                        Move their old leads in
+                      </button>
+                    )}
                   </>
                 ) : null}
               </div>
+
+              {pwFor === seat.user_id ? (
+                <form
+                  className="ar-row"
+                  style={{ gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}
+                  onSubmit={(e) => { e.preventDefault(); resetPassword(seat); }}
+                >
+                  <div style={{ flex: "1 1 220px" }}>
+                    <label className="ar-label" htmlFor={`pw-${seat.user_id}`}>
+                      New password for {seat.email ?? seat.full_name ?? "this person"}
+                    </label>
+                    <input
+                      id={`pw-${seat.user_id}`} className="ar-field" type="text" autoFocus minLength={8}
+                      value={pwValue} onChange={(e) => setPwValue(e.target.value)} placeholder="At least 8 characters"
+                    />
+                  </div>
+                  <button className="ar-btn ar-btn-primary ar-btn-sm" type="submit" disabled={busy || pwValue.length < 8}>
+                    {busy ? "Saving…" : "Save password"}
+                  </button>
+                  <button className="ar-btn ar-btn-ghost ar-btn-sm" type="button" onClick={() => setPwFor(null)}>
+                    Cancel
+                  </button>
+                </form>
+              ) : null}
+
+              {confirmAbsorb === seat.user_id ? (
+                <div className="ar-subcard ar-stack">
+                  <p style={{ margin: 0, fontSize: 14 }}>
+                    Move every lead {seat.full_name ?? seat.email ?? "they"} scanned <strong>before joining</strong> into
+                    the company pool? The whole team will see them, and this cannot be undone here.
+                  </p>
+                  <div className="ar-row" style={{ gap: 8 }}>
+                    <button className="ar-btn ar-btn-primary ar-btn-sm" disabled={busy} onClick={() => absorb(seat)}>
+                      {busy ? "Moving…" : "Yes, move them in"}
+                    </button>
+                    <button className="ar-btn ar-btn-ghost ar-btn-sm" onClick={() => setConfirmAbsorb(null)}>Cancel</button>
+                  </div>
+                </div>
+              ) : null}
 
               {seat.role !== "owner" && seat.status !== "frozen" ? (
                 <p className="ar-muted" style={{ fontSize: 12, margin: 0 }}>

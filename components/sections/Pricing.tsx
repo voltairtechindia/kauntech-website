@@ -184,10 +184,16 @@ export default function Pricing() {
             </ul>
             <Link
               className="price-btn outline"
-              href="/contact"
+              href="/enterprise"
               style={{ display: "block", textAlign: "center", textDecoration: "none" }}
             >
               Get Quote
+            </Link>
+            <Link
+              href="/enterprise/admin-auth"
+              style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 13, color: "var(--text-dim, #9a9a9a)" }}
+            >
+              Already a customer? Manage your team
             </Link>
           </div>
         </div>
