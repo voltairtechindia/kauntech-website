@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { LayoutGrid, LogOut, Users, Contact } from "lucide-react";
+import { initials } from "@/lib/enterpriseTypes";
 import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
 import { inr } from "@/lib/enterpriseTypes";
 
@@ -12,6 +13,17 @@ import { inr } from "@/lib/enterpriseTypes";
  * a phone. Three destinations only — the owner comes here to look at the team's
  * leads and to manage people, and every extra item would dilute that.
  */
+
+/**
+ * Inside a <Link>, this knows whether the router is still fetching that route.
+ * A console page is a live database read, so a click can take a moment: the
+ * count is swapped for a spinner rather than leaving the rail looking dead.
+ */
+function NavPending({ children }: { children?: React.ReactNode }) {
+  const { pending } = useLinkStatus();
+  if (pending) return <span className="ec-nav-pending" role="status" aria-label="Loading" />;
+  return <>{children}</>;
+}
 
 const NAV = [
   { href: "/enterprise/admin", label: "Overview", icon: LayoutGrid, exact: true },
@@ -69,14 +81,19 @@ export default function ConsoleShell({
               >
                 <Icon aria-hidden />
                 {label}
-                {counts[href] != null ? <span className="ec-nav-count">{inr(counts[href])}</span> : null}
+                <NavPending>
+                  {counts[href] != null ? <span className="ec-nav-count">{inr(counts[href])}</span> : null}
+                </NavPending>
               </Link>
             ))}
           </nav>
           <div className="ec-side-foot">
-            <span className="ec-side-user" title={ownerEmail ?? undefined}>{ownerEmail}</span>
-            <button className="ec-btn ec-btn--ghost ec-btn--sm" onClick={signOut} disabled={leaving}
-              style={{ justifyContent: "flex-start", paddingLeft: 0 }}>
+            <div className="ec-side-who">
+              <span className="ec-avatar ec-avatar--sm ec-avatar--accent" aria-hidden>{initials(ownerEmail)}</span>
+              <span className="ec-side-user" title={ownerEmail ?? undefined}>{ownerEmail}</span>
+            </div>
+            <button className="ec-btn ec-btn--ghost ec-btn--sm ec-btn--block" onClick={signOut} disabled={leaving}
+              style={{ justifyContent: "flex-start" }}>
               <LogOut aria-hidden /> {leaving ? "Signing out…" : "Sign out"}
             </button>
           </div>
@@ -98,7 +115,7 @@ export default function ConsoleShell({
               {NAV.map(({ href, label, icon: Icon, exact }) => (
                 <Link key={href} href={href} className="ec-tab"
                   aria-current={isActive(href, exact) ? "page" : undefined}>
-                  <Icon aria-hidden /> {label}
+                  <NavPending><Icon aria-hidden /></NavPending> {label}
                 </Link>
               ))}
             </nav>

@@ -18,6 +18,9 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
   }
 
   const me = owner.seats.find((s) => s.role === "owner");
+  // A HEAD count: no rows travel, and it only runs on a full page load — the
+  // shell is a shared layout, so switching sections reuses it. A failure shows
+  // a zero in the rail rather than an error page.
   const leadCount = await getLeadCount(owner.org.id).catch(() => 0);
 
   return (

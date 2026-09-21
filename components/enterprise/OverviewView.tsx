@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Contact, UserPlus } from "lucide-react";
+import { ArrowRight, Contact, Flame, Sparkles, TrendingUp, UserPlus, Users } from "lucide-react";
 import type { Overview } from "@/lib/enterpriseLeads";
 import {
   filtersToQuery,
@@ -67,24 +67,24 @@ export default function OverviewView({ owner, ov }: { owner: OrgView; ov: Overvi
 
       <section className="ec-stats" aria-label="Team totals">
         <div className="ec-stat">
-          <span className="ec-stat-label">Leads, all time</span>
+          <span className="ec-stat-label"><span className="ec-stat-icon" aria-hidden><Contact /></span> Leads, all time</span>
           <span className="ec-stat-value">{inr(ov.total)}</span>
           <span className="ec-stat-hint">in the shared pool</span>
         </div>
         <div className="ec-stat">
-          <span className="ec-stat-label">Last 7 days</span>
+          <span className="ec-stat-label"><span className="ec-stat-icon" aria-hidden><TrendingUp /></span> Last 7 days</span>
           <span className="ec-stat-value">{inr(ov.last7)}</span>
           <span className="ec-stat-hint">{inr(ov.last30)} in 30 days</span>
         </div>
         <div className="ec-stat">
-          <span className="ec-stat-label">Hot leads</span>
+          <span className="ec-stat-label"><span className="ec-stat-icon" aria-hidden><Flame /></span> Hot leads</span>
           <span className="ec-stat-value">{inr(ov.hot)}</span>
           <span className="ec-stat-hint">
             <Link className="ec-link" href={`/enterprise/admin/leads${filtersToQuery({ temp: "hot" })}`}>See them</Link>
           </span>
         </div>
         <div className="ec-stat">
-          <span className="ec-stat-label">AI Intel run</span>
+          <span className="ec-stat-label"><span className="ec-stat-icon" aria-hidden><Sparkles /></span> AI Intel run</span>
           <span className="ec-stat-value">{inr(ov.intel)}</span>
           <span className="ec-stat-hint">leads researched</span>
         </div>
@@ -94,7 +94,10 @@ export default function OverviewView({ owner, ov }: { owner: OrgView; ov: Overvi
         {/* ── People ── */}
         <section className="ec-panel" aria-labelledby="people-h">
           <div className="ec-panel-head">
-            <h2 id="people-h" className="ec-panel-title">Your team</h2>
+            <h2 id="people-h" className="ec-panel-title">
+              <Users aria-hidden /> Your team
+              <span className="ec-count">{seats.length} of {owner.org.seat_limit}</span>
+            </h2>
             <Link href="/enterprise/admin/team" className="ec-link">Manage team</Link>
           </div>
           <div className="ec-table-wrap">

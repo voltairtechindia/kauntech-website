@@ -34,6 +34,17 @@
   --ec-cold-soft: oklch(70% 0.1 230 / 0.14);
   --ec-focus: oklch(78% 0.15 55);
   --ec-scrim: oklch(8% 0 0 / 0.62);
+  --ec-grad: var(--ar-grad);
+  --ec-glow: var(--ar-orange-glow);
+  /* Control glyphs, baked at the ink colour that sits on the accent. */
+  --ec-glyph-tick: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M13.2 4.6 6.4 11.4 2.8 7.8' fill='none' stroke='%230a0a0b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --ec-glyph-dash: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8h8' fill='none' stroke='%230a0a0b' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
+  --ec-glyph-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m4 6 4 4 4-4' fill='none' stroke='%237d7d87' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  /* Three depths, not one shadow everywhere: a panel sits on the page, a menu
+     sits over it, a drawer sits over everything. */
+  --ec-shadow-1: 0 1px 2px oklch(0% 0 0 / 0.4);
+  --ec-shadow-2: 0 2px 4px oklch(0% 0 0 / 0.35), 0 14px 28px -18px oklch(0% 0 0 / 0.9);
+  --ec-shadow-3: 0 24px 64px oklch(0% 0 0 / 0.55);
 
   --ec-font-display: var(--ar-display);
   --ec-font-body: var(--font-fira-sans), system-ui, sans-serif;
@@ -61,6 +72,9 @@
   color: var(--ec-ink);
   min-height: 100vh;
   overflow-x: clip;
+  /* The date picker, the scrollbars and autofill are drawn by the browser:
+     without this they arrive white in the middle of a dark console. */
+  color-scheme: dark;
 }
 
 /* The marketing site gives every <section> 72–118px of vertical padding
@@ -105,9 +119,11 @@
   min-width: 0;
 }
 .ec-brand-kicker {
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
   color: var(--ec-ink-3);
-  letter-spacing: 0.02em;
 }
 .ec-brand-name {
   font-family: var(--ec-font-display);
@@ -142,9 +158,25 @@
 .ec-nav-link:hover { background: var(--ec-hover); color: var(--ec-ink); }
 .ec-nav-link:focus-visible { outline: 2px solid var(--ec-focus); outline-offset: 1px; }
 .ec-nav-link:active { background: var(--ec-field); }
+.ec-nav-link {
+  position: relative;
+}
+/* The accent bar, not just the wash: on a dark rail a tinted background alone
+   is easy to miss at a glance. */
 .ec-nav-link[aria-current="page"] {
   background: var(--ec-accent-soft);
   color: var(--ec-accent-ink);
+  box-shadow: inset 0 0 0 1px var(--ec-accent-line);
+}
+.ec-nav-link[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--ec-grad);
 }
 .ec-nav-count {
   margin-left: auto;
@@ -160,6 +192,12 @@
   gap: var(--ec-sp-2);
   padding: var(--ec-sp-4) var(--ec-sp-2) 0;
   border-top: 1px solid var(--ec-line);
+  min-width: 0;
+}
+.ec-side-who {
+  display: flex;
+  align-items: center;
+  gap: var(--ec-sp-2);
   min-width: 0;
 }
 .ec-side-user {
@@ -230,17 +268,19 @@
 /* ───────────────────────────── page head ───────────────────────────── */
 
 .ec-head {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--ec-sp-4);
+  padding-top: var(--ec-sp-4);
 }
 .ec-head > div { min-width: 0; }
 .ec-title {
   margin: 0;
   font-family: var(--ec-font-display);
-  font-size: 26px;
+  font-size: 28px;
   line-height: 1.15;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -254,29 +294,67 @@
 }
 .ec-head-actions { display: flex; flex-wrap: wrap; gap: var(--ec-sp-2); }
 
+/* A short accent rule above the page title: the one piece of brand colour on a
+   page that is otherwise all data. Absolute, so it cannot become a flex item
+   and stretch the full width of the head. */
+.ec-head::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 34px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ec-grad);
+  box-shadow: 0 0 12px var(--ec-glow);
+}
+
 /* ───────────────────────────── stats ───────────────────────────── */
 
 .ec-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  border: 1px solid var(--ec-line);
-  border-radius: var(--ec-r-lg);
-  overflow: hidden;
-  background: var(--ec-line);
+  gap: var(--ec-sp-3);
 }
 @media (min-width: 820px) { .ec-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .ec-stat {
+  position: relative;
   display: grid;
   gap: 6px;
   padding: var(--ec-sp-4) var(--ec-sp-5);
-  background: var(--ec-panel);
+  border: 1px solid var(--ec-line);
+  border-radius: var(--ec-r-lg);
+  background:
+    linear-gradient(180deg, oklch(100% 0 0 / 0.028), transparent 46%),
+    var(--ec-panel);
+  box-shadow: var(--ec-shadow-1);
   min-width: 0;
+  transition: border-color var(--ec-dur) var(--ec-ease-out), transform var(--ec-dur) var(--ec-ease-out);
 }
-.ec-stat-label { font-size: 13px; color: var(--ec-ink-3); }
+.ec-stat:hover { border-color: var(--ec-line-strong); transform: translateY(-1px); }
+.ec-stat-label {
+  display: flex;
+  align-items: center;
+  gap: var(--ec-sp-2);
+  font-size: 13px;
+  color: var(--ec-ink-3);
+}
+/* The icon chip carries the accent so the number itself can stay plain ink. */
+.ec-stat-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 7px;
+  border: 1px solid var(--ec-accent-line);
+  background: var(--ec-accent-soft);
+  color: var(--ec-accent-ink);
+}
+.ec-stat-icon svg { width: 13px; height: 13px; }
 .ec-stat-value {
   font-family: var(--ec-font-display);
-  font-size: 28px;
+  font-size: 30px;
   line-height: 1;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -298,6 +376,7 @@
   border: 1px solid var(--ec-line);
   border-radius: var(--ec-r-lg);
   background: var(--ec-panel);
+  box-shadow: var(--ec-shadow-2);
   min-width: 0;
   overflow: hidden;
 }
@@ -308,12 +387,29 @@
   gap: var(--ec-sp-3);
   padding: var(--ec-sp-4) var(--ec-sp-5);
   border-bottom: 1px solid var(--ec-line);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.03), transparent);
 }
 .ec-panel-title {
+  display: flex;
+  align-items: center;
+  gap: var(--ec-sp-2);
   margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: var(--ec-ink);
+  min-width: 0;
+}
+.ec-panel-title svg { width: 15px; height: 15px; flex: none; color: var(--ec-ink-3); }
+.ec-count {
+  padding: 2px 8px;
+  border: 1px solid var(--ec-line);
+  border-radius: 999px;
+  background: var(--ec-field);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ec-ink-3);
+  white-space: nowrap;
 }
 .ec-panel-body { padding: var(--ec-sp-4) var(--ec-sp-5); }
 .ec-link {
@@ -446,6 +542,18 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 /* ───────────────────────────── tables ───────────────────────────── */
 
 .ec-table-wrap { overflow-x: auto; }
+.ec-table-wrap--tall {
+  max-height: min(70vh, 760px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ec-line-strong) transparent;
+}
+.ec-table-wrap--tall::-webkit-scrollbar { width: 10px; height: 10px; }
+.ec-table-wrap--tall::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: var(--ec-line-strong) padding-box;
+}
 .ec-table {
   width: 100%;
   border-collapse: collapse;
@@ -453,17 +561,23 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   table-layout: auto;
 }
 .ec-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   padding: 10px var(--ec-sp-4);
   text-align: left;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--ec-ink-3);
   white-space: nowrap;
   border-bottom: 1px solid var(--ec-line);
+  /* Opaque, not translucent: rows scroll under it. */
   background: var(--ec-panel);
 }
 .ec-table td {
-  padding: var(--ec-sp-3) var(--ec-sp-4);
+  padding: 13px var(--ec-sp-4);
   border-bottom: 1px solid var(--ec-line);
   color: var(--ec-ink-2);
   vertical-align: middle;
@@ -474,10 +588,14 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 }
 .ec-table tbody tr:last-child td { border-bottom: 0; }
 .ec-table .num { text-align: right; font-variant-numeric: tabular-nums; }
-.ec-table tr.is-click { cursor: pointer; transition: background-color var(--ec-dur) var(--ec-ease-out); }
+.ec-table tr.is-click { cursor: pointer; }
+.ec-table tr.is-click td { transition: background-color var(--ec-dur) var(--ec-ease-out); }
 .ec-table tr.is-click:hover td { background: var(--ec-hover); }
 .ec-table tr.is-click:focus-visible { outline: 2px solid var(--ec-focus); outline-offset: -2px; }
 .ec-table tr.is-selected td { background: var(--ec-accent-soft); }
+/* The open row keeps an accent edge so it is still findable once the drawer
+   covers the right of the screen. */
+.ec-table tr.is-selected td:first-child { box-shadow: inset 2px 0 0 var(--ec-accent); }
 .ec-cell-lead { display: flex; align-items: center; gap: var(--ec-sp-3); min-width: 0; }
 .ec-cell-lead > div { min-width: 0; }
 .ec-cell-name { color: var(--ec-ink); font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
@@ -516,6 +634,7 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   gap: var(--ec-sp-2);
   padding: var(--ec-sp-3) var(--ec-sp-4);
   border-bottom: 1px solid var(--ec-line);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.02), transparent);
 }
 .ec-search {
   position: relative;
@@ -536,7 +655,7 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 
 .ec-input,
 .ec-select {
-  height: 36px;
+  height: 38px;
   padding: 0 var(--ec-sp-3);
   border: 1px solid var(--ec-line);
   border-radius: var(--ec-r-sm);
@@ -554,9 +673,22 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   outline-offset: 0;
   border-color: transparent;
 }
+.ec-input:focus, .ec-select:focus, .ec-textarea:focus {
+  border-color: var(--ec-accent-line);
+  box-shadow: 0 0 0 3px var(--ec-accent-soft);
+}
 .ec-input:disabled, .ec-select:disabled { opacity: 0.5; cursor: not-allowed; }
 .ec-input[aria-invalid="true"] { border-color: var(--ec-bad); }
-.ec-select { padding-right: var(--ec-sp-6); max-width: 220px; }
+.ec-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: var(--ec-sp-8);
+  max-width: 220px;
+  background-image: var(--ec-glyph-chevron);
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px 16px;
+}
 .ec-select option { background: var(--ec-panel); color: var(--ec-ink); }
 
 .ec-field { display: grid; gap: 6px; min-width: 0; }
@@ -570,7 +702,48 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   color: var(--ec-ink-2);
   cursor: pointer;
 }
-.ec-check input { margin-top: 2px; accent-color: var(--ec-accent); }
+.ec-check input[type="checkbox"] { margin-top: 1px; }
+
+/* ── checkbox ──
+   Drawn, not native: `appearance: none` strips the OS control, and the tick and
+   the dash are baked SVGs layered over the brand gradient. Baked rather than
+   masked because a background-image works everywhere a pseudo-element on a
+   replaced element does not. */
+.ec input[type="checkbox"].ec-tick,
+.ec .ec-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ec-line-strong);
+  border-radius: 5px;
+  background-color: var(--ec-field);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 15px 15px, auto;
+  cursor: pointer;
+  transition:
+    background-color var(--ec-dur) var(--ec-ease-out),
+    border-color var(--ec-dur) var(--ec-ease-out),
+    box-shadow var(--ec-dur) var(--ec-ease-out);
+}
+.ec input[type="checkbox"].ec-tick:hover,
+.ec .ec-check input[type="checkbox"]:hover { border-color: var(--ec-accent-line); background-color: var(--ec-hover); }
+.ec input[type="checkbox"].ec-tick:focus-visible,
+.ec .ec-check input[type="checkbox"]:focus-visible { outline: 2px solid var(--ec-focus); outline-offset: 2px; }
+.ec input[type="checkbox"].ec-tick:checked,
+.ec .ec-check input[type="checkbox"]:checked {
+  border-color: transparent;
+  background-image: var(--ec-glyph-tick), var(--ec-grad);
+  box-shadow: 0 0 10px var(--ec-glow);
+}
+.ec input[type="checkbox"].ec-tick:indeterminate {
+  border-color: transparent;
+  background-image: var(--ec-glyph-dash), var(--ec-grad);
+}
+.ec input[type="checkbox"].ec-tick:disabled,
+.ec .ec-check input[type="checkbox"]:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .ec-seg {
   display: inline-flex;
@@ -607,7 +780,7 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   padding: 0 var(--ec-sp-4);
   border: 1px solid var(--ec-line-strong);
   border-radius: var(--ec-r-sm);
-  background: var(--ec-field);
+  background: linear-gradient(180deg, oklch(100% 0 0 / 0.04), transparent), var(--ec-field);
   color: var(--ec-ink);
   font: inherit;
   font-size: 14px;
@@ -625,8 +798,15 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 .ec-btn[data-state="loading"] { cursor: progress; }
 .ec-btn[data-state="loading"] svg { animation: ec-spin 700ms linear infinite; }
 
-.ec-btn--primary { background: var(--ec-accent); border-color: var(--ec-accent); color: var(--ec-on-accent); }
-.ec-btn--primary:hover { background: var(--ec-accent-ink); border-color: var(--ec-accent-ink); }
+.ec-btn--primary {
+  background: var(--ec-grad);
+  border-color: transparent;
+  color: var(--ec-on-accent);
+  font-weight: 600;
+  box-shadow: 0 1px 2px oklch(0% 0 0 / 0.4), 0 0 0 0 var(--ec-glow);
+}
+.ec-btn--primary:hover { box-shadow: 0 1px 2px oklch(0% 0 0 / 0.4), 0 0 18px var(--ec-glow); filter: brightness(1.05); }
+.ec-btn--primary:disabled, .ec-btn--primary[aria-disabled="true"] { box-shadow: none; filter: none; }
 .ec-btn--ghost { background: transparent; border-color: transparent; color: var(--ec-ink-2); }
 .ec-btn--ghost:hover { background: var(--ec-hover); color: var(--ec-ink); }
 .ec-btn--danger { background: transparent; border-color: var(--ec-bad-soft); color: var(--ec-bad); }
@@ -646,7 +826,16 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   padding: var(--ec-sp-10) var(--ec-sp-6);
   text-align: center;
 }
-.ec-empty svg { width: 28px; height: 28px; color: var(--ec-ink-3); }
+.ec-empty > svg {
+  box-sizing: content-box;
+  width: 22px;
+  height: 22px;
+  padding: 13px;
+  margin-bottom: var(--ec-sp-1);
+  border: 1px dashed var(--ec-line-strong);
+  border-radius: 50%;
+  color: var(--ec-ink-3);
+}
 .ec-empty-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--ec-ink); }
 .ec-empty-text { margin: 0; max-width: 42ch; font-size: 14px; line-height: 1.55; color: var(--ec-ink-3); }
 
@@ -691,7 +880,7 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   background: var(--ec-panel);
   color: var(--ec-ink);
   font-size: 14px;
-  box-shadow: 0 12px 32px oklch(0% 0 0 / 0.45);
+  box-shadow: var(--ec-shadow-3);
   animation: ec-rise var(--ec-dur-slow) var(--ec-ease-out);
 }
 .ec-toast svg { width: 16px; height: 16px; flex: none; color: var(--ec-good); }
@@ -717,9 +906,10 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   z-index: 50;
   display: flex;
   flex-direction: column;
-  width: min(480px, 100vw);
+  width: min(520px, 100vw);
   background: var(--ec-panel);
   border-left: 1px solid var(--ec-line-strong);
+  box-shadow: var(--ec-shadow-3);
   animation: ec-slide var(--ec-dur-slow) var(--ec-ease-out);
 }
 @keyframes ec-slide { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
@@ -729,6 +919,7 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   gap: var(--ec-sp-3);
   padding: var(--ec-sp-5);
   border-bottom: 1px solid var(--ec-line);
+  background: linear-gradient(180deg, var(--ec-accent-soft), transparent 78%);
 }
 .ec-drawer-body {
   flex: 1;
@@ -747,7 +938,23 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
-.ec-section-title { margin: 0 0 var(--ec-sp-2); font-size: 13px; font-weight: 600; color: var(--ec-ink-2); }
+.ec-section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--ec-sp-3);
+  margin: 0 0 var(--ec-sp-3);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ec-ink-3);
+}
+.ec-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ec-line);
+}
 .ec-dl { display: grid; gap: var(--ec-sp-2); margin: 0; }
 .ec-dl > div { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: var(--ec-sp-3); font-size: 14px; }
 .ec-dl dt { color: var(--ec-ink-3); }
@@ -772,7 +979,7 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   border: 1px solid var(--ec-line-strong);
   border-radius: var(--ec-r-lg);
   background: var(--ec-panel);
-  box-shadow: 0 24px 64px oklch(0% 0 0 / 0.5);
+  box-shadow: var(--ec-shadow-3);
   animation: ec-rise var(--ec-dur-slow) var(--ec-ease-out);
 }
 .ec-dialog-head { padding: var(--ec-sp-5) var(--ec-sp-5) 0; }
@@ -897,15 +1104,9 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 
 /* ───────────────────────────── lead: editing, picking, viewing ───────────── */
 
-/* The row's tick box. Clicking it must not open the drawer — the cell stops the
-   event — so it needs its own hit area and focus ring. */
-.ec-col-pick { width: 36px; padding-right: 0 !important; }
-.ec-tick {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--ec-accent);
-  cursor: pointer;
-}
+/* Clicking a row's tick must not open the drawer — the cell stops the event —
+   so the box gets a padded cell of its own to be hit in. */
+.ec-col-pick { width: 42px; padding-right: 0 !important; }
 .ec-table tr.is-picked td { background: var(--ec-hover); }
 .ec-table tr.is-picked.is-selected td { background: var(--ec-accent-soft); }
 
@@ -1042,3 +1243,47 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
   color: var(--ec-ink-3);
 }
 @media (max-width: 559px) { .ec-lightbox-hint { display: none; } }
+
+/* ───────────────────────────── loading ─────────────────────────────
+   Skeletons, not spinners: switching sections repaints the same frame the
+   real page uses, so the layout does not jump when the data lands. */
+
+.ec-skel {
+  display: block;
+  border-radius: var(--ec-r-sm);
+  background:
+    linear-gradient(90deg, transparent, oklch(100% 0 0 / 0.06), transparent) 0 0 / 220% 100%,
+    var(--ec-hover);
+  animation: ec-shimmer 1.4s var(--ec-ease-out) infinite;
+}
+.ec-skel--circle { width: 32px; height: 32px; border-radius: 50%; flex: none; }
+@keyframes ec-shimmer {
+  from { background-position: -110% 0, 0 0; }
+  to { background-position: 110% 0, 0 0; }
+}
+.ec-skel-rows { display: grid; }
+.ec-skel-row {
+  display: flex;
+  align-items: center;
+  gap: var(--ec-sp-3);
+  padding: 15px var(--ec-sp-5);
+  border-top: 1px solid var(--ec-line);
+}
+.ec-skel-row:first-child { border-top: 0; }
+
+/* A nav item the router is still fetching says so, rather than looking dead. */
+.ec-nav-pending,
+.ec-tab-pending {
+  width: 13px;
+  height: 13px;
+  margin-left: auto;
+  border: 1.5px solid var(--ec-line-strong);
+  border-top-color: var(--ec-accent);
+  border-radius: 50%;
+  animation: ec-spin 700ms linear infinite;
+}
+.ec-tab-pending { margin-left: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ec-skel { animation: none; }
+}

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
@@ -76,6 +75,9 @@ export default function LeadsView({
   const byId = new Map(seats.map((s) => [s.user_id, s]));
   const firstRender = useRef(true);
 
+  // Changing a filter returns to page 1; `next.page` overrides that, which is
+  // how the pager moves. Either way the navigation runs inside a transition, so
+  // the table dims in place instead of dropping to the route skeleton.
   function go(next: Partial<LeadFilters>) {
     const merged: LeadFilters = { ...filters, page: 1, ...next };
     start(() => router.replace(`${pathname}${filtersToQuery(merged)}`, { scroll: false }));
@@ -287,7 +289,8 @@ export default function LeadsView({
         ) : null}
 
         {rows.length ? (
-          <div className="ec-table-wrap" style={{ opacity: pending ? 0.6 : 1, transition: "opacity 120ms" }}>
+          <div className={`ec-table-wrap${rows.length > 12 ? " ec-table-wrap--tall" : ""}`}
+            style={{ opacity: pending ? 0.6 : 1, transition: "opacity 120ms" }}>
             <table className="ec-table">
               <thead>
                 <tr>
@@ -401,14 +404,14 @@ export default function LeadsView({
             <span>{inr(from)}–{inr(to)} of {inr(total)}</span>
             <div className="ec-row">
               {filters.page > 1 ? (
-                <Link className="ec-btn ec-btn--sm" href={`${pathname}${filtersToQuery({ ...filters, page: filters.page - 1 })}`} scroll={false}>
+                <button type="button" className="ec-btn ec-btn--sm" disabled={pending} onClick={() => go({ page: filters.page - 1 })}>
                   <ChevronLeft aria-hidden /> Previous
-                </Link>
+                </button>
               ) : null}
               {filters.page < pages ? (
-                <Link className="ec-btn ec-btn--sm" href={`${pathname}${filtersToQuery({ ...filters, page: filters.page + 1 })}`} scroll={false}>
+                <button type="button" className="ec-btn ec-btn--sm" disabled={pending} onClick={() => go({ page: filters.page + 1 })}>
                   Next <ChevronRight aria-hidden />
-                </Link>
+                </button>
               ) : null}
             </div>
           </nav>
