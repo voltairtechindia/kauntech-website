@@ -49,7 +49,9 @@ export interface EnterpriseEnquiry {
   company: string;
   phone: string | null;
   seats: number;
+  /** Meaningless when `unlimited_scans` is true; written as 0 there. */
   scans_per_user: number;
+  unlimited_scans: boolean;
   intel_per_user: number | null;
   strategy_per_user: number | null;
   needs: string[];

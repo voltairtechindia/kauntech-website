@@ -2,8 +2,9 @@
  * Enterprise quote endpoint consumed by app/enterprise/EnterpriseForm.tsx.
  *
  * POST /api/enterprise
- *   { name, work_email, company, phone?, seats, scans_per_user, intel_per_user?,
- *     strategy_per_user?, needs?: string[], message?, source?, page_url?, website? }
+ *   { name, work_email, company, phone?, seats, scans_per_user | unlimited_scans,
+ *     intel_per_user?, strategy_per_user?, needs?: string[], message?, source?,
+ *     page_url?, website? }
  *   -> 200 { ok: true }
  *
  * Same shape as /api/contact — per-IP burst + daily limits, and a `website`
@@ -119,10 +120,13 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const scansPerUser = intIn(body.scans_per_user, SCANS.min, SCANS.max);
+  // A team that wants the cap gone has no number to give, so the tick box
+  // stands in for it: one of the two must be present, never neither.
+  const unlimitedScans = body.unlimited_scans === true;
+  const scansPerUser = unlimitedScans ? 0 : intIn(body.scans_per_user, SCANS.min, SCANS.max);
   if (scansPerUser == null) {
     return NextResponse.json(
-      { detail: "Please enter how many scans each user needs per year." },
+      { detail: "Please enter how many scans each user needs per year, or tick unlimited." },
       { status: 400 },
     );
   }
@@ -153,6 +157,7 @@ export async function POST(req: Request) {
       phone: phone || null,
       seats,
       scans_per_user: scansPerUser,
+      unlimited_scans: unlimitedScans,
       intel_per_user: intelPerUser,
       strategy_per_user: strategyPerUser,
       needs: sanitizeNeeds(body.needs),

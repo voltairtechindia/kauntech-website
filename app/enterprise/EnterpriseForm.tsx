@@ -71,6 +71,8 @@ function inr(n: number): string {
 interface Values {
   seats: string;
   scans: string;
+  /** Ticked means "no cap" — the scans box is then not an answer we need. */
+  unlimitedScans: boolean;
   intel: string;
   strategy: string;
   name: string;
@@ -90,7 +92,9 @@ function validate(v: Values): Partial<Record<Field, string>> {
   else if (seats > SEATS.max) e.seats = `Enter ${inr(SEATS.max)} or fewer.`;
 
   const scans = Number(v.scans);
-  if (!v.scans) e.scans = "Enter scans per user, per year.";
+  if (v.unlimitedScans) {
+    // Nothing to validate: the tick box is the answer.
+  } else if (!v.scans) e.scans = "Enter scans per user, per year.";
   else if (scans < SCANS.min) e.scans = "Must be at least 1.";
   else if (scans > SCANS.max) e.scans = `Enter ${inr(SCANS.max)} or fewer.`;
 
@@ -128,6 +132,7 @@ export default function EnterpriseForm() {
   const [values, setValues] = useState<Values>({
     seats: "",
     scans: "",
+    unlimitedScans: false,
     intel: "",
     strategy: "",
     name: "",
@@ -148,6 +153,10 @@ export default function EnterpriseForm() {
 
   function set(field: Field, next: string) {
     setValues((cur) => ({ ...cur, [field]: next }));
+  }
+  /** Ticking "unlimited" clears the number, so the two can never both be sent. */
+  function setUnlimited(on: boolean) {
+    setValues((cur) => ({ ...cur, unlimitedScans: on, scans: on ? "" : cur.scans }));
   }
   function blur(field: Field) {
     setTouched((cur) => ({ ...cur, [field]: true }));
@@ -181,7 +190,8 @@ export default function EnterpriseForm() {
       message: values.message.trim() || null,
       website: new FormData(form).get("website"), // honeypot
       seats: seatCount,
-      scans_per_user: Number(values.scans),
+      scans_per_user: values.unlimitedScans ? 0 : Number(values.scans),
+      unlimited_scans: values.unlimitedScans,
       intel_per_user: values.intel ? Number(values.intel) : null,
       strategy_per_user: values.strategy ? Number(values.strategy) : null,
       source: new URLSearchParams(window.location.search).get("src") === "app" ? "app" : "site",
@@ -244,10 +254,25 @@ export default function EnterpriseForm() {
             onChange={(v) => set("seats", v)} onBlur={() => blur("seats")}
           />
           <Num
-            id="scans" label="Total scans per user" required placeholder="per year"
+            id="scans" label="Total scans per user"
+            required={!values.unlimitedScans}
+            placeholder={values.unlimitedScans ? "No cap" : "per year"}
+            disabled={values.unlimitedScans}
             value={values.scans} error={shown("scans")}
             onChange={(v) => set("scans", v)} onBlur={() => blur("scans")}
           />
+          <label className="ent-check">
+            <input
+              type="checkbox" name="unlimited_scans"
+              checked={values.unlimitedScans}
+              onChange={(e) => setUnlimited(e.target.checked)}
+            />
+            <span className="ent-check-box" aria-hidden="true" />
+            <span className="ent-check-text">
+              We need unlimited scans
+              <em>No yearly cap per user — we&apos;ll price it with you.</em>
+            </span>
+          </label>
           <Num
             id="intel" label="Total Intel per user" placeholder="per month"
             value={values.intel} error={shown("intel")}
@@ -337,13 +362,14 @@ interface BaseProps {
 
 /** Digits-only field. Filtering on change is what keeps the value and the
  *  server's integer check from ever disagreeing. */
-function Num(p: BaseProps) {
+function Num(p: BaseProps & { disabled?: boolean }) {
   return (
     <Shell {...p}>
       <input
         id={p.id} name={p.id}
         className={p.error ? "ent-input bad" : "ent-input"}
         type="text" inputMode="numeric" autoComplete="off"
+        disabled={p.disabled}
         placeholder={p.placeholder}
         aria-invalid={p.error ? true : undefined}
         aria-describedby={p.error ? `${p.id}-err` : undefined}
@@ -451,6 +477,48 @@ function Styles() {
       .ent-textarea{resize:vertical;min-height:84px}
 
       .ent-err{margin:0;font-size:12.5px;line-height:1.4;color:#FCA5A5}
+
+      /* The tick box is drawn, not the OS control: this form is one dark card
+         and a stock checkbox arrives in the browser's own colours. The real
+         input stays in the DOM (keyboard, labels, form data) and is hidden
+         behind the square we paint. */
+      .ent-check{
+        display:flex;align-items:flex-start;gap:10px;
+        margin:-4px 0 0;padding:10px 12px;border-radius:10px;
+        background:#141417;border:1px solid #27272A;
+        cursor:pointer;user-select:none;
+      }
+      .ent-check:hover{border-color:#3F3F46}
+      .ent-check input{
+        position:absolute;opacity:0;width:0;height:0;
+      }
+      .ent-check-box{
+        flex:none;width:18px;height:18px;margin-top:1px;
+        border-radius:5px;border:1.5px solid #3F3F46;background:#18181B;
+        display:grid;place-items:center;
+        transition:background-color .14s ease,border-color .14s ease,box-shadow .14s ease;
+      }
+      .ent-check-box::after{
+        content:"";width:10px;height:10px;
+        background:#0B0B0F;
+        clip-path:polygon(14% 46%,0 60%,40% 100%,100% 22%,86% 8%,38% 70%);
+        transform:scale(0);transition:transform .14s ease;
+      }
+      .ent-check input:checked + .ent-check-box{
+        background:linear-gradient(92deg,#F59E0B,#F97316);
+        border-color:transparent;
+        box-shadow:0 0 10px rgba(249,115,22,.35);
+      }
+      .ent-check input:checked + .ent-check-box::after{transform:scale(1)}
+      .ent-check input:focus-visible + .ent-check-box{
+        outline:2px solid #F97316;outline-offset:2px;
+      }
+      .ent-check-text{font-size:14px;line-height:1.35;color:#E4E4E7}
+      .ent-check-text em{
+        display:block;margin-top:2px;
+        font-style:normal;font-size:12.5px;color:#71717A;
+      }
+      .ent-input:disabled{opacity:.45;cursor:not-allowed}
 
       .ent-hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
 
