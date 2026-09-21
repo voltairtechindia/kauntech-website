@@ -894,3 +894,151 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 .ec-gate-foot { font-size: 13px; color: var(--ec-ink-3); text-align: center; }
 .ec-gate-foot a { color: var(--ec-accent-ink); text-decoration: none; }
 .ec-gate-foot a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ───────────────────────────── lead: editing, picking, viewing ───────────── */
+
+/* The row's tick box. Clicking it must not open the drawer — the cell stops the
+   event — so it needs its own hit area and focus ring. */
+.ec-col-pick { width: 36px; padding-right: 0 !important; }
+.ec-tick {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ec-accent);
+  cursor: pointer;
+}
+.ec-table tr.is-picked td { background: var(--ec-hover); }
+.ec-table tr.is-picked.is-selected td { background: var(--ec-accent-soft); }
+
+.ec-bulkbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ec-sp-2);
+  padding: var(--ec-sp-3) var(--ec-sp-4);
+  border-bottom: 1px solid var(--ec-line);
+  background: var(--ec-field);
+  font-size: 13px;
+  color: var(--ec-ink-2);
+}
+.ec-bulkbar strong { color: var(--ec-ink); font-weight: 600; }
+.ec-bulk-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px 0 4px;
+  color: var(--ec-ink-3);
+}
+.ec-bulk-label svg { width: 14px; height: 14px; }
+
+/* Drawer: the actions sit between the head and the body so they stay put while
+   the body scrolls; the save bar does the same at the bottom. */
+.ec-drawer-actions,
+.ec-drawer-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ec-sp-2);
+  padding: var(--ec-sp-3) var(--ec-sp-5);
+  border-bottom: 1px solid var(--ec-line);
+}
+.ec-drawer-foot {
+  border-bottom: 0;
+  border-top: 1px solid var(--ec-line);
+  background: var(--ec-panel);
+}
+.ec-drawer-foot .ec-hint { flex: 1 1 140px; }
+
+.ec-form { display: grid; gap: var(--ec-sp-6); }
+.ec-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ec-sp-4);
+}
+@media (max-width: 559px) { .ec-form-grid { grid-template-columns: minmax(0, 1fr); } }
+.ec-textarea {
+  height: auto;
+  min-height: 64px;
+  padding: var(--ec-sp-2) var(--ec-sp-3);
+  line-height: 1.5;
+  resize: vertical;
+}
+.ec-dialog--wide { width: min(720px, 100%); }
+
+/* ───────────────────────────── card photo ───────────────────────────── */
+
+.ec-card-thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--ec-line);
+  border-radius: 10px;
+  background: var(--ec-field);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+.ec-card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ec-card-thumb-zoom {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: oklch(0% 0 0 / 0.55);
+  opacity: 0;
+  transition: opacity var(--ec-dur) var(--ec-ease-out);
+}
+.ec-card-thumb-zoom svg { width: 16px; height: 16px; color: #fff; }
+.ec-card-thumb:hover .ec-card-thumb-zoom,
+.ec-card-thumb:focus-visible .ec-card-thumb-zoom { opacity: 1; }
+.ec-card-thumb:focus-visible { outline: 2px solid var(--ec-focus); outline-offset: 2px; }
+.ec-card-thumb--dead { cursor: default; color: var(--ec-ink-3); }
+.ec-card-thumb--dead svg { width: 18px; height: 18px; }
+
+.ec-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: oklch(8% 0.004 264 / 0.94);
+  animation: ec-fade var(--ec-dur) var(--ec-ease-out);
+}
+.ec-lightbox-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--ec-sp-3);
+  padding: var(--ec-sp-3) var(--ec-sp-4);
+  border-bottom: 1px solid var(--ec-line);
+}
+.ec-lightbox-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ec-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ec-lightbox-stage {
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  padding: var(--ec-sp-4);
+  touch-action: none;
+}
+.ec-lightbox-stage img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  user-select: none;
+  transition: transform var(--ec-dur) var(--ec-ease-out);
+}
+.ec-lightbox-hint {
+  margin: 0;
+  padding: var(--ec-sp-3) var(--ec-sp-4);
+  text-align: center;
+  font-size: 12px;
+  color: var(--ec-ink-3);
+}
+@media (max-width: 559px) { .ec-lightbox-hint { display: none; } }
