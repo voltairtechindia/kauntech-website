@@ -3,15 +3,15 @@
 import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { LayoutGrid, LogOut, Users, Contact } from "lucide-react";
+import { LayoutGrid, LogOut, MessageSquarePlus, Users, Contact } from "lucide-react";
 import { initials } from "@/lib/enterpriseTypes";
 import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
 import { inr } from "@/lib/enterpriseTypes";
 
 /**
- * The console's frame: a side rail on desktop, a sticky bar with three tabs on
- * a phone. Three destinations only — the owner comes here to look at the team's
- * leads and to manage people, and every extra item would dilute that.
+ * The console's frame: a side rail on desktop, a sticky bar of tabs on a phone.
+ * Four destinations: the team's leads, the people on the plan, what they have
+ * asked us for — and the overview that leads to all three.
  */
 
 /**
@@ -29,6 +29,7 @@ const NAV = [
   { href: "/enterprise/admin", label: "Overview", icon: LayoutGrid, exact: true },
   { href: "/enterprise/admin/leads", label: "Leads", icon: Contact, exact: false },
   { href: "/enterprise/admin/team", label: "Team", icon: Users, exact: false },
+  { href: "/enterprise/admin/requests", label: "Requests", icon: MessageSquarePlus, exact: false },
 ] as const;
 
 export default function ConsoleShell({
@@ -36,12 +37,15 @@ export default function ConsoleShell({
   ownerEmail,
   leadCount,
   seatCount,
+  requestCount,
   children,
 }: {
   orgName: string;
   ownerEmail: string | null;
   leadCount: number;
   seatCount: number;
+  /** Asks we have not closed yet, so the rail says one is still open. */
+  requestCount: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -54,6 +58,8 @@ export default function ConsoleShell({
   const counts: Record<string, number> = {
     "/enterprise/admin/leads": leadCount,
     "/enterprise/admin/team": seatCount,
+    // Zero open asks is the resting state, so it shows nothing rather than a 0.
+    ...(requestCount ? { "/enterprise/admin/requests": requestCount } : {}),
   };
 
   async function signOut() {

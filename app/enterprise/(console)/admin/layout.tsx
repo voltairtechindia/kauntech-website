@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import ConsoleShell from "@/components/enterprise/ConsoleShell";
 import { getOrgOwner, getOrgView } from "@/lib/enterpriseConsole";
 import { getLeadCount } from "@/lib/enterpriseLeads";
+import { getOpenRequestCount } from "@/lib/enterpriseRequests";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +19,13 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
   }
 
   const me = owner.seats.find((s) => s.role === "owner");
-  // A HEAD count: no rows travel, and it only runs on a full page load — the
-  // shell is a shared layout, so switching sections reuses it. A failure shows
-  // a zero in the rail rather than an error page.
-  const leadCount = await getLeadCount(owner.org.id).catch(() => 0);
+  // Two HEAD counts: no rows travel, they run together, and they only run on a
+  // full page load — the shell is a shared layout, so switching sections reuses
+  // it. A failure shows a zero in the rail rather than an error page.
+  const [leadCount, requestCount] = await Promise.all([
+    getLeadCount(owner.org.id).catch(() => 0),
+    getOpenRequestCount(owner.org.id).catch(() => 0),
+  ]);
 
   return (
     <ConsoleShell
@@ -29,6 +33,7 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
       ownerEmail={me?.email ?? null}
       leadCount={leadCount}
       seatCount={owner.seats.length}
+      requestCount={requestCount}
     >
       {children}
     </ConsoleShell>

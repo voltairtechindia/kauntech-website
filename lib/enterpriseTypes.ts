@@ -163,3 +163,62 @@ export function relTime(iso: string | null | undefined, now = Date.now()): strin
 export function inr(n: number): string {
   return n.toLocaleString("en-IN");
 }
+
+/* ───────────────────────────── requests ───────────────────────────── */
+
+/**
+ * What a team asks us for from inside their console: more of something they
+ * already buy, or something we do not ship yet. The quantity kinds line up
+ * one-for-one with the pools on the Team page, so "50 more scans" needs no
+ * translation when it reaches the admin panel.
+ */
+export const REQUEST_KINDS = ["seats", "scans", "intel", "strategy", "tokens", "feature", "other"] as const;
+export type RequestKind = (typeof REQUEST_KINDS)[number];
+
+/** The kinds that carry a number; the rest are prose. */
+export const COUNTED_KINDS: RequestKind[] = ["seats", "scans", "intel", "strategy", "tokens"];
+
+export const REQUEST_KIND_LABEL: Record<RequestKind, string> = {
+  seats: "More seats",
+  scans: "More scans",
+  intel: "More AI Intel",
+  strategy: "More AI Strategy",
+  tokens: "More K-Tokens",
+  feature: "A feature we don't have",
+  other: "Something else",
+};
+
+/** The unit that follows the number in "3 more seats". */
+export const REQUEST_KIND_UNIT: Partial<Record<RequestKind, string>> = {
+  seats: "seats",
+  scans: "scans",
+  intel: "AI Intel runs",
+  strategy: "AI Strategy runs",
+  tokens: "K-Tokens",
+};
+
+export const REQUEST_STATUSES = ["new", "seen", "planned", "done", "declined"] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+
+/** Written for the owner, not for us: each one says what happens next. */
+export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
+  new: "Sent",
+  seen: "We've read it",
+  planned: "Planned",
+  done: "Done",
+  declined: "Not planned",
+};
+
+export interface OrgRequest {
+  id: number;
+  org_id: string;
+  user_id: string | null;
+  kind: RequestKind;
+  amount: number | null;
+  title: string;
+  message: string | null;
+  status: RequestStatus;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+}

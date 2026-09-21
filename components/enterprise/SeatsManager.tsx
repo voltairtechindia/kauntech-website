@@ -7,6 +7,7 @@ import {
   Snowflake, UserPlus, Users, X,
 } from "lucide-react";
 import { createArBrowserClient } from "@/lib/ar/appAuthBrowser";
+import AllowanceStrip from "./AllowanceStrip";
 import {
   RESOURCES,
   RESOURCE_LABEL,
@@ -187,11 +188,6 @@ export default function SeatsManager({
     }
   }
 
-  const handed = RESOURCES.reduce(
-    (acc, r) => ({ ...acc, [r]: org.pools[r] - free[r] }),
-    {} as Record<Resource, number>,
-  );
-
   return (
     <div className="ec-page">
       <div className="ec-head">
@@ -209,29 +205,7 @@ export default function SeatsManager({
       </div>
 
       {/* ── Allowance ── */}
-      <section className="ec-panel" aria-labelledby="pool-h">
-        <div className="ec-panel-head">
-          <h2 id="pool-h" className="ec-panel-title">Yearly allowance</h2>
-          <span className="ec-muted" style={{ fontSize: 13 }}>Handed out / bought</span>
-        </div>
-        <div className="ec-panel-body">
-          <div className="ec-pools">
-            {COLUMN_ORDER.map((r) => {
-              const pct = org.pools[r] > 0 ? Math.min(100, Math.round((handed[r] / org.pools[r]) * 100)) : 0;
-              return (
-                <div key={r} className="ec-meter">
-                  <div className="ec-meter-top">
-                    <span>{RESOURCE_LABEL[r]}</span>
-                    <b>{inr(handed[r])} / {inr(org.pools[r])}</b>
-                  </div>
-                  <div className="ec-meter-bar" aria-hidden><div className="ec-meter-fill" style={{ width: `${pct}%` }} /></div>
-                  <span className="ec-hint">{inr(free[r])} left to share</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <AllowanceStrip view={initial} />
 
       {handoff ? <HandoffCard handoff={handoff} onDone={() => setHandoff(null)} /> : null}
 

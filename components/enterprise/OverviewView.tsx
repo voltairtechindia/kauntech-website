@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Contact, Flame, Sparkles, TrendingUp, UserPlus, Users } from "lucide-react";
+import AllowanceStrip from "./AllowanceStrip";
 import type { Overview } from "@/lib/enterpriseLeads";
 import {
   filtersToQuery,
@@ -89,6 +90,8 @@ export default function OverviewView({ owner, ov }: { owner: OrgView; ov: Overvi
           <span className="ec-stat-hint">leads researched</span>
         </div>
       </section>
+
+      <AllowanceStrip view={owner} aside={<Link className="ec-link" href="/enterprise/admin/requests">Need more?</Link>} />
 
       <div className="ec-grid-2">
         {/* ── People ── */}

@@ -1287,3 +1287,51 @@ a.ec-list-row:focus-visible { outline: 2px solid var(--ec-focus); outline-offset
 @media (prefers-reduced-motion: reduce) {
   .ec-skel { animation: none; }
 }
+
+/* ───────────────────────────── requests ─────────────────────────────
+   One ask per block, with our reply nested under it, so the page reads as a
+   thread rather than a table of tickets. */
+
+.ec-req {
+  display: grid;
+  gap: var(--ec-sp-2);
+  padding: var(--ec-sp-4) var(--ec-sp-5);
+  border-top: 1px solid var(--ec-line);
+}
+.ec-req:first-child { border-top: 0; }
+.ec-req-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.ec-req-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ec-ink);
+  overflow-wrap: anywhere;
+}
+/* Our answer, marked as ours: the accent edge is the only thing on the page
+   the owner did not write. */
+.ec-reply {
+  display: grid;
+  gap: 4px;
+  margin-top: var(--ec-sp-1);
+  padding: var(--ec-sp-3) var(--ec-sp-4);
+  border-left: 2px solid var(--ec-accent);
+  border-radius: 0 var(--ec-r-sm) var(--ec-r-sm) 0;
+  background: var(--ec-field);
+}
+.ec-reply-who {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ec-accent-ink);
+}
+
+/* Four sections, not three, on a phone. */
+.ec-tabs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ec-tab { font-size: 12px; padding: 0 4px; }
+@media (max-width: 400px) { .ec-tab svg { display: none; } }
