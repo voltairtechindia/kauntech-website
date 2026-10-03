@@ -143,8 +143,12 @@ export default function HomeExperience() {
   // GPU acceleration. Software renderers (SwiftShader/llvmpipe - headless
   // browsers, GPU-less VMs, Lighthouse bots) technically expose WebGL but run
   // the whole scene on the CPU main thread (~10 s of blocking time), so they
-  // get the CssPhone fallback instead - same content, designed for exactly
-  // this case.
+  // get the flat story instead - same content, designed for exactly this case.
+  //
+  // Deliberately NOT gated on core count: the flat story was measured slower
+  // than the 3D one on a wide window (39.6 ms vs 25.0 ms per frame at a 20x
+  // CPU throttle), because it animates several app screens side by side
+  // instead of one. Sending weak desktops to it would have made them worse.
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
     const check = () => {
@@ -165,6 +169,62 @@ export default function HomeExperience() {
     check();
     mq.addEventListener("change", check);
     return () => mq.removeEventListener("change", check);
+  }, []);
+
+  // An app screen animating costs ~8 ms of every scrolled frame on weak
+  // hardware, whether it is a CSS phone or the live DOM screen on the glass of
+  // the 3D one. Measured at a 16x CPU throttle: the 3D story ran at 24.6
+  // ms/frame, and 17.1 ms with the screen's keyframes parked - the same number
+  // as deleting the screen outright, so the keyframes ARE the cost. (Nothing
+  // else moved it: layer promotion, `contain`, pixel ratio and canvas size
+  // were all within noise.)
+  //
+  // The screens are there to be watched while you read a chapter, not while
+  // the page is flying past, so they hold their frame during the scroll and
+  // pick up again a moment after it stops.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    let scrolling = false;
+    let idle = 0;
+    const stop = () => {
+      scrolling = false;
+      root.classList.remove("is-scrolling");
+    };
+    const onScroll = () => {
+      if (!scrolling) {
+        scrolling = true;
+        root.classList.add("is-scrolling");
+      }
+      clearTimeout(idle);
+      idle = window.setTimeout(stop, 160);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(idle);
+      stop();
+    };
+  }, []);
+
+  // The stacked story holds five full 390x844 app screens, each self-animating
+  // on a CSS timeline. Left alone they all run at once, which on a phone is
+  // the single biggest cost of scrolling this page - measured at a 20x CPU
+  // throttle, keeping only the on-screen chapter live took the frame time from
+  // 24.4 ms to 16.7 ms. (`content-visibility: auto` does NOT do this: it was
+  // worth 0.6 ms, inside the noise.) The margin keeps a chapter running a
+  // little before it scrolls in, so nothing starts mid-pose.
+  useEffect(() => {
+    const chapters = rootRef.current?.querySelectorAll<HTMLElement>(".k-mchapter");
+    if (!chapters?.length) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) e.target.classList.toggle("is-live", e.isIntersecting);
+      },
+      { rootMargin: "30% 0px" },
+    );
+    chapters.forEach((c) => io.observe(c));
+    return () => io.disconnect();
   }, []);
 
   // Pointer parallax feeding the 3D rig.
@@ -200,12 +260,13 @@ export default function HomeExperience() {
     return () => window.removeEventListener("pointermove", onMove);
   }, []);
 
+  /* ---- hero intro: plays on every desktop, 3D or not. Kept in its own
+         useGSAP (no dependencies) so deciding about WebGL later can't make it
+         replay. ---- */
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
-
       mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
-        /* ---- hero intro ---- */
         const h1 = heroCopyRef.current?.querySelector(".k-h1");
         if (h1) {
           const split = SplitText.create(h1, { type: "chars,words,lines", mask: "lines" });
@@ -226,7 +287,20 @@ export default function HomeExperience() {
           delay: 0.55,
           clearProps: "all",
         });
+      });
+    },
+    { scope: rootRef },
+  );
 
+  /* ---- the pinned 3D story. Only built when the phone is actually on
+         screen; without it the chapters are a plain stacked list that needs
+         no pin, no scrub and no ScrollTriggers at all. ---- */
+  useGSAP(
+    () => {
+      if (!canvasOn) return;
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px) and (prefers-reduced-motion: no-preference)", () => {
         /* ---- hero scroll: phone drifts toward chapter 1, copy parallaxes away ---- */
         const applyChapter = (c: number) => {
           if (c !== chapterRef.current) {
@@ -332,11 +406,11 @@ export default function HomeExperience() {
         };
       });
     },
-    { scope: rootRef },
+    { scope: rootRef, dependencies: [canvasOn], revertOnUpdate: true },
   );
 
   return (
-    <div ref={rootRef} className="k-experience">
+    <div ref={rootRef} className={`k-experience${canvasOn ? "" : " is-flat"}`}>
       {/* persistent 3D iPhone overlay (desktop only) */}
       {canvasOn && canvasLive && (
         <div className="k-canvas" aria-hidden="true">

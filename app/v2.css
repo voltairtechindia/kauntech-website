@@ -619,10 +619,27 @@ html.lenis body {
   gap: 36px;
   max-width: 560px;
   margin: 0 auto;
-  /* five full 390x844 app screens, each self-animating: let the browser skip
-     rendering (and running the keyframes of) the ones that are off-screen */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 720px;
+}
+
+/* Only the chapter near the viewport runs its app-screen timeline; the rest
+   hold their current frame. HomeExperience adds `.is-live` from an
+   IntersectionObserver. Chapters stay fully painted and in flow - this parks
+   the keyframes only, so nothing shifts and nothing pops. */
+.k-mchapter:not(.is-live) .kps *,
+.k-mchapter:not(.is-live) .kps *::before,
+.k-mchapter:not(.is-live) .kps *::after {
+  animation-play-state: paused;
+}
+
+/* ...and while the page is actually moving, no app screen animates - not the
+   stacked ones and not the live screen on the 3D phone's glass. Repainting a
+   390x844 composition is what makes scrolling stutter on weak machines, and
+   it is the one moment nobody is watching the screen. `.is-scrolling` comes
+   off ~160 ms after the scroll stops. */
+.k-experience.is-scrolling .kps *,
+.k-experience.is-scrolling .kps *::before,
+.k-experience.is-scrolling .kps *::after {
+  animation-play-state: paused;
 }
 
 .k-mchapter-copy {
@@ -636,11 +653,37 @@ html.lenis body {
 }
 
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
-  .k-story-desktop {
+  /* The pinned stage is only a story when the 3D phone is flying through it -
+     without the canvas it is an empty half-screen. `.is-flat` (set by
+     HomeExperience whenever the gate says no WebGL) keeps those visitors on
+     the stacked chapters, which carry the same copy and the same screens. */
+  .k-experience:not(.is-flat) .k-story-desktop {
     display: block;
   }
-  .k-story-mobile {
+  .k-experience:not(.is-flat) .k-story-mobile {
     display: none;
+  }
+
+  /* the stacked story, laid out for a wide window: phone beside the copy,
+     alternating sides, instead of a narrow centred phone column */
+  .is-flat .k-story-mobile {
+    gap: 120px;
+    padding: 110px 24px 130px;
+  }
+  .is-flat .k-mchapter {
+    flex-direction: row;
+    align-items: center;
+    gap: 72px;
+    max-width: 1060px;
+  }
+  .is-flat .k-mchapter:nth-child(even) {
+    flex-direction: row-reverse;
+  }
+  .is-flat .k-mchapter > .k-cssphone {
+    flex: none;
+  }
+  .is-flat .k-mchapter-copy {
+    flex: 1;
   }
 }
 
