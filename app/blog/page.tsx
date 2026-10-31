@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import Ic from "@/components/ui/Icon";
 import { listPublishedPosts } from "@/lib/blog/db";
 import { formatDate } from "@/lib/blog/util";
+import { orEmpty } from "@/lib/data-mode";
 
 const SITE_URL = "https://www.kauntech.com";
 
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 };
 
 export default async function BlogIndexPage() {
-  const posts = await listPublishedPosts();
+  const posts = await orEmpty(() => listPublishedPosts(), []);
 
   const listLd = {
     "@context": "https://schema.org",

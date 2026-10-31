@@ -14,6 +14,7 @@ import {
 } from "@/lib/blog/db";
 import { formatDate } from "@/lib/blog/util";
 import { EMPTY_PARAM, orPlaceholder } from "@/lib/static-params";
+import { orEmpty } from "@/lib/data-mode";
 
 const SITE_URL = "https://www.kauntech.com";
 
@@ -37,7 +38,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPublishedPost(slug);
+  const post = await orEmpty(() => getPublishedPost(slug), null);
   if (!post) return { title: "Post not found" };
 
   const title = post.seo?.title ?? post.title;
@@ -73,10 +74,10 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await getPublishedPost(slug);
+  const post = await orEmpty(() => getPublishedPost(slug), null);
   if (!post) notFound();
 
-  const related = await listRelatedPosts(post.slug, 3);
+  const related = await orEmpty(() => listRelatedPosts(post.slug, 3), []);
   const url = `${SITE_URL}/blog/${post.slug}`;
   const faq = post.faq ?? [];
 
