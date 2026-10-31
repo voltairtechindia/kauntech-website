@@ -3,12 +3,10 @@
 # Runs on every push to main, every 4 hours (so new blog posts, careers and FAQ edits
 # show up without a push), and on demand from the Actions tab.
 #
-# Build-time data comes from Supabase. SUPABASE_URL below is public. The
-# service key comes from the repo secret SUPABASE_SERVICE_KEY when it exists,
-# otherwise from the old Vercel project (VERCEL_TOKEN / VERCEL_ORG_ID /
-# VERCEL_PROJECT_ID secrets). It is only used during the build and never
-# reaches the site. The build stops before deploying if the key does not work,
-# so the last good version stays live.
+# The site is fully static. If the repo secret SUPABASE_SERVICE_KEY is set and
+# works, database-backed content (blog posts etc.) is read during the build;
+# otherwise the site builds from what is in the code alone. The key is only used
+# during the build and never reaches the site.
 name: Deploy to GitHub Pages
 
 on:
@@ -30,8 +28,6 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
-env:
-  SUPABASE_URL: https://ujzchcirgmveryjavfzk.supabase.co
 
 jobs:
   build:
@@ -59,28 +55,26 @@ jobs:
           set -uo pipefail
           : > .env.build
           if [ -n "${VERCEL_TOKEN:-}" ]; then
+            # Public settings (store links, app keys meant for browsers) from the old Vercel project.
             npx --yes vercel@63.1.2 env pull .env.vercel --environment=production --yes --token="$VERCEL_TOKEN" >/dev/null 2>&1 || true
             # Vercel writes "[sensitive]" for write-only variables; skip those.
             grep -E '^(NEXT_PUBLIC_[A-Z0-9_]+|ANDROID_PLAY_SIGNING_SHA256|IOS_APP_TEAM_ID|IOS_APP_URL|ANDROID_APP_URL)=' .env.vercel | grep -v -E '="?\[[a-z ]*\]"?$' >> .env.build 2>/dev/null || true
           fi
+          SUPABASE_URL="https://ujzchcirgmveryjavfzk.supabase.co"
           key="${SECRET_SERVICE_KEY:-}"
-          src="repository secret"
-          if [ -z "$key" ]; then
-            key=$(grep -E '^SUPABASE_SERVICE_KEY=' .env.vercel 2>/dev/null | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e 's/\\n$//')
-            src="old Vercel project"
-          fi
           rm -f .env.vercel
-          [ -n "$key" ] && echo "::add-mask::$key"
-          kind=other
-          case "$key" in eyJ*) kind=jwt ;; sb_secret_*) kind=sb_secret ;; "") kind=missing ;; esac
-          code=$(curl -s -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/" -H "apikey: $key" -H "Authorization: Bearer $key" || echo 000)
-          echo "Service key from: $src (kind: $kind, length: ${#key}); database answered HTTP $code"
-          if [ "$code" != "200" ]; then
-            echo "::error::The Supabase service key is missing or rejected. Add it as a repository secret named SUPABASE_SERVICE_KEY (Settings > Secrets and variables > Actions)."
-            exit 1
+          code=000
+          if [ -n "$key" ]; then
+            echo "::add-mask::$key"
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/" -H "apikey: $key" -H "Authorization: Bearer $key" || echo 000)
           fi
-          grep -v -E '^(SUPABASE_URL|SUPABASE_SERVICE_KEY)=' .env.build > .env.production.local || true
-          printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\n' "$SUPABASE_URL" "$key" >> .env.production.local
+          cp .env.build .env.production.local
+          if [ "$code" = "200" ]; then
+            printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\n' "$SUPABASE_URL" "$key" >> .env.production.local
+            echo "Build mode: database (blog posts and other database content included)"
+          else
+            echo "::notice::Build mode: static only (no working SUPABASE_SERVICE_KEY secret, database content skipped)"
+          fi
           rm -f .env.build
           echo "Public settings loaded: $(cut -d= -f1 .env.production.local | grep -v SUPABASE_SERVICE_KEY | tr '\n' ' ')"
 
