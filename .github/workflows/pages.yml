@@ -1,0 +1,102 @@
+# Builds the static site (out/) and publishes it on GitHub Pages.
+#
+# Runs on every push to main, every 4 hours (so new blog posts, careers and FAQ edits
+# show up without a push), and on demand from the Actions tab.
+#
+# Build-time data comes from Supabase. The two keys are read from repo secrets
+# SUPABASE_URL + SUPABASE_SERVICE_KEY when they exist, otherwise from the old
+# Vercel project (VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID secrets).
+# The service key is only used during the build; it never reaches the site.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - ".github/workflows/**"
+      - "changes.bundle"
+  schedule:
+    - cron: "17 */4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write # only for the keep-alive commit below
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Load build settings
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
+            printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\n' "$SUPABASE_URL" "$SUPABASE_SERVICE_KEY" > .env.build
+            echo "Build settings: repository secrets"
+          elif [ -n "${VERCEL_TOKEN:-}" ]; then
+            npx --yes vercel@63.1.2 env pull .env.vercel --environment=production --yes --token="$VERCEL_TOKEN" >/dev/null 2>&1 || true
+            grep -E '^(SUPABASE_URL|SUPABASE_SERVICE_KEY|NEXT_PUBLIC_[A-Z0-9_]+|ANDROID_PLAY_SIGNING_SHA256|IOS_APP_TEAM_ID|IOS_APP_URL|ANDROID_APP_URL)=' .env.vercel > .env.build 2>/dev/null || true
+            rm -f .env.vercel
+            echo "Build settings: Vercel project env"
+          fi
+          for k in SUPABASE_URL SUPABASE_SERVICE_KEY; do
+            v=$(grep -E "^$k=" .env.build 2>/dev/null | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//') || true
+            if [ -z "$v" ]; then
+              echo "::error::$k is not available. Add it under Settings > Secrets and variables > Actions."
+              exit 1
+            fi
+            echo "::add-mask::$v"
+          done
+          mv .env.build .env.production.local
+
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+      # GitHub switches off scheduled runs in a repo with no commits for 60 days.
+      # One empty commit every ~50 quiet days keeps the 4-hourly rebuild alive.
+      - name: Keep the schedule alive
+        if: github.event_name == 'schedule'
+        run: |
+          last=$(git log -1 --format=%ct)
+          if [ $(( $(date +%s) - last )) -gt $(( 50 * 86400 )) ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Keep scheduled site rebuilds running"
+            git push
+          fi
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

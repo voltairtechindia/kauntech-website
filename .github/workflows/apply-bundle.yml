@@ -1,0 +1,46 @@
+# One-off delivery path for code changes made outside this machine.
+#
+# Upload a git bundle named changes.bundle to the repo root (Add file > Upload
+# files). This merges its `static-pages` branch into main, deletes the bundle,
+# and starts the Pages deploy. Commits in the bundle must not touch
+# .github/workflows (the Actions token is not allowed to change workflows).
+name: Apply change bundle
+
+on:
+  push:
+    branches: [main]
+    paths: ["changes.bundle"]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: apply-bundle
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Merge the bundle into main
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git bundle verify changes.bundle
+          git fetch changes.bundle "static-pages:refs/remotes/bundle/static-pages"
+          git rm -q changes.bundle
+          git commit -q -m "Remove change bundle"
+          git merge --no-edit -m "Merge static site changes" refs/remotes/bundle/static-pages
+          git push origin HEAD:main
+
+      - name: Deploy the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml --ref main
