@@ -3,10 +3,12 @@
 # Runs on every push to main, every 4 hours (so new blog posts, careers and FAQ edits
 # show up without a push), and on demand from the Actions tab.
 #
-# Build-time data comes from Supabase. The two keys are read from repo secrets
-# SUPABASE_URL + SUPABASE_SERVICE_KEY when they exist, otherwise from the old
-# Vercel project (VERCEL_TOKEN / VERCEL_ORG_ID / VERCEL_PROJECT_ID secrets).
-# The service key is only used during the build; it never reaches the site.
+# Build-time data comes from Supabase. SUPABASE_URL below is public. The
+# service key comes from the repo secret SUPABASE_SERVICE_KEY when it exists,
+# otherwise from the old Vercel project (VERCEL_TOKEN / VERCEL_ORG_ID /
+# VERCEL_PROJECT_ID secrets). It is only used during the build and never
+# reaches the site. The build stops before deploying if the key does not work,
+# so the last good version stays live.
 name: Deploy to GitHub Pages
 
 on:
@@ -28,6 +30,9 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  SUPABASE_URL: https://ujzchcirgmveryjavfzk.supabase.co
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -46,31 +51,37 @@ jobs:
 
       - name: Load build settings
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          SECRET_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          set -euo pipefail
-          if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
-            printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\n' "$SUPABASE_URL" "$SUPABASE_SERVICE_KEY" > .env.build
-            echo "Build settings: repository secrets"
-          elif [ -n "${VERCEL_TOKEN:-}" ]; then
+          set -uo pipefail
+          : > .env.build
+          if [ -n "${VERCEL_TOKEN:-}" ]; then
             npx --yes vercel@63.1.2 env pull .env.vercel --environment=production --yes --token="$VERCEL_TOKEN" >/dev/null 2>&1 || true
-            grep -E '^(SUPABASE_URL|SUPABASE_SERVICE_KEY|NEXT_PUBLIC_[A-Z0-9_]+|ANDROID_PLAY_SIGNING_SHA256|IOS_APP_TEAM_ID|IOS_APP_URL|ANDROID_APP_URL)=' .env.vercel > .env.build 2>/dev/null || true
-            rm -f .env.vercel
-            echo "Build settings: Vercel project env"
+            grep -E '^(NEXT_PUBLIC_[A-Z0-9_]+|ANDROID_PLAY_SIGNING_SHA256|IOS_APP_TEAM_ID|IOS_APP_URL|ANDROID_APP_URL)=' .env.vercel >> .env.build 2>/dev/null || true
           fi
-          for k in SUPABASE_URL SUPABASE_SERVICE_KEY; do
-            v=$(grep -E "^$k=" .env.build 2>/dev/null | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//') || true
-            if [ -z "$v" ]; then
-              echo "::error::$k is not available. Add it under Settings > Secrets and variables > Actions."
-              exit 1
-            fi
-            echo "::add-mask::$v"
-          done
-          mv .env.build .env.production.local
+          key="${SECRET_SERVICE_KEY:-}"
+          src="repository secret"
+          if [ -z "$key" ]; then
+            key=$(grep -E '^SUPABASE_SERVICE_KEY=' .env.vercel 2>/dev/null | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//' -e 's/\\n$//')
+            src="old Vercel project"
+          fi
+          rm -f .env.vercel
+          [ -n "$key" ] && echo "::add-mask::$key"
+          kind=other
+          case "$key" in eyJ*) kind=jwt ;; sb_secret_*) kind=sb_secret ;; "") kind=missing ;; esac
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SUPABASE_URL/rest/v1/" -H "apikey: $key" -H "Authorization: Bearer $key" || echo 000)
+          echo "Service key from: $src (kind: $kind, length: ${#key}); database answered HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::The Supabase service key is missing or rejected. Add it as a repository secret named SUPABASE_SERVICE_KEY (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+          grep -v -E '^(SUPABASE_URL|SUPABASE_SERVICE_KEY)=' .env.build > .env.production.local || true
+          printf 'SUPABASE_URL=%s\nSUPABASE_SERVICE_KEY=%s\n' "$SUPABASE_URL" "$key" >> .env.production.local
+          rm -f .env.build
+          echo "Public settings loaded: $(cut -d= -f1 .env.production.local | grep -v SUPABASE_SERVICE_KEY | tr '\n' ' ')"
 
       - run: npm run build
 
