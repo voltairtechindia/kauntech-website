@@ -14,6 +14,7 @@ import Markdown from "@/components/Markdown";
 import Ic from "@/components/ui/Icon";
 import { getJob, listOpenJobs } from "@/lib/careers/db";
 import { EMPTY_PARAM, orPlaceholder } from "@/lib/static-params";
+import { orEmpty } from "@/lib/data-mode";
 
 const SITE_URL = "https://www.kauntech.com";
 
@@ -35,7 +36,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const job = await getJob(slug);
+  const job = await orEmpty(() => getJob(slug), null);
   if (!job || job.status !== "open") return { title: "Role not found" };
 
   const description =
@@ -71,7 +72,7 @@ export default async function JobDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const job = await getJob(slug);
+  const job = await orEmpty(() => getJob(slug), null);
   if (!job || job.status !== "open") notFound();
 
   const jobLd = {
