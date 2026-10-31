@@ -3,11 +3,13 @@ import type { MetadataRoute } from "next";
 import { listPublishedPosts } from "@/lib/blog/db";
 import { listOpenJobs } from "@/lib/careers/db";
 
+// Static export: built once at deploy time.
+export const dynamic = "force-static";
+
 const SITE_URL = "https://www.kauntech.com";
 
 // Refresh the sitemap periodically so newly published blog posts / job openings
 // get picked up without a redeploy (matches the blog's ISR cadence).
-export const revalidate = 300;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();

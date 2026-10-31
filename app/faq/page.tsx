@@ -3,10 +3,7 @@ import type { Metadata } from "next";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Faq from "@/components/sections/Faq";
 
-// DB-backed FAQ: revalidate on the same 5-min cadence as the blog so admin
-// edits (via /api/faq) go live without a redeploy. /api/faq also revalidates
-// this path on write for an instant refresh.
-export const revalidate = 300;
+// DB-backed FAQ, read at build time. Admin edits go live on the next site build.
 
 export const metadata: Metadata = {
   title: "Frequently Asked Questions",

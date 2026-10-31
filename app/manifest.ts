@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next";
 
+// Static export: built once at deploy time.
+export const dynamic = "force-static";
+
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Kauntech - Offline AI Business Card Scanner",

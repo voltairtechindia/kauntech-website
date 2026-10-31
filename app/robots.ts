@@ -1,5 +1,8 @@
 import type { MetadataRoute } from "next";
 
+// Static export: built once at deploy time.
+export const dynamic = "force-static";
+
 const SITE_URL = "https://www.kauntech.com";
 
 export default function robots(): MetadataRoute.Robots {

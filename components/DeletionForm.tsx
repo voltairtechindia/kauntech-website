@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CircleCheck, LoaderCircle, RotateCcw, Trash2 } from "lucide-react";
 
 import Ic from "@/components/ui/Icon";
+import { sendLead } from "@/lib/leads";
 
 export default function DeletionForm() {
   const [submitting, setSubmitting] = useState(false);
@@ -19,39 +20,31 @@ export default function DeletionForm() {
     setError("");
     setSubmitting(true);
 
+    // The ticket is made here (no server). It goes into the Website Leads sheet
+    // with the request, so the team can match a follow-up email to it.
+    const t = `KNT-DEL-${Date.now().toString(36).toUpperCase().slice(-4)}${Math.random()
+      .toString(36)
+      .slice(2, 6)
+      .toUpperCase()}`;
     try {
-      const res = await fetch("/api/delete-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: data.get("full_name"),
-          email: data.get("email"),
-          scope: data.get("scope"),
-          details: data.get("details"),
-          consent: data.get("consent") === "on",
-          website: data.get("website"), // honeypot - bots fill this
-          page_url: typeof location !== "undefined" ? location.href : undefined,
-        }),
-      });
-      const json = (await res.json().catch(() => null)) as {
-        ok?: boolean;
-        ticket?: string;
-        detail?: string;
-      } | null;
-
-      if (res.ok && json?.ticket) {
-        setTicket(json.ticket);
-        setSubmitted(true);
-        form.reset();
-      } else {
-        setError(
-          json?.detail ||
-            "Sorry, we couldn't submit your request just now. Please email business@voltairtech.com.",
-        );
-      }
+      await sendLead(
+        "delete-request",
+        {
+          ticket: t,
+          name: String(data.get("full_name") ?? ""),
+          email: String(data.get("email") ?? ""),
+          scope: String(data.get("scope") ?? ""),
+          details: String(data.get("details") ?? ""),
+          consent: data.get("consent") === "on" ? "yes" : "no",
+        },
+        { honeypot: String(data.get("website") ?? "") },
+      );
+      setTicket(t);
+      setSubmitted(true);
+      form.reset();
     } catch {
       setError(
-        "Sorry, we couldn't reach the server. Please email business@voltairtech.com and we'll process it manually.",
+        "Sorry, we couldn't submit your request just now. Please email business@voltairtech.com and we'll process it manually.",
       );
     } finally {
       setSubmitting(false);
@@ -72,7 +65,7 @@ export default function DeletionForm() {
           </h3>
           <p className="form-desc">
             Complete this formal erasure notice. Our compliance team will inspect your request,
-            permanently erase all remote authentication logs, Supabase database profiles, and
+            permanently erase all remote authentication logs, cloud database profiles, and
             quota metrics, and dispatch a verification receipt within 48 hours.
           </p>
 

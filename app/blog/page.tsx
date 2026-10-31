@@ -9,8 +9,7 @@ import { formatDate } from "@/lib/blog/util";
 
 const SITE_URL = "https://www.kauntech.com";
 
-// Revalidate the listing every 5 min so new n8n posts appear without a redeploy.
-export const revalidate = 300;
+// Built at deploy time; new n8n posts appear on the next scheduled build.
 
 export const metadata: Metadata = {
   title: "Blog - Offline Networking, OCR & DPDP Compliance Insights",

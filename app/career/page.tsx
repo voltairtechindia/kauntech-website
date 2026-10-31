@@ -18,7 +18,6 @@ import type { JobOpening } from "@/lib/careers/types";
 
 const SITE_URL = "https://www.kauntech.com";
 
-export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Careers - Build the future of offline-first networking at Kauntech",
