@@ -63,8 +63,7 @@ export default async function BlogIndexPage() {
       <section className="container">
         {posts.length === 0 ? (
           <p className="blog-empty">
-            No posts yet - check back soon. (New articles publish automatically
-            from our content pipeline.)
+            No posts yet. Check back soon.
           </p>
         ) : (
           <div className="blog-grid">
