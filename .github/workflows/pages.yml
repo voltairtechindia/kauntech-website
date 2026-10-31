@@ -60,7 +60,8 @@ jobs:
           : > .env.build
           if [ -n "${VERCEL_TOKEN:-}" ]; then
             npx --yes vercel@63.1.2 env pull .env.vercel --environment=production --yes --token="$VERCEL_TOKEN" >/dev/null 2>&1 || true
-            grep -E '^(NEXT_PUBLIC_[A-Z0-9_]+|ANDROID_PLAY_SIGNING_SHA256|IOS_APP_TEAM_ID|IOS_APP_URL|ANDROID_APP_URL)=' .env.vercel >> .env.build 2>/dev/null || true
+            # Vercel writes "[sensitive]" for write-only variables; skip those.
+            grep -E '^(NEXT_PUBLIC_[A-Z0-9_]+|ANDROID_PLAY_SIGNING_SHA256|IOS_APP_TEAM_ID|IOS_APP_URL|ANDROID_APP_URL)=' .env.vercel | grep -v -E '="?\[[a-z ]*\]"?$' >> .env.build 2>/dev/null || true
           fi
           key="${SECRET_SERVICE_KEY:-}"
           src="repository secret"
