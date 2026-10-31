@@ -11,6 +11,7 @@ import {
   Tag,
 } from "lucide-react";
 import Ic from "@/components/ui/Icon";
+import { sendLead } from "@/lib/leads";
 
 // Handshake with /contact/thank-you: the conversion only fires when this flag is
 // present, so a refresh or a direct visit to the thank-you URL can't inflate leads.
@@ -111,31 +112,23 @@ export default function Contact() {
     setError("");
     const data = new FormData(form);
 
-    // Supabase via our own API route - the single store. Inquiries are read back
-    // in kauntech-admin (lib/inquiries.ts).
+    // The site is static: inquiries go to the Website Leads sheet + an email
+    // alert (lib/leads.ts).
     let ok = false;
-    let detail = "";
+    const detail = "";
     try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: data.get("Name"),
-          company: data.get("Company"),
-          phone: data.get("Phone"),
-          email: data.get("Email"),
-          message: data.get("Message"),
-          website: data.get("website"), // honeypot - bots fill this
-          page_url: typeof location !== "undefined" ? location.href : undefined,
-        }),
-      });
-      ok = res.ok;
-      if (!ok) {
-        const j = (await res.json().catch(() => null)) as {
-          detail?: string;
-        } | null;
-        if (j && typeof j.detail === "string") detail = j.detail;
-      }
+      await sendLead(
+        "contact",
+        {
+          name: String(data.get("Name") ?? ""),
+          company: String(data.get("Company") ?? ""),
+          phone: String(data.get("Phone") ?? ""),
+          email: String(data.get("Email") ?? ""),
+          message: String(data.get("Message") ?? ""),
+        },
+        { honeypot: String(data.get("website") ?? "") },
+      );
+      ok = true;
     } catch (err) {
       console.error(err);
     }

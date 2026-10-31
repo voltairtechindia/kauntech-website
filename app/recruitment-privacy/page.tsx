@@ -13,10 +13,9 @@ import {
 
 import Ic from "@/components/ui/Icon";
 
-// Hidden, recruitment-specific privacy notice. Like the main app (which is
-// offline-first with optional, user-controlled cloud backup), resume data is
-// processed server-side - stored in Supabase, parsed by AI, and
-// embedded for HR shortlisting. This page documents that honestly. It is
+// Hidden, recruitment-specific privacy notice. Since the move to a static site,
+// applications land in the private Website Leads Google Sheet and resumes in a
+// private Drive folder (lib/leads.ts). This page documents that honestly. It is
 // intentionally kept out of the sitemap/nav and set to noindex; it's reached
 // only from the careers application consent checkbox.
 export const metadata: Metadata = {
@@ -114,14 +113,12 @@ export default function RecruitmentPrivacyPage() {
             </h2>
             <ul>
               <li>
-                Resume files are kept in a <strong>private storage bucket</strong> accessible only
-                to authorised HR staff via short-lived signed links - they are never publicly
-                downloadable.
+                Resume files are kept in a <strong>private Google Drive folder</strong> owned by
+                our company Google account. They are never publicly downloadable.
               </li>
               <li>
-                Application records are stored in our access-controlled database, hosted with our
-                secure cloud infrastructure provider. Resume parsing is performed by Google&apos;s
-                Gemini API.
+                Application records are stored in a private Google Sheet in the same account. If
+                we screen applications with AI, that is done with Google&apos;s Gemini API.
               </li>
               <li>Access is restricted to the people involved in hiring.</li>
             </ul>

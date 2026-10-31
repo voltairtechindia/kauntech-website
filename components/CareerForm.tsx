@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { CircleAlert, CircleCheck, LoaderCircle, Paperclip, Send } from "lucide-react";
 
 import Ic from "@/components/ui/Icon";
+import { sendLead } from "@/lib/leads";
 
 type JobOption = { slug: string; title: string };
 type Status = { kind: "success" | "error"; text: string } | null;
@@ -31,34 +32,39 @@ export default function CareerForm({
     setStatus(null);
 
     const data = new FormData(form);
-    if (typeof location !== "undefined") data.set("page_url", location.href);
+    const resume = data.get("resume");
+    const file = resume instanceof File && resume.size > 0 ? resume : null;
+    if (file && file.size > 5 * 1024 * 1024) {
+      setStatus({ kind: "error", text: "That résumé is over 5 MB. Please attach a smaller PDF or DOCX." });
+      setSubmitting(false);
+      return;
+    }
+    const slug = String(data.get("job_slug") ?? "");
+    const role = jobs.find((j) => j.slug === slug)?.title ?? slug;
 
     try {
-      const res = await fetch("/api/careers/apply", {
-        method: "POST",
-        body: data, // multipart - let the browser set the boundary
+      await sendLead(
+        "career",
+        {
+          name: String(data.get("full_name") ?? ""),
+          email: String(data.get("email") ?? ""),
+          role,
+          note: String(data.get("cover_note") ?? ""),
+          consent: data.get("consent") ? "yes" : "no",
+        },
+        { file, honeypot: String(data.get("website") ?? "") },
+      );
+      setStatus({
+        kind: "success",
+        text: "Thank you! Your application has been received. Our team reviews every submission and will reach out if there's a fit.",
       });
-      const json = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setStatus({
-          kind: "success",
-          text: "Thank you! Your application has been received. Our team reviews every submission and will reach out if there's a fit.",
-        });
-        form.reset();
-        setFileName("");
-        onSubmitted?.();
-      } else {
-        setStatus({
-          kind: "error",
-          text:
-            (json as { detail?: string }).detail ||
-            "Sorry, we couldn't submit your application. Please try again.",
-        });
-      }
+      form.reset();
+      setFileName("");
+      onSubmitted?.();
     } catch {
       setStatus({
         kind: "error",
-        text: "Network error - please check your connection and try again.",
+        text: "Sorry, we couldn't submit your application. Please email it to business@voltairtech.com.",
       });
     }
     setSubmitting(false);
@@ -146,7 +152,7 @@ export default function CareerForm({
         </div>
 
         <div>
-          <label htmlFor="ap_resume">Resume * (PDF or DOCX, max 10 MB)</label>
+          <label htmlFor="ap_resume">Resume * (PDF or DOCX, max 5 MB)</label>
           <div className="file-field">
             <label className="btn-secondary" style={{ cursor: "pointer", padding: "12px 22px" }}>
               <Ic icon={Paperclip} />

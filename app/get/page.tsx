@@ -13,7 +13,6 @@ import GetAppClient from "./GetAppClient";
 // could be CDN-cached and replayed across platforms, and in-app browsers /
 // link unfurlers send misleading UAs. We resolve both store URLs here (so the
 // env overrides still work) and let the device decide in the browser.
-export const dynamic = "force-dynamic";
 
 export default function GetAppPage() {
   // resolveStoreUrl never returns null now that both stores are live; fall back

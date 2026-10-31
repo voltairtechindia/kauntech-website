@@ -7,10 +7,8 @@ import FinalCta from "@/components/home/FinalCta";
 import HomeOverview from "@/components/sections/HomeOverview";
 import Faq from "@/components/sections/Faq";
 
-// The FAQ teaser reads the DB-backed `site_faqs` table, so revalidate on the
-// same cadence as the blog/sitemap (admin FAQ edits go live within 5 min; the
-// /api/faq write also revalidates "/" for an instant refresh).
-export const revalidate = 300;
+// The FAQ teaser reads the DB-backed `site_faqs` table at build time; admin FAQ
+// edits go live on the next site build.
 
 export default function HomePage() {
   return (

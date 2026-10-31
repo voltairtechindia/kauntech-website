@@ -16,7 +16,7 @@ import { NextResponse } from "next/server";
 const TEAM_ID = process.env.IOS_APP_TEAM_ID || "67HQV24JQ7";
 const BUNDLE_ID = "com.kauntech.bizcard";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export function GET() {
   if (!/^[A-Z0-9]{10}$/.test(TEAM_ID)) {

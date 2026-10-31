@@ -8,9 +8,8 @@
 import { listPublishedPosts } from "@/lib/blog/db";
 import { listOpenJobs } from "@/lib/careers/db";
 
-export const runtime = "nodejs";
+export const dynamic = "force-static";
 // Regenerate at most every 5 min; matches the blog/sitemap ISR cadence.
-export const revalidate = 300;
 
 const SITE_URL = "https://www.kauntech.com";
 

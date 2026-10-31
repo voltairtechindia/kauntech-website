@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { INTEL, SCANS, SEATS, STRATEGY } from "@/lib/enterprise";
+import { sendLead } from "@/lib/leads";
 
 /**
  * Phone-first Enterprise quote form.
@@ -182,37 +183,26 @@ export default function EnterpriseForm() {
 
     setStatus("sending");
     const form = e.currentTarget;
-    const payload = {
-      name: values.name.trim(),
-      work_email: values.work_email.trim(),
-      company: values.company.trim(),
-      phone: values.phone.trim() || null,
-      message: values.message.trim() || null,
-      website: new FormData(form).get("website"), // honeypot
-      seats: seatCount,
-      scans_per_user: values.unlimitedScans ? 0 : Number(values.scans),
-      unlimited_scans: values.unlimitedScans,
-      intel_per_user: values.intel ? Number(values.intel) : null,
-      strategy_per_user: values.strategy ? Number(values.strategy) : null,
-      source: new URLSearchParams(window.location.search).get("src") === "app" ? "app" : "site",
-      page_url: window.location.href,
-    };
-
     try {
-      const res = await fetch("/api/enterprise", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(data?.detail || "Could not send your enquiry. Please try again.");
-        setStatus("error");
-        return;
-      }
+      await sendLead(
+        "enterprise",
+        {
+          name: values.name.trim(),
+          email: values.work_email.trim(),
+          company: values.company.trim(),
+          phone: values.phone.trim(),
+          message: values.message.trim(),
+          seats: seatCount,
+          scans_per_user: values.unlimitedScans ? "unlimited" : Number(values.scans),
+          intel_per_user: values.intel ? Number(values.intel) : "",
+          strategy_per_user: values.strategy ? Number(values.strategy) : "",
+          source: new URLSearchParams(window.location.search).get("src") === "app" ? "app" : "site",
+        },
+        { honeypot: String(new FormData(form).get("website") ?? "") },
+      );
       setStatus("sent");
     } catch {
-      setError("You appear to be offline. Please try again when you reconnect.");
+      setError("Could not send your enquiry. Please try again, or email business@voltairtech.com.");
       setStatus("error");
     }
   }

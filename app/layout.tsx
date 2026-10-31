@@ -8,7 +8,6 @@ import "./ui.css";
 import ScrollReveal from "@/components/ScrollReveal";
 import SiteChrome from "@/components/SiteChrome";
 import GtagScripts from "@/components/GtagScripts";
-import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = "https://www.kauntech.com";
 
@@ -225,7 +224,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ScrollReveal />
         <SiteChrome>{children}</SiteChrome>
-        <Analytics />
         <GtagScripts />
       </body>
     </html>

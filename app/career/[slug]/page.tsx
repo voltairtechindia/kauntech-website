@@ -13,19 +13,20 @@ import ApplyModal from "@/components/ApplyModal";
 import Markdown from "@/components/Markdown";
 import Ic from "@/components/ui/Icon";
 import { getJob, listOpenJobs } from "@/lib/careers/db";
+import { EMPTY_PARAM, orPlaceholder } from "@/lib/static-params";
 
 const SITE_URL = "https://www.kauntech.com";
 
-export const revalidate = 300;
-export const dynamicParams = true;
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
+  let slugs: string[] = [];
   try {
-    const jobs = await listOpenJobs();
-    return jobs.map((j) => ({ slug: j.slug }));
+    slugs = (await listOpenJobs()).map((j) => j.slug);
   } catch {
-    return [];
+    // DB unreachable: build the placeholder only.
   }
+  return orPlaceholder(slugs.map((slug) => ({ slug })), { slug: EMPTY_PARAM });
 }
 
 export async function generateMetadata({

@@ -28,7 +28,7 @@ const UPLOAD_CERT_SHA256 =
 
 const SHA256_RE = /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/;
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 export function GET() {
   const playCert = (process.env.ANDROID_PLAY_SIGNING_SHA256 || "").toUpperCase().trim();

@@ -11,6 +11,36 @@ Key product angle: offline-first OCR (say "offline-first", never "100% offline" 
 - **Icons**: Font Awesome 6 via CDN (loaded in `app/layout.tsx`)
 - **No testing framework** currently set up
 
+## Hosting: static on GitHub Pages (since 31 Oct 2026)
+Vercel blocked the account, so `main` is a static export (`output: "export"`,
+`next.config.ts`) deployed by `.github/workflows/pages.yml` on every push, every
+4 hours, and on demand. Custom domain www.kauntech.com (apex redirects to www).
+- **No server:** no `/api/*`, no middleware, no ISR, no image optimizer. Blog,
+  careers and FAQs are read from Supabase at BUILD time (`SUPABASE_URL` +
+  `SUPABASE_SERVICE_KEY`: repo secrets if set, else pulled from the old Vercel
+  project via the `VERCEL_TOKEN` secret). A DB error fails the build, so the last
+  good site stays up.
+- **Forms** (contact, careers + resume, enterprise quote, deletion request, chat
+  questions) post to the "Website Leads" Google Apps Script (`lib/leads.ts`):
+  a row in the Website Leads Google Sheet (tab per form) + an email to
+  business@voltairtech.com. Deletion tickets (`KNT-DEL-…`) are made in the browser.
+- **Chat widget:** no live AI; questions go to the team with a reply address.
+- **404 page does routing** (`app/not-found.tsx` + `components/landing/PathLanding.tsx`):
+  `/card/<uuid>` and `/r/KT-XXXXXX` render their landing pages in the browser
+  (referral clicks are no longer logged), `/ar/view/<id>` goes to
+  `/ar/view?card=<id>` (`app/ar/view/page.tsx` + `lib/ar/viewerModel.ts`, uses the
+  app's public anon key), trailing slashes are dropped.
+- `/.well-known/apple-app-site-association` and `assetlinks.json` are exported as
+  static files; `ANDROID_PLAY_SIGNING_SHA256` must be present at build.
+- The share image is the static `app/opengraph-image.png` (GitHub Pages serves
+  extension-less files with the wrong content type).
+- **Offline until they get a server:** the AR studio (`/ar` shows a notice) and
+  the enterprise seat console. Full server version: branch `vercel-full`. The
+  sections below describe that version where they mention `/api/*`; the admin
+  panel and n8n must now write to Supabase directly.
+- Empty dynamic routes build a `_none` placeholder that 404s (`lib/static-params.ts`).
+- Local builds need Google Fonts reachable (next/font downloads at build time).
+
 ## Dev Commands
 ```bash
 npm run dev      # Start dev server (localhost:3000)

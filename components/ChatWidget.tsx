@@ -23,6 +23,7 @@ import {
 
 import Ic from "@/components/ui/Icon";
 import Markdown from "@/components/Markdown";
+import { sendLead } from "@/lib/leads";
 import {
   pageContext,
   suggestRoutes,
@@ -51,6 +52,8 @@ type Msg = {
   error?: boolean;
   /** In-app navigation buttons surfaced under a bot reply. */
   nav?: RouteSuggestion[];
+  /** The visitor's question; shown with a reply form so the team can answer. */
+  ask?: string;
   animate?: boolean;
 };
 
@@ -102,25 +105,10 @@ function TypewriterText({ text, onComplete, onProgress }: TypewriterTextProps) {
   return <Markdown>{displayedText}</Markdown>;
 }
 
-const SESSION_KEY = "kauntech_chat_session";
 const OPENED_KEY = "kauntech_chat_opened"; // user opened the panel this session
 const DISMISS_KEY = "kauntech_teaser_dismissed"; // count of teaser dismissals
 const SCROLL_TRIGGER = 0.35; // fraction of page scrolled that counts as "reading"
 const MAX_DISMISSALS = 2; // stop nudging after this many dismissals/session
-
-/** Stable per-browser session id so a conversation threads together server-side. */
-function getSessionId(): string {
-  try {
-    let id = localStorage.getItem(SESSION_KEY);
-    if (!id) {
-      id = "sess_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
-      localStorage.setItem(SESSION_KEY, id);
-    }
-    return id;
-  } catch {
-    return "sess_ephemeral_" + Date.now().toString(36);
-  }
-}
 
 function ss(key: string): string | null {
   try {
@@ -306,50 +294,20 @@ export default function ChatWidget() {
       setInput("");
       setBusy(true);
 
-      try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: asked,
-            session_id: getSessionId(),
-            page_url: typeof location !== "undefined" ? location.href : undefined,
-          }),
-        });
-        const data = (await res.json().catch(() => null)) as {
-          reply?: string;
-          detail?: string;
-        } | null;
-        if (!res.ok) {
-          // Rate-limit / quota / validation errors carry a friendly `detail`;
-          // show it as a normal reply. Only fall back to the lead-capture form
-          // when we got nothing usable back (a real outage).
-          if (data?.detail) {
-            setMessages((prev) => [...prev, { from: "bot", text: data.detail!, animate: true }]);
-            return;
-          }
-          throw new Error(`Request failed (${res.status})`);
-        }
-        const reply = data?.reply ?? "";
-        // Derive in-app navigation from what was asked + answered (no AI cost).
-        const nav = suggestRoutes(`${asked} ${reply}`, pathname);
-        setMessages((prev) => [
-          ...prev,
-          { from: "bot", text: reply, nav: nav.length ? nav : undefined, animate: true },
-        ]);
-      } catch (err) {
-        console.error("[kauntech-chat]", err);
-        setMessages((prev) => [
-          ...prev,
-          {
-            from: "bot",
-            error: true,
-            text: "Sorry, I couldn't reach the assistant just now. Please share your details below and our team will email you shortly.",
-          },
-        ]);
-      } finally {
-        setBusy(false);
-      }
+      // The site is static, so there is no live assistant. A person on the team
+      // answers: collect a reply address, and still suggest pages to read now.
+      const nav = suggestRoutes(asked, pathname);
+      setMessages((prev) => [
+        ...prev,
+        {
+          from: "bot",
+          text: "Good question. A person from our team answers these, usually within a few hours. Leave your name and email or WhatsApp number and we'll reply there.",
+          nav: nav.length ? nav : undefined,
+          ask: asked,
+          animate: true,
+        },
+      ]);
+      setBusy(false);
     },
     [busy, isAnimating, pathname],
   );
@@ -367,7 +325,7 @@ export default function ChatWidget() {
     <>
       {/* Proactive, contextual nudge that grows out of the launcher. */}
       {teaser && !open && (
-        <div className="chat-teaser" role="dialog" aria-label="Kauntech assistant">
+        <div className="chat-teaser" role="dialog" aria-label="Ask the Kauntech team">
           <button
             className="chat-teaser-close"
             type="button"
@@ -406,8 +364,8 @@ export default function ChatWidget() {
 
       <button
         className={`chat-widget-btn${teaser && !open ? " nudging" : ""}`}
-        title="Chat with Kauntech AI Specialist"
-        aria-label="Open Kauntech AI assistant"
+        title="Ask the Kauntech team"
+        aria-label="Ask the Kauntech team a question"
         onClick={openPanel}
         type="button"
         style={open ? { transform: "scale(0)", opacity: 0 } : undefined}
@@ -419,7 +377,7 @@ export default function ChatWidget() {
             style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "50%", padding: "2px" }}
           />
         </span>
-        <span className="chat-widget-btn-label">Ask Kauntech AI</span>
+        <span className="chat-widget-btn-label">Ask Kauntech</span>
       </button>
 
       <div className={`chat-widget-window${open ? " active" : ""}${isWide ? " wide" : ""}`} ref={windowRef}>
@@ -433,10 +391,10 @@ export default function ChatWidget() {
               />
             </div>
             <div className="chat-title-box">
-              <h4>Kauntech AI Specialist</h4>
+              <h4>Ask the Kauntech team</h4>
               <p>
                 <span className="status-dot" style={{ display: "inline-block", animation: "none" }} />
-                <span>Online &amp; Ready</span>
+                <span>Replies within a few hours</span>
               </p>
             </div>
           </div>
@@ -447,9 +405,9 @@ export default function ChatWidget() {
 
         <div className="chat-body" ref={bodyRef}>
           <div className="chat-msg bot">
-            Hello! I am your Kauntech AI Specialist. Have questions about our offline-first
-            architecture, K-Tokens, pricing, or India&apos;s DPDP Act 2023 compliance? Choose a
-            preset or ask me anything!
+            Hello! Questions about offline-first scanning, K-Tokens, pricing, or India&apos;s
+            DPDP Act 2023? Ask us below. A person from our team replies, usually within a few
+            hours.
             {showPresets && (
               <div className="chat-preset-chips">
                 {ctx.presets.map((p) => (
@@ -483,7 +441,8 @@ export default function ChatWidget() {
               ) : (
                 m.text
               )}
-              {m.error && <FallbackForm />}
+              {m.error && <AskForm question="" />}
+              {!m.animate && m.ask && <AskForm question={m.ask} />}
               {!m.animate && m.nav && m.nav.length > 0 && (
                 <div className="chat-nav-actions">
                   {m.nav.map((n) => (
@@ -537,27 +496,60 @@ export default function ChatWidget() {
   );
 }
 
-function FallbackForm() {
-  const [submitted, setSubmitted] = useState(false);
-  if (submitted)
+/** Reply form under a question. Name plus email or WhatsApp, then it goes to the team. */
+function AskForm({ question }: { question: string }) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
+
+  if (state === "done")
     return (
       <div style={{ color: "#34d399", fontWeight: 700, marginTop: 12 }}>
-        Request Submitted. Thank you!
+        Got it. We&apos;ll reply to {contact.trim()} shortly.
       </div>
     );
+
+  const isEmail = /@/.test(contact);
+  const digits = contact.replace(/[^0-9]/g, "").length;
+  const ok =
+    name.trim().length >= 2 &&
+    (isEmail ? /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.trim()) : digits >= 8 && digits <= 15);
+
+  const send = async () => {
+    if (!ok) return;
+    setState("sending");
+    try {
+      await sendLead("chat", {
+        name,
+        email: isEmail ? contact : "",
+        phone: isEmail ? "" : contact,
+        reply_on: isEmail ? "Email" : "WhatsApp",
+        question,
+      });
+      setState("done");
+    } catch {
+      setState("error");
+    }
+  };
+
   return (
     <div className="chat-fallback-form" style={{ marginTop: 12 }}>
-      <input type="text" placeholder="Your Name" required />
-      <input type="email" placeholder="Your Email ID" required />
-      <textarea placeholder="Please describe your question or issue in detail..." rows={3} required />
-      <button
-        type="button"
-        onClick={() => {
-          alert("Details submitted successfully. Our admin will email you shortly.");
-          setSubmitted(true);
-        }}
-      >
-        Submit to Admin
+      <input type="text" placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} required />
+      <input
+        type="text"
+        inputMode="email"
+        placeholder="Email or WhatsApp number"
+        value={contact}
+        onChange={(e) => setContact(e.target.value)}
+        required
+      />
+      {state === "error" ? (
+        <div style={{ color: "#f87171", fontSize: 13, marginBottom: 6 }}>
+          Couldn&apos;t send. Please email business@voltairtech.com.
+        </div>
+      ) : null}
+      <button type="button" onClick={send} disabled={state === "sending" || !ok}>
+        {state === "sending" ? "Sending…" : "Send my question"}
       </button>
     </div>
   );
