@@ -19,6 +19,8 @@ export const SUPPORT_EMAIL = "business@voltairtech.com";
  * client (the platform rewrites it at the edge). Falls back to `x-real-ip`.
  */
 export function getClientIp(req: Request): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
   const xff = req.headers.get("x-forwarded-for");
   if (xff) {
     const first = xff.split(",")[0]?.trim();

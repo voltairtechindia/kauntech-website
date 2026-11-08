@@ -19,3 +19,7 @@ deno.lock
 
 # CodeGraph index — local only (contains a unix socket, breaks tarballs)
 .codegraph/
+
+# wrangler local secrets
+.dev.vars
+.wrangler/

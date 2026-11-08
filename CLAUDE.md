@@ -11,20 +11,28 @@ Key product angle: offline-first OCR (say "offline-first", never "100% offline" 
 - **Icons**: Font Awesome 6 via CDN (loaded in `app/layout.tsx`)
 - **No testing framework** currently set up
 
-## Hosting: static on GitHub Pages (since 31 Oct 2026)
-Vercel blocked the account, so `main` is a static export (`output: "export"`,
-`next.config.ts`) deployed by `.github/workflows/pages.yml` on every push, every
-4 hours, and on demand. Custom domain www.kauntech.com (apex redirects to www).
+## Hosting: Cloudflare Pages (migrated from Vercel)
+The site is a static export (`output: "export"`, `next.config.ts`) deployed to
+**Cloudflare Pages** (`kauntech-website.pages.dev`, custom domain `www.kauntech.com`).
+- **Edge Routing & Security:** Edge headers (`public/_headers`) enforce CSP (with WebAssembly support for 3D/Three.js models, Google Tag Manager, Ads, and Analytics), HSTS, and nosniff. Edge redirects (`public/_redirects`) handle legacy routes.
+- **Deploy Command:** `npm run deploy:cf` (deploys `out/` via Wrangler to Cloudflare Pages).
 - **No server:** no `/api/*`, no middleware, no ISR, no image optimizer. Blog,
   careers and FAQs are read from Supabase at BUILD time (`SUPABASE_URL` +
-  `SUPABASE_SERVICE_KEY`: repo secrets if set, else pulled from the old Vercel
-  project via the `VERCEL_TOKEN` secret). A DB error fails the build, so the last
-  good site stays up.
+  `SUPABASE_SERVICE_KEY`). A DB error fails the build, so the last good site stays up.
 - **Forms** (contact, careers + resume, enterprise quote, deletion request, chat
   questions) post to the "Website Leads" Google Apps Script (`lib/leads.ts`):
   a row in the Website Leads Google Sheet (tab per form) + an email to
   business@voltairtech.com. Deletion tickets (`KNT-DEL-…`) are made in the browser.
-- **Chat widget:** no live AI; questions go to the team with a reply address.
+- **Chat widget + enquiries (Cloudflare Pages Functions, 2026-11):** the static
+  site in `out/` is deployed together with `functions/` (config in `wrangler.toml`,
+  `nodejs_compat`). `functions/api/chat.ts` is the live Gemini RAG assistant (same
+  `lib/rag` engine, logs to `conversations`/`messages` for the admin); if it fails the
+  widget falls back to the "a person will reply" form. `functions/api/inquiry.ts`
+  saves contact and chat enquiries to `contact_submissions` (admin Inquiries page);
+  `lib/leads.ts` calls it alongside the Google Sheet script, which still emails the
+  team. Secrets live on the Pages project (`wrangler pages secret list`). Deploy with
+  `npx wrangler pages deploy out --project-name=<project> --branch=main` from the
+  project folder so the Functions are uploaded too.
 - **404 page does routing** (`app/not-found.tsx` + `components/landing/PathLanding.tsx`):
   `/card/<uuid>` and `/r/KT-XXXXXX` render their landing pages in the browser
   (referral clicks are no longer logged), `/ar/view/<id>` goes to

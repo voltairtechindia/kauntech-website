@@ -1,0 +1,7 @@
+# Cloudflare Pages: static site in out/ plus the Functions in functions/
+# (/api/chat and /api/inquiry). Secrets are set on the project, not here:
+#   npx wrangler pages secret put GOOGLE_API_KEY --project-name=kauntech-website
+name = "kauntech-website"
+pages_build_output_dir = "out"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]

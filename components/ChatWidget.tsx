@@ -105,6 +105,22 @@ function TypewriterText({ text, onComplete, onProgress }: TypewriterTextProps) {
   return <Markdown>{displayedText}</Markdown>;
 }
 
+const SESSION_KEY = "kauntech_chat_session";
+
+/** Stable per-browser session id so a conversation threads together server-side. */
+function getSessionId(): string {
+  try {
+    let id = localStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = "sess_" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      localStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return "sess_ephemeral_" + Date.now().toString(36);
+  }
+}
+
 const OPENED_KEY = "kauntech_chat_opened"; // user opened the panel this session
 const DISMISS_KEY = "kauntech_teaser_dismissed"; // count of teaser dismissals
 const SCROLL_TRIGGER = 0.35; // fraction of page scrolled that counts as "reading"
@@ -294,20 +310,50 @@ export default function ChatWidget() {
       setInput("");
       setBusy(true);
 
-      // The site is static, so there is no live assistant. A person on the team
-      // answers: collect a reply address, and still suggest pages to read now.
-      const nav = suggestRoutes(asked, pathname);
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: "bot",
-          text: "Good question. A person from our team answers these, usually within a few hours. Leave your name and email or WhatsApp number and we'll reply there.",
-          nav: nav.length ? nav : undefined,
-          ask: asked,
-          animate: true,
-        },
-      ]);
-      setBusy(false);
+      try {
+        // Answered by the Cloudflare Pages Function in functions/api/chat.ts.
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: asked,
+            session_id: getSessionId(),
+            page_url: typeof location !== "undefined" ? location.href : undefined,
+          }),
+        });
+        const data = (await res.json().catch(() => null)) as { reply?: string; detail?: string } | null;
+        if (!res.ok) {
+          // Rate limits and validation errors carry a friendly `detail`.
+          if (data?.detail && res.status !== 500) {
+            setMessages((prev) => [...prev, { from: "bot", text: data.detail!, animate: true }]);
+            return;
+          }
+          throw new Error(`Request failed (${res.status})`);
+        }
+        const reply = data?.reply ?? "";
+        if (!reply.trim()) throw new Error("Empty reply");
+        const nav = suggestRoutes(`${asked} ${reply}`, pathname);
+        setMessages((prev) => [
+          ...prev,
+          { from: "bot", text: reply, nav: nav.length ? nav : undefined, animate: true },
+        ]);
+      } catch (err) {
+        // A person on the team answers when the assistant can't.
+        console.error("[kauntech-chat]", err);
+        const nav = suggestRoutes(asked, pathname);
+        setMessages((prev) => [
+          ...prev,
+          {
+            from: "bot",
+            text: "I couldn't reach the assistant just now. A person from our team will answer instead, usually within a few hours. Leave your name and email or WhatsApp number and we'll reply there.",
+            nav: nav.length ? nav : undefined,
+            ask: asked,
+            animate: true,
+          },
+        ]);
+      } finally {
+        setBusy(false);
+      }
     },
     [busy, isAnimating, pathname],
   );
@@ -394,7 +440,7 @@ export default function ChatWidget() {
               <h4>Ask the Kauntech team</h4>
               <p>
                 <span className="status-dot" style={{ display: "inline-block", animation: "none" }} />
-                <span>Replies within a few hours</span>
+                <span>AI assistant, replies instantly</span>
               </p>
             </div>
           </div>
@@ -406,8 +452,7 @@ export default function ChatWidget() {
         <div className="chat-body" ref={bodyRef}>
           <div className="chat-msg bot">
             Hello! Questions about offline-first scanning, K-Tokens, pricing, or India&apos;s
-            DPDP Act 2023? Ask us below. A person from our team replies, usually within a few
-            hours.
+            DPDP Act 2023? Ask me below and I&apos;ll answer right away.
             {showPresets && (
               <div className="chat-preset-chips">
                 {ctx.presets.map((p) => (

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "NODE_OPTIONS='--max-old-space-size=6144' next build",
+    "deploy:cf": "wrangler pages deploy out --project-name=kauntech-website --branch=main",
     "start": "next start",
     "lint": "next lint"
   },

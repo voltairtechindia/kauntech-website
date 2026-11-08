@@ -48,6 +48,18 @@ export async function sendLead(
     };
   }
 
+  // Enquiries (not job applications) also go to the admin panel's Inquiries
+  // page through our own Function (functions/api/inquiry.ts). Best effort: the
+  // Sheet and the email below are what the visitor's success depends on.
+  if ((form === "contact" || form === "chat") && typeof window !== "undefined") {
+    fetch("/api/inquiry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      keepalive: true,
+    }).catch(() => {});
+  }
+
   // text/plain keeps this a "simple" request: no CORS preflight, which Apps
   // Script cannot answer. The script still reads the body as JSON.
   const res = await fetch(LEADS_URL, {

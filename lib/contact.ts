@@ -12,6 +12,7 @@ export interface ContactSubmission {
   message: string;
   page_url: string | null;
   user_agent: string | null;
+  metadata?: Record<string, unknown>;
 }
 
 export async function insertContactSubmission(
